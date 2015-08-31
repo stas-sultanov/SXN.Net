@@ -31,13 +31,27 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SXN.Core, Version=4.4.820.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SXN.Core.4.4.0820.1\lib\net45\SXN.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="RIO_NOTIFICATION_COMPLETION .cs" />
-    <Compile Include="RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
+    <Compile Include="Interop\sockaddr_in.cs" />
+    <Compile Include="Interop\SocketCreateFlags.cs" />
+    <Compile Include="ServerSocket.cs" />
+    <Compile Include="SocketTryResult.cs" />
+    <Compile Include="Interop\WSADATA.cs" />
+    <Compile Include="SocketErrorCode.cs" />
+    <Compile Include="Interop\RIO_NOTIFICATION_COMPLETION.cs" />
+    <Compile Include="Interop\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Interop\Interop.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
