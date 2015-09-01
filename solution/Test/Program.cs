@@ -8,7 +8,7 @@ namespace Test
 		static void Main(String[] args)
 		{
 			// 0 try initialize server
-			var tryInitialize = SocketServer.TryInitialize(10202);
+			var tryInitialize = TcpSocketServer.TryInitialize(10202);
 
 			if (!tryInitialize.Success)
 			{

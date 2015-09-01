@@ -1,5 +1,6 @@
-﻿using System.Net.Sockets;
+﻿using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security;
 
 // ReSharper disable InconsistentNaming
@@ -14,6 +15,8 @@ namespace System.Net.RIOSockets
 
 		private const String WS232DLL = "WS2_32.dll";
 
+		
+
 		public static readonly IntPtr INVALID_SOCKET = new IntPtr(-1);
 
 		public const Int32 SOCKET_ERROR = -1;
@@ -21,6 +24,8 @@ namespace System.Net.RIOSockets
 		#endregion
 
 		#region Methods
+
+
 
 		/// <summary>
 		/// Permits an incoming connection attempt on a socket.

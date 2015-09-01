@@ -41,9 +41,10 @@
   <ItemGroup>
     <Compile Include="Interop\ADDRESS_FAMILIES.cs" />
     <Compile Include="Interop\IN_ADDR.cs" />
+    <Compile Include="Interop\Kernel32Interop.cs" />
     <Compile Include="Interop\SOCKADDR_IN.cs" />
     <Compile Include="Interop\SocketCreateFlags.cs" />
-    <Compile Include="SocketServer.cs" />
+    <Compile Include="TcpSocketServer.cs" />
     <Compile Include="SocketTryResult.cs" />
     <Compile Include="Interop\WSADATA.cs" />
     <Compile Include="SocketErrorCode.cs" />
