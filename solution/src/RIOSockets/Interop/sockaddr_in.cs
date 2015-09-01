@@ -1,13 +1,34 @@
 ﻿using System.Runtime.InteropServices;
+// ReSharper disable All
 
 namespace System.Net.RIOSockets
 {
-	[StructLayout(LayoutKind.Sequential)]
-	public unsafe struct sockaddr_in
+	[StructLayout(LayoutKind.Sequential, Size = 16)]
+	internal unsafe struct SOCKADDR_IN
 	{
+		/// <summary>
+		/// The size of the structure.
+		/// </summary>
+		public const Int32 Size = 16;
+
+		/// <summary>
+		/// Address family.
+		/// </summary>
 		public ADDRESS_FAMILIES sin_family;
-		public ushort sin_port;
-		public in_addr sin_addr;
-		public fixed byte sin_zero[8];
+
+		/// <summary>
+		/// Internet Protocol (IP) port.
+		/// </summary>
+		public UInt16 sin_port;
+
+		/// <summary>
+		/// IP address in network byte order.
+		/// </summary>
+		public IN_ADDR sin_addr;
+
+		/// <summary>
+		/// Padding to make structure the same size as SOCKADDR.
+		/// </summary>
+		public fixed Byte sin_zero[8];
 	}
 }
