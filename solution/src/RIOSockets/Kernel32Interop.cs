@@ -1,8 +1,9 @@
-﻿using System.Runtime.ConstrainedExecution;
+﻿using System;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace System.Net.RIOSockets
+namespace SXN.Net
 {
 	/// <summary>
 	/// Encapsulates functions of the 'kernel32'.

@@ -1,7 +1,6 @@
-﻿using System;
-// ReSharper disable InconsistentNaming
+﻿// ReSharper disable InconsistentNaming
 
-namespace System.Net.RIOSockets
+namespace SXN.Net.Winsock
 {
 	/// <summary>
 	/// Specifies the type of completion queue notifications to use with the RIONotify function when sending or receiving data.

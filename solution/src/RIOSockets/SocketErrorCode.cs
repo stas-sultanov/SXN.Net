@@ -1,6 +1,6 @@
 ﻿// ReSharper disable All
 
-namespace System.Net.RIOSockets
+namespace SXN.Net
 {
 	public enum SocketErrorCode : int
 	{

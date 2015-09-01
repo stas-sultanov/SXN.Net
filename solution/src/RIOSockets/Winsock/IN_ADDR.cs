@@ -1,8 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 // ReSharper disable All
 
-namespace System.Net.RIOSockets
+namespace SXN.Net.Winsock
 {
 	/// <summary>
 	/// Represents an IPv4 Internet address.

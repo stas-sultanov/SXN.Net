@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net.RIOSockets;
+using SXN.Net;
 
 namespace Test
 {
@@ -13,7 +13,11 @@ namespace Test
 			if (!tryInitialize.Success)
 			{
 				Console.WriteLine($"error initializing server socket:: {tryInitialize.ErrorCode}");
+
+				return;
 			}
+
+			Console.WriteLine("init success");
 
 			var socketServer = tryInitialize.Result;
 
@@ -24,6 +28,8 @@ namespace Test
 			{
 				Console.WriteLine($"error accepting request :: {tryInitialize.ErrorCode}");
 			}
+
+			
 
 		}
 	}

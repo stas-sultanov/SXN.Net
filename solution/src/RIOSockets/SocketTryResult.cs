@@ -1,8 +1,8 @@
 ﻿
+using System;
 using System.Runtime.CompilerServices;
 
-
-namespace System.Net.RIOSockets
+namespace SXN.Net
 {
 	/// <summary>
 	/// Encapsulates the results of the execution of the Try-Do methods.

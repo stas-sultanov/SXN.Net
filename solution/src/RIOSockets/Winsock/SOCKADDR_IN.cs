@@ -1,7 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+
 // ReSharper disable All
 
-namespace System.Net.RIOSockets
+namespace SXN.Net.Winsock
 {
 	[StructLayout(LayoutKind.Sequential, Size = 16)]
 	internal unsafe struct SOCKADDR_IN
@@ -14,7 +16,7 @@ namespace System.Net.RIOSockets
 		/// <summary>
 		/// Address family.
 		/// </summary>
-		public ADDRESS_FAMILIES sin_family;
+		public UInt16 sin_family;
 
 		/// <summary>
 		/// Internet Protocol (IP) port.

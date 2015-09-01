@@ -1,12 +1,13 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 // ReSharper disable InconsistentNaming
 
-namespace System.Net.RIOSockets
+namespace SXN.Net.Winsock
 {
 	/// <summary>
-	/// Specifies the method for I/O completion to be used with a RIONotify function for sending or receiving network data.
+	/// Specifies the method for I/O completion to be used with a <see cref="RIO.RIONotify"/> function for sending or receiving network data with the Winsock registered I/O extensions.
 	/// </summary>
 	[StructLayout(LayoutKind.Explicit)]
 	internal struct RIO_NOTIFICATION_COMPLETION
@@ -14,7 +15,7 @@ namespace System.Net.RIOSockets
 		#region Nested Types
 
 		[StructLayout(LayoutKind.Sequential)]
-		internal struct IOCP
+		internal struct EVENT
 		{
 			#region Fields
 
@@ -34,7 +35,7 @@ namespace System.Net.RIOSockets
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
-		internal unsafe struct EVENT
+		internal unsafe struct IOCP
 		{
 			#region Fields
 
@@ -70,16 +71,14 @@ namespace System.Net.RIOSockets
 		internal RIO_NOTIFICATION_COMPLETION_TYPE Type;
 
 		/// <summary>
-		/// 
+		/// This value is valid when the <see cref="Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_EVENT_COMPLETION" />.
 		/// </summary>
-		/// <remarks>This value is valid when the <see cref="Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_EVENT_COMPLETION" />.</remarks>
 		[FieldOffset(4)]
 		internal EVENT Event;
 
 		/// <summary>
-		/// 
+		/// This value is valid when the <see cref="Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
 		/// </summary>
-		/// <remarks>This value is valid when the <see cref="Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.</remarks>
 		[FieldOffset(4)]
 		internal IOCP Iocp;
 

@@ -7,8 +7,8 @@
     <ProjectGuid>{09D61337-624F-4D21-AC32-232E1C790E1C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>System.Net.RIOSockets</RootNamespace>
-    <AssemblyName>System.Net.RIOSockets</AssemblyName>
+    <RootNamespace>SXN.Net</RootNamespace>
+    <AssemblyName>SXN.Net</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -39,20 +39,21 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Interop\ADDRESS_FAMILIES.cs" />
-    <Compile Include="Interop\RIO_EXTENSION_FUNCTION_TABLE.cs" />
-    <Compile Include="Interop\IN_ADDR.cs" />
-    <Compile Include="Interop\Kernel32Interop.cs" />
-    <Compile Include="Interop\SOCKADDR_IN.cs" />
-    <Compile Include="Interop\SocketCreateFlags.cs" />
+    <Compile Include="Winsock\RIO.cs" />
+    <Compile Include="Winsock\RIO_BUF.cs" />
+    <Compile Include="Winsock\RIO_EXTENSION_FUNCTION_TABLE.cs" />
+    <Compile Include="Winsock\IN_ADDR.cs" />
+    <Compile Include="Kernel32Interop.cs" />
+    <Compile Include="Winsock\SOCKADDR_IN.cs" />
+    <Compile Include="Winsock\SocketCreateFlags.cs" />
     <Compile Include="TcpSocketServer.cs" />
     <Compile Include="SocketTryResult.cs" />
-    <Compile Include="Interop\WSADATA.cs" />
+    <Compile Include="Winsock\WSADATA.cs" />
     <Compile Include="SocketErrorCode.cs" />
-    <Compile Include="Interop\RIO_NOTIFICATION_COMPLETION.cs" />
-    <Compile Include="Interop\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
+    <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION.cs" />
+    <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Interop\WinsockInterop.cs" />
+    <Compile Include="Winsock\Interop.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,7 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+
 // ReSharper disable All
 
-namespace System.Net.RIOSockets
+namespace SXN.Net.Winsock
 {
 	/// <summary>
 	/// Contains information on the functions that implement the Winsock registered I/O extensions.
