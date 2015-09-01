@@ -4,30 +4,50 @@ namespace System.Net.RIOSockets
 {
 	public sealed class TcpSocketServer
 	{
-		#region Constant and Static Fields
-
-		
-
-		#endregion
+		#region Fields
 
 		private readonly IntPtr socket;
 
+		#endregion
+
+		#region Constructors
+
 		/// <summary>
-		/// Initializes a new instance of the <see cref="TcpSocketServer"/> class.
+		/// Initializes a new instance of the <see cref="TcpSocketServer" /> class.
 		/// </summary>
 		private TcpSocketServer(IntPtr socket)
 		{
 			this.socket = socket;
 		}
 
-		#region Private methods
+		#endregion
+
+		#region Methods
+
+		public SocketTryResult<IntPtr> TryAccept()
+		{
+			// Permits an incoming connection attempt on a socket.
+			var acceptedSocket = WinsockInterop.accept(socket, IntPtr.Zero, 0);
+
+			// ReSharper disable once InvertIf
+			if (acceptedSocket == WinsockInterop.INVALID_SOCKET)
+			{
+				// get last error
+				var errorCode = (SocketErrorCode) WinsockInterop.WSAGetLastError();
+
+				// return result
+				return new SocketTryResult<IntPtr>(errorCode, IntPtr.Zero);
+			}
+
+			return new SocketTryResult<IntPtr>(SocketErrorCode.None, acceptedSocket);
+		}
 
 		public static SocketTryResult<TcpSocketServer> TryInitialize(UInt16 port)
 		{
 			WSADATA data;
 
 			// 0 initiates use of the Winsock DLL by a process.
-			var startupResultCode = Interop.WSAStartup(Interop.Version, out data);
+			var startupResultCode = WinsockInterop.WSAStartup(WinsockInterop.Version, out data);
 
 			// 0.1 check if startup was successful
 			if (startupResultCode != SocketErrorCode.None)
@@ -36,9 +56,9 @@ namespace System.Net.RIOSockets
 			}
 
 			// 1 try create socket
-			var serverSocket = Interop.WSASocket((Int32) ADDRESS_FAMILIES.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, SocketCreateFlags.REGISTERED_IO);
+			var serverSocket = WinsockInterop.WSASocket((Int32) ADDRESS_FAMILIES.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, SocketCreateFlags.REGISTERED_IO);
 
-			if (Interop.INVALID_SOCKET == serverSocket)
+			if (WinsockInterop.INVALID_SOCKET == serverSocket)
 			{
 				goto FAIL;
 			}
@@ -53,18 +73,18 @@ namespace System.Net.RIOSockets
 			var socketAddress = new SOCKADDR_IN
 			{
 				sin_family = ADDRESS_FAMILIES.AF_INET,
-				sin_port = Interop.htons(port),
+				sin_port = WinsockInterop.htons(port),
 				sin_addr = address
 			};
 
 			// 4 try associate address with socket
-			if (Interop.SOCKET_ERROR == Interop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size))
+			if (WinsockInterop.SOCKET_ERROR == WinsockInterop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size))
 			{
 				goto FAIL;
 			}
 
 			// 5 try start listen
-			if (Interop.SOCKET_ERROR == Interop.listen(serverSocket, 2048))
+			if (WinsockInterop.SOCKET_ERROR == WinsockInterop.listen(serverSocket, 2048))
 			{
 				goto FAIL;
 			}
@@ -76,31 +96,30 @@ namespace System.Net.RIOSockets
 			FAIL:
 
 			// get last error
-			var errorCode = (SocketErrorCode) Interop.WSAGetLastError();
+			var errorCode = (SocketErrorCode) WinsockInterop.WSAGetLastError();
 
 			// terminate use of the Winsock DLL
-			Interop.WSACleanup();
+			WinsockInterop.WSACleanup();
 
 			// return result
 			return new SocketTryResult<TcpSocketServer>(errorCode, null);
 		}
 
-		public SocketTryResult<IntPtr> TryAccept()
+		private unsafe Int32 Init()
 		{
-			// Permits an incoming connection attempt on a socket.
-			var acceptedSocket = Interop.accept(socket, IntPtr.Zero, 0);
+			Int32 disable = -1;
 
-			// ReSharper disable once InvertIf
-			if (acceptedSocket == Interop.INVALID_SOCKET)
+			Int32 result;
+
+			// try disable use of the Nagle algorithm
+			result = WinsockInterop.setsockopt(socket, WinsockInterop.IPPROTO_TCP, WinsockInterop.TCP_NODELAY, (Char*)&disable, 4)
+
+			if (result == WinsockInterop.setsockopt(socket, WinsockInterop.IPPROTO_TCP, WinsockInterop.TCP_NODELAY, (Char*) &disable, 4))
 			{
-				// get last error
-				var errorCode = (SocketErrorCode)Interop.WSAGetLastError();
 
-				// return result
-				return new SocketTryResult<IntPtr>(errorCode, IntPtr.Zero);
 			}
 
-			return new SocketTryResult<IntPtr>(SocketErrorCode.None, acceptedSocket);
+			// try enable faster operations on the loopback interface
 		}
 
 		#endregion

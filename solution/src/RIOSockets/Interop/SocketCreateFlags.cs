@@ -1,7 +1,7 @@
 ﻿namespace System.Net.RIOSockets
 {
 	/// <summary>
-	/// A set of flags used to specify additional socket attributes for <see cref="Interop.WSASocket"/> method.
+	/// A set of flags used to specify additional socket attributes for <see cref="WinsockInterop.WSASocket"/> method.
 	/// </summary>
 	[Flags]
 	internal enum SocketCreateFlags : uint
