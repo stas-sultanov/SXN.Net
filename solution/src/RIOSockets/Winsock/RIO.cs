@@ -2,11 +2,21 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+
 // ReSharper disable All
 
 namespace SXN.Net.Winsock
 {
-	using DWORD = System.UInt32;
+	using SOCKET = IntPtr;
+	using DWORD = UInt32;
+	using RIO_CQ = IntPtr;
+	using RIO_RQ = IntPtr;
+	using ULONG = UInt32;
+	using BOOL = Boolean;
+	using RIO_BUFFERID = IntPtr;
+	using INT = Int32;
+	using PVOID = Object;
+	using PCHAR = IntPtr;
 
 	internal sealed class RIO
 	{
@@ -14,55 +24,47 @@ namespace SXN.Net.Winsock
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate IntPtr RIORegisterBuffer([In] IntPtr DataBuffer, [In] DWORD DataLength);
+		public delegate RIO_BUFFERID RIORegisterBuffer([In] PCHAR DataBuffer, [In] DWORD DataLength);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate void RIODeregisterBuffer([In] IntPtr BufferId);
+		public delegate void RIODeregisterBuffer([In] RIO_BUFFERID BufferId);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate Boolean RIOSend([In] IntPtr SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] Int64 RequestContext);
+		public delegate BOOL RIOSend([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate Boolean RIOReceive([In] IntPtr SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] Int64 RequestContext);
+		public delegate BOOL RIOReceive([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] ULONG DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate IntPtr RIOCreateCompletionQueue([In] DWORD QueueSize, [In] RIO_NOTIFICATION_COMPLETION NotificationCompletion);
+		public delegate RIO_CQ RIOCreateCompletionQueue([In] DWORD QueueSize, [In] RIO_NOTIFICATION_COMPLETION NotificationCompletion);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate void RIOCloseCompletionQueue([In] IntPtr CQ);
+		public delegate void RIOCloseCompletionQueue([In] RIO_CQ CQ);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate IntPtr RIOCreateRequestQueue([In] IntPtr Socket,
-			[In] DWORD MaxOutstandingReceive,
-			[In] DWORD MaxReceiveDataBuffers,
-			[In] DWORD MaxOutstandingSend,
-			[In] DWORD MaxSendDataBuffers,
-			[In] IntPtr ReceiveCQ,
-			[In] IntPtr SendCQ,
-			[In] Int64 ConnectionCorrelation
-			);
+		public delegate RIO_RQ RIOCreateRequestQueue([In] SOCKET Socket, [In] ULONG MaxOutstandingReceive, [In] ULONG MaxReceiveDataBuffers, [In] ULONG MaxOutstandingSend, [In] ULONG MaxSendDataBuffers, [In] RIO_CQ ReceiveCQ, [In] RIO_CQ SendCQ, [In] PVOID SocketContext);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate DWORD RIODequeueCompletion([In] IntPtr CQ, [In] IntPtr ResultArray, [In] DWORD ResultArrayLength);
+		public delegate ULONG RIODequeueCompletion([In] RIO_CQ CQ, [In] IntPtr Array, [In] ULONG ArraySize);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate Int32 RIONotify([In] IntPtr CQ);
+		public delegate INT RIONotify([In] RIO_CQ CQ);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate Boolean RIOResizeCompletionQueue([In] IntPtr CQ, [In] DWORD QueueSize);
+		public delegate BOOL RIOResizeCompletionQueue([In] RIO_CQ CQ, [In] DWORD QueueSize);
 
 		[SuppressUnmanagedCodeSecurity]
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		public delegate Boolean RIOResizeRequestQueue([In] IntPtr RQ, [In] DWORD MaxOutstandingReceive, [In] DWORD MaxOutstandingSend);
+		public delegate BOOL RIOResizeRequestQueue([In] RIO_RQ RQ, [In] DWORD MaxOutstandingReceive, [In] DWORD MaxOutstandingSend);
 
 		#endregion
 
@@ -70,7 +72,15 @@ namespace SXN.Net.Winsock
 
 		public const Int64 CachedValue = Int64.MinValue;
 
+		public const Int32 ERROR_SUCCESS = 0;
+
 		public const int RIO_INVALID_BUFFERID = 0;
+
+		public static readonly ULONG RIO_CORRUPT_CQ = 0xFFFFFFFF;
+
+		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
+
+		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
 
 		#endregion
 
@@ -103,7 +113,7 @@ namespace SXN.Net.Winsock
 		#region Constructors
 
 		/// <summary>
-		/// Initializes a new instance of <see cref="RIO"/> class.
+		/// Initializes a new instance of <see cref="RIO" /> class.
 		/// </summary>
 		/// <param name="table">The reference to the table of the functions pointers.</param>
 		public RIO(ref RIO_EXTENSION_FUNCTION_TABLE table)
@@ -135,32 +145,73 @@ namespace SXN.Net.Winsock
 
 		#region Methods
 
+		/// <summary>
+		/// Closes an existing completion queue used for I/O completion notification by send and receive requests with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="CQ">A descriptor identifying an existing completion queue.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void CloseCompletionQueue([In] IntPtr CQ) => closeCompletionQueue(CQ);
+		public void CloseCompletionQueue([In] RIO_CQ CQ) => closeCompletionQueue(CQ);
 
+		/// <summary>
+		/// Creates an I/O completion queue of a specific size for use with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="QueueSize">The size, in number of entries, of the completion queue to create.</param>
+		/// <param name="NotificationCompletion">The type of notification completion to use based on the Type member of the <see cref="RIO_NOTIFICATION_COMPLETION" /> structure (I/O completion or event notification).</param>
+		/// <returns>
+		/// If no error occurs, returns a descriptor referencing a new completion queue.
+		/// Otherwise, a value of <see cref="RIO_CORRUPT_CQ" /> is returned, and a specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IntPtr CreateRequestQueue([In] IntPtr Socket,
-			[In] DWORD MaxOutstandingReceive,
-			[In] DWORD MaxReceiveDataBuffers,
-			[In] DWORD MaxOutstandingSend,
-			[In] DWORD MaxSendDataBuffers,
-			[In] IntPtr ReceiveCQ,
-			[In] IntPtr SendCQ,
-			[In] Int64 ConnectionCorrelation
-			) => createRequestQueue(Socket, MaxOutstandingReceive, MaxReceiveDataBuffers, MaxOutstandingSend, MaxSendDataBuffers, ReceiveCQ, SendCQ, ConnectionCorrelation);
+		public RIO_CQ CreateCompletionQueue([In] DWORD QueueSize, [In] RIO_NOTIFICATION_COMPLETION NotificationCompletion) => createCompletionQueue(QueueSize, NotificationCompletion);
 
+		/// <summary>
+		/// Creates a registered I/O socket descriptor using a specified socket and I/O completion queues for use with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="Socket">A descriptor that identifies the socket.</param>
+		/// <param name="MaxOutstandingReceive">The maximum number of outstanding receives allowed on the socket.</param>
+		/// <param name="MaxReceiveDataBuffers">The maximum number of receive data buffers on the socket.</param>
+		/// <param name="MaxOutstandingSend">The maximum number of outstanding sends allowed on the socket.</param>
+		/// <param name="MaxSendDataBuffers">The maximum number of send data buffers on the socket.</param>
+		/// <param name="ReceiveCQ">A descriptor that identifies the I/O completion queue to use for receive request completions.</param>
+		/// <param name="SendCQ">A descriptor that identifies the I/O completion queue to use for send request completions.</param>
+		/// <param name="SocketContext">The socket context to associate with this request queue.</param>
+		/// <returns>
+		/// If no error occurs, returns a descriptor referencing a new request queue.
+		/// Otherwise, a value of <see cref="RIO_INVALID_RQ" /> is returned, and a specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public DWORD DequeueCompletion([In] IntPtr CQ, [In] IntPtr ResultArray, [In] DWORD ResultArrayLength) => dequeueCompletion(CQ, ResultArray, ResultArrayLength);
+		public RIO_RQ CreateRequestQueue([In] SOCKET Socket, [In] ULONG MaxOutstandingReceive, [In] ULONG MaxReceiveDataBuffers, [In] ULONG MaxOutstandingSend, [In] ULONG MaxSendDataBuffers, [In] RIO_CQ ReceiveCQ, [In] RIO_CQ SendCQ, [In] PVOID SocketContext) => createRequestQueue(Socket, MaxOutstandingReceive, MaxReceiveDataBuffers, MaxOutstandingSend, MaxSendDataBuffers, ReceiveCQ, SendCQ, SocketContext);
+
+		/// <summary>
+		/// Removes entries from an I/O completion queue for use with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="CQ">A descriptor that identifies an I/O completion queue.</param>
+		/// <param name="Array">An array of RIORESULT structures to receive the description of the completions dequeued.</param>
+		/// <param name="ArraySize">The maximum number of entries in the <see cref="Array" /> to write.</param>
+		/// <returns>
+		/// If no error occurs, returns the number of completion entries removed from the specified completion queue.
+		/// Otherwise, a value of <see cref="RIO_CORRUPT_CQ" /> is returned to indicate that the state of the <see cref="RIO_CQ" /> passed in the <paramref name="CQ" /> parameter has become corrupt due to memory corruption or misuse of the RIO functions.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public ULONG DequeueCompletion([In] RIO_CQ CQ, [In] IntPtr Array, [In] ULONG ArraySize) => dequeueCompletion(CQ, Array, ArraySize);
 
 		/// <summary>
 		/// Deregisters a registered buffer used with the Winsock registered I/O extensions.
 		/// </summary>
 		/// <param name="BufferId">A descriptor identifying a registered buffer.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void DeregisterBuffer([In] IntPtr BufferId) => deregisterBuffer(BufferId);
+		public void DeregisterBuffer([In] RIO_BUFFERID BufferId) => deregisterBuffer(BufferId);
 
+		/// <summary>
+		/// A descriptor that identifies an I/O completion queue.
+		/// </summary>
+		/// <param name="CQ">A descriptor that identifies an I/O completion queue.</param>
+		/// <returns>
+		/// If no error occurs, returns <see cref="ERROR_SUCCESS" />.
+		/// Otherwise, the function failed and a specific error code is returned.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Int32 Notify([In] IntPtr CQ) => notify(CQ);
+		public INT Notify([In] RIO_CQ CQ) => notify(CQ);
 
 		/// <summary>
 		/// Receives network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the Winsock registered I/O extensions.
@@ -171,11 +222,11 @@ namespace SXN.Net.Winsock
 		/// <param name="Flags">A set of flags that modify the behavior of the function.</param>
 		/// <param name="RequestContext">The request context to associate with this receive operation.</param>
 		/// <returns>
-		/// If no error occurs, returns TRUE. In this case, the receive operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
-		/// A value of FALSE indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
+		/// If no error occurs, returns <c>true</c>. In this case, the receive operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
+		/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Boolean Receive([In] IntPtr SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] Int64 RequestContext) => receive(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
+		public BOOL Receive([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] ULONG DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext) => receive(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
 
 		/// <summary>
 		/// Registers a RIO_BUFFERID, a registered buffer descriptor, with a specified buffer for use with the Winsock registered I/O extensions.
@@ -184,31 +235,48 @@ namespace SXN.Net.Winsock
 		/// <param name="DataLength">The length, in bytes, in the buffer to register.</param>
 		/// <returns>If no error occurs, returns a registered buffer descriptor. Otherwise, a value of <see cref="RIO.RIO_INVALID_BUFFERID" /> is returned, and a specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IntPtr RegisterBuffer([In] IntPtr DataBuffer, [In] DWORD DataLength) => registerBuffer(DataBuffer, DataLength);
+		public RIO_BUFFERID RegisterBuffer([In] PCHAR DataBuffer, [In] DWORD DataLength) => registerBuffer(DataBuffer, DataLength);
 
+		/// <summary>
+		/// Resizes an I/O completion queue to be either larger or smaller for use with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="CQ">A descriptor that identifies an existing I/O completion queue to resize.</param>
+		/// <param name="QueueSize">The new size, in number of entries, of the completion queue.</param>
+		/// <returns>
+		/// If no error occurs, returns <c>true</c>.
+		/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Boolean ResizeCompletionQueue([In] IntPtr CQ, [In] DWORD QueueSize) => resizeCompletionQueue(CQ, QueueSize);
+		public BOOL ResizeCompletionQueue([In] RIO_CQ CQ, [In] DWORD QueueSize) => resizeCompletionQueue(CQ, QueueSize);
 
+		/// <summary>
+		/// Resizes a request queue to be either larger or smaller for use with the Winsock registered I/O extensions.
+		/// </summary>
+		/// <param name="RQ">A descriptor that identifies an existing registered I/O socket descriptor (request queue) to resize.</param>
+		/// <param name="MaxOutstandingReceive">The maximum number of outstanding sends allowed on the socket. This value can be larger or smaller than the original number.</param>
+		/// <param name="MaxOutstandingSend">The maximum number of outstanding receives allowed on the socket. This value can be larger or smaller than the original number.</param>
+		/// <returns>
+		/// If no error occurs, returns <c>true</c>.
+		/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Boolean ResizeRequestQueue([In] IntPtr RQ, [In] DWORD MaxOutstandingReceive, [In] DWORD MaxOutstandingSend) => resizeRequestQueue(RQ, MaxOutstandingReceive, MaxOutstandingSend);
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public IntPtr CreateCompletionQueue([In] DWORD QueueSize, [In] RIO_NOTIFICATION_COMPLETION NotificationCompletion) => createCompletionQueue(QueueSize, NotificationCompletion);
+		public BOOL ResizeRequestQueue([In] RIO_RQ RQ, [In] DWORD MaxOutstandingReceive, [In] DWORD MaxOutstandingSend) => resizeRequestQueue(RQ, MaxOutstandingReceive, MaxOutstandingSend);
 
 		/// <summary>
 		/// Sends a network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the Winsock registered I/O extensions.
 		/// </summary>
 		/// <param name="SocketQueue">A descriptor that identifies a connected registered I/O TCP socket or a bound registered I/O UDP socket.</param>
-		/// <param name="pData">A description of the portion of the registered buffer from which to send data. This parameter may be NULL for a bound registered I/O UDP socket if the application does not need to send a data payload in the UDP datagram.</param>
+		/// <param name="pData">A description of the portion of the registered buffer from which to send data. This parameter may be <c>null</c> for a bound registered I/O UDP socket if the application does not need to send a data payload in the UDP datagram.</param>
 		/// <param name="DataBufferCount">A data buffer count parameter that indicates if data is to be sent in the buffer pointed to by the <see cref="pData" /> parameter.</param>
 		/// <param name="Flags">A set of flags that modify the behavior of the function.</param>
 		/// <param name="RequestContext">The request context to associate with this send operation.</param>
 		/// <returns>
-		/// If no error occurs, the RIOSend function returns TRUE. In this case, the send operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
-		/// A value of FALSE indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the WSAGetLastError function.
+		/// If no error occurs, returns <c>true</c>. In this case, the send operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
+		/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.
+		/// A specific error code can be retrieved by calling the <see cref="Interop.WSAGetLastError" /> function.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Boolean Send([In] IntPtr SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] Int64 RequestContext) => send(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
+		public BOOL Send([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext) => send(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
 
 		#endregion
 	}

@@ -8,7 +8,7 @@ namespace Test
 		static void Main(String[] args)
 		{
 			// 0 try initialize server
-			var tryInitialize = TcpServer.TryInitialize(10202);
+			var tryInitialize = TcpServer.TryInitialize();
 
 			if (!tryInitialize.Success)
 			{
@@ -17,17 +17,27 @@ namespace Test
 				return;
 			}
 
+			var server = tryInitialize.Result;
+
 			Console.WriteLine("init success");
 
-			var socketServer = tryInitialize.Result;
+			// 1 try start server
+			var tryStartResultCode = server.TryStart(10202);
 
-			// 1 try accept request
-			var tryAccept = socketServer.TryAccept();
+			if (tryStartResultCode != WinsockErrorCode.None)
+			{
+				Console.WriteLine($"error starting server:: {tryStartResultCode}");
+			}
+
+			// 2 try accept request
+			var tryAccept = server.TryAccept();
 
 			if (!tryAccept.Success)
 			{
 				Console.WriteLine($"error accepting request :: {tryInitialize.ErrorCode}");
 			}
+
+			// 3 try stop
 		}
 	}
 }

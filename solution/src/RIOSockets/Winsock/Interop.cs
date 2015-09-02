@@ -42,7 +42,7 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// Maximum queue length specifiable by listen.
 		/// </summary>
-		public const Int32 SOMAXCONN = 1024;
+		public const Int32 SOMAXCONN = 0x7fffffff;
 
 		/// <summary>
 		/// Enables or disables the Nagle algorithm for TCP sockets. This option is disabled (set to FALSE) by default.
@@ -89,8 +89,18 @@ namespace SXN.Net.Winsock
 		/// <param name="name">A pointer to a <see cref="SOCKADDR_IN" /> structure of the local address to assign to the bound socket .</param>
 		/// <param name="namelen">The length, in bytes, of the value pointed to by the <paramref name="name" /> parameter.</param>
 		/// <returns>If no error occurs, returns zero. Otherwise, returns <see cref="SOCKET_ERROR" />, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true, CharSet = CharSet.Ansi)]
 		public static extern Int32 bind([In] SOCKET s, [In] ref SOCKADDR_IN name, [In] Int32 namelen);
+
+		/// <summary>
+		/// Associates a local address with a socket.
+		/// </summary>
+		/// <param name="s">A descriptor identifying the socket to close.</param>
+		/// <returns>If no error occurs, returns zero. Otherwise, returns <see cref="SOCKET_ERROR" />, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
+		[SuppressUnmanagedCodeSecurity]
+		[DllImport(WS232DLL, SetLastError = true, CharSet = CharSet.Ansi)]
+		public static extern Int32 closesocket([In] SOCKET s);
 
 		/// <summary>
 		/// Converts a <paramref name="hostshort" /> from host to TCP/IP network byte order (which is big-endian).

@@ -8,6 +8,8 @@ namespace SXN.Net
 	{
 		#region Fields
 
+		private readonly RIO rioHandle;
+
 		private readonly IntPtr socket;
 
 		#endregion
@@ -17,25 +19,37 @@ namespace SXN.Net
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TcpServer" /> class.
 		/// </summary>
-		private TcpServer(IntPtr socket)
+		private TcpServer(IntPtr socket, RIO rioHandle)
 		{
 			this.socket = socket;
+
+			this.rioHandle = rioHandle;
 		}
 
 		#endregion
 
 		#region Private methods
 
-		private static unsafe TryResult<RIO> TryGetRio(IntPtr socket)
+		/// <summary>
+		/// Tries to get registered I/O handle.
+		/// </summary>
+		/// <returns>
+		/// An instance of <see cref="TryResult{T}" /> which encapsulates result of the operation.
+		/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
+		/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
+		/// </returns>
+		private static unsafe TryResult<RIO> TryGetRioHandle(IntPtr socket)
 		{
 			UInt32 dwBytes;
 
-			var rioFunctionsTableId = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
+			// compose function table id
+			var functionTableId = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
 
-			var rioTable = new RIO_EXTENSION_FUNCTION_TABLE();
+			// initialize functions table
+			var functionTable = new RIO_EXTENSION_FUNCTION_TABLE();
 
 			// try get registered IO functions table
-			var tryGetTableResult = Interop.WSAIoctl(socket, Interop.SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &rioFunctionsTableId, 16, &rioTable, (UInt32) sizeof(RIO_EXTENSION_FUNCTION_TABLE), out dwBytes, IntPtr.Zero, IntPtr.Zero);
+			var tryGetTableResult = Interop.WSAIoctl(socket, Interop.SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &functionTableId, 16, &functionTable, (UInt32) sizeof(RIO_EXTENSION_FUNCTION_TABLE), out dwBytes, IntPtr.Zero, IntPtr.Zero);
 
 			// check if attempt was successful
 			if (tryGetTableResult == Interop.SOCKET_ERROR)
@@ -44,8 +58,10 @@ namespace SXN.Net
 				return TryResult<RIO>.CreateFail();
 			}
 
-			var rio = new RIO(ref rioTable);
+			// create registered I/O handle
+			var rio = new RIO(ref functionTable);
 
+			// return success
 			return TryResult<RIO>.CreateSuccess(rio);
 		}
 
@@ -85,7 +101,7 @@ namespace SXN.Net
 			}
 
 			// 1 try create socket
-			var serverSocket = Interop.WSASocket((Int32) Interop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
+			var serverSocket = Interop.WSASocket(Interop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
 
 			// 1.a check if socket created
 			if (Interop.INVALID_SOCKET == serverSocket)
@@ -94,9 +110,9 @@ namespace SXN.Net
 			}
 
 			// try initialize registered I/O extension
-			var tryGetRio = TryGetRio(serverSocket);
+			var tryGetRioHandle = TryGetRioHandle(serverSocket);
 
-			if (!tryGetRio.Success)
+			if (!tryGetRioHandle.Success)
 			{
 				goto FAIL;
 			}
@@ -106,7 +122,7 @@ namespace SXN.Net
 			// 2 try disable use of the Nagle algorithm
 			unsafe
 			{
-				var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Char*)&disable, 4);
+				var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Char*) &disable, 4);
 
 				// 2.a check if attempt has succeed
 				if (tryDisableNagle == Interop.SOCKET_ERROR)
@@ -129,37 +145,33 @@ namespace SXN.Net
 				}
 			}
 
-			// 4 compose address
-			var address = new IN_ADDR
+			// 4 try bind
 			{
-				s_addr = 0
-			};
+				// compose address
+				var address = new IN_ADDR
+				{
+					s_addr = 0
+				};
 
-			// 5 compose socket address
-			var socketAddress = new SOCKADDR_IN
-			{
-				sin_family = Interop.AF_INET,
-				sin_port = Interop.htons(port),
-				sin_addr = address
-			};
+				// compose socket address
+				var socketAddress = new SOCKADDR_IN
+				{
+					sin_family = Interop.AF_INET,
+					sin_port = Interop.htons(port),
+					sin_addr = address
+				};
 
-			// 6 try associate address with socket
-			var tryBindResult = Interop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
+				// try associate address with socket
+				var tryBindResult = Interop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
 
-			if (tryBindResult == Interop.SOCKET_ERROR)
-			{
-				goto FAIL;
+				if (tryBindResult == Interop.SOCKET_ERROR)
+				{
+					goto FAIL;
+				}
 			}
 
-			// 7 try start listen
-			var tryStartListen = Interop.listen(serverSocket, 2048);
-
-			if (tryStartListen == Interop.SOCKET_ERROR)
-			{
-				goto FAIL;
-			}
-
-			var result = new TcpServer(serverSocket);
+			// initialize server
+			var result = new TcpServer(serverSocket, tryGetRioHandle.Result);
 
 			// return success
 			return WinsockTryResult<TcpServer>.CreateSuccess(result);
@@ -174,6 +186,40 @@ namespace SXN.Net
 
 			// return fail
 			return WinsockTryResult<TcpServer>.CreateFail(errorCode);
+		}
+
+		public WinsockErrorCode Activate()
+		{
+			// try start listen
+			var tryStartListen = Interop.listen(socket, 2048);
+
+			if (tryStartListen == Interop.SOCKET_ERROR)
+			{
+				goto FAIL;
+			}
+
+			return WinsockErrorCode.None;
+
+			FAIL:
+
+			return (WinsockErrorCode) Interop.WSAGetLastError();
+		}
+
+		public WinsockErrorCode Deactivate()
+		{
+			// try close socket
+			var tryCloseResultCode = Interop.closesocket(socket);
+
+			if (tryCloseResultCode == Interop.SOCKET_ERROR)
+			{
+				goto FAIL;
+			}
+
+			return WinsockErrorCode.None;
+
+			FAIL:
+
+			return (WinsockErrorCode)Interop.WSAGetLastError();
 		}
 
 		#endregion
