@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+// ReSharper disable All
 
 namespace SXN.Net.Winsock
 {
+	using WORD = UInt16;
+
 	/// <summary>
 	/// Contains information about the Windows Sockets implementation.
 	/// </summary>
@@ -18,7 +21,7 @@ namespace SXN.Net.Winsock
 		/// The version of the Windows Sockets specification that the Ws2_32.dll expects the caller to use.
 		/// The high-order byte specifies the minor version number; the low-order byte specifies the major version number.
 		/// </summary>
-		internal Int16 wVersion;
+		internal WORD wVersion;
 
 		/// <summary>
 		/// The highest version of the Windows Sockets specification that the Ws2_32.dll can support.
@@ -27,7 +30,7 @@ namespace SXN.Net.Winsock
 		/// <remarks>
 		/// This is the same value as the <see cref="wVersion"/> member when the version requested in the wVersionRequested parameter passed to the <see cref="Interop.WSAStartup"/> function is the highest version of the Windows Sockets specification that the Ws2_32.dll can support.
 		/// </remarks>
-		internal Int16 wHighVersion;
+		internal WORD wHighVersion;
 
 		/// <summary>
 		/// A NULL-terminated ASCII string into which the Ws2_32.dll copies a description of the Windows Sockets implementation.
@@ -54,7 +57,7 @@ namespace SXN.Net.Winsock
 		/// No single value can be appropriate for all underlying service providers.
 		/// The architecture of Windows Sockets changed in version 2 to support multiple providers, and the <see cref="WSADATA"/> structure no longer applies to a single vendor's stack.
 		/// </remarks>
-		internal Int16 iMaxSockets;
+		internal UInt16 iMaxSockets;
 
 		/// <summary>
 		/// The maximum datagram message size. This member is ignored for Windows Sockets version 2 and later.
@@ -64,7 +67,7 @@ namespace SXN.Net.Winsock
 		/// The architecture of Windows Sockets changed in version 2 to support multiple providers, and the <see cref="WSADATA"/> structure no longer applies to a single vendor's stack.
 		/// For the actual maximum message size specific to a particular Windows Sockets service provider and socket type, applications should use getsockopt to retrieve the value of option SO_MAX_MSG_SIZE after a socket has been created.
 		/// </remarks>
-		internal Int16 iMaxUdpDg;
+		internal UInt16 iMaxUdpDg;
 
 		/// <summary>
 		/// A pointer to vendor-specific information. This member should be ignored for Windows Sockets version 2 and later.

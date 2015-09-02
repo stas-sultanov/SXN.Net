@@ -8,7 +8,7 @@ namespace Test
 		static void Main(String[] args)
 		{
 			// 0 try initialize server
-			var tryInitialize = TcpSocketServer.TryInitialize(10202);
+			var tryInitialize = TcpServer.TryInitialize(10202);
 
 			if (!tryInitialize.Success)
 			{
@@ -28,9 +28,6 @@ namespace Test
 			{
 				Console.WriteLine($"error accepting request :: {tryInitialize.ErrorCode}");
 			}
-
-			
-
 		}
 	}
 }

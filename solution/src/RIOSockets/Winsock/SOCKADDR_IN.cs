@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-
 // ReSharper disable All
 
 namespace SXN.Net.Winsock
@@ -16,7 +15,7 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// Address family.
 		/// </summary>
-		public UInt16 sin_family;
+		public Int16 sin_family;
 
 		/// <summary>
 		/// Internet Protocol (IP) port.

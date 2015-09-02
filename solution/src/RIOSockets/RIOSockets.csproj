@@ -45,11 +45,10 @@
     <Compile Include="Winsock\IN_ADDR.cs" />
     <Compile Include="Kernel32Interop.cs" />
     <Compile Include="Winsock\SOCKADDR_IN.cs" />
-    <Compile Include="Winsock\SocketCreateFlags.cs" />
-    <Compile Include="TcpSocketServer.cs" />
-    <Compile Include="SocketTryResult.cs" />
+    <Compile Include="TcpServer.cs" />
+    <Compile Include="WinsockTryResult.cs" />
     <Compile Include="Winsock\WSADATA.cs" />
-    <Compile Include="SocketErrorCode.cs" />
+    <Compile Include="WinsockErrorCode.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

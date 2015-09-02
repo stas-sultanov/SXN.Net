@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-
 // ReSharper disable All
 
 namespace SXN.Net.Winsock
 {
+	using DWORD = UInt32;
+
 	/// <summary>
 	/// Contains information on the functions that implement the Winsock registered I/O extensions.
 	/// </summary>
@@ -14,7 +15,7 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// The size, in bytes, of the structure.
 		/// </summary>
-		public UInt32 cbSize;
+		public DWORD cbSize;
 
 		/// <summary>
 		/// A pointer to the RIOReceive function.

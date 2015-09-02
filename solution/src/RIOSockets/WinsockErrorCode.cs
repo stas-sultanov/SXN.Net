@@ -2,7 +2,7 @@
 
 namespace SXN.Net
 {
-	public enum SocketErrorCode : int
+	public enum WinsockErrorCode : int
 	{
 		/// <summary>
 		/// No error.
