@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+
 // ReSharper disable All
 
 namespace SXN.Net.Winsock
@@ -8,7 +9,7 @@ namespace SXN.Net.Winsock
 	using BOOL = Boolean;
 
 	/// <summary>
-	/// Specifies the method for I/O completion to be used with a <see cref="RIO.RIONotify"/> function for sending or receiving network data with the Winsock registered I/O extensions.
+	/// Specifies the method for I/O completion to be used with a <see cref="RIO.RIONotify" /> function for sending or receiving network data with the Winsock registered I/O extensions.
 	/// </summary>
 	[StructLayout(LayoutKind.Explicit)]
 	internal struct RIO_NOTIFICATION_COMPLETION

@@ -4,13 +4,15 @@ using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
+	using SOCKET = UIntPtr;
+
 	public sealed class TcpServer
 	{
 		#region Fields
 
 		private readonly RIO rioHandle;
 
-		private readonly IntPtr socket;
+		private readonly SOCKET socket;
 
 		#endregion
 
@@ -19,7 +21,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TcpServer" /> class.
 		/// </summary>
-		private TcpServer(IntPtr socket, RIO rioHandle)
+		private TcpServer(SOCKET socket, RIO rioHandle)
 		{
 			this.socket = socket;
 
@@ -38,7 +40,7 @@ namespace SXN.Net
 		/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
 		/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
 		/// </returns>
-		private static unsafe TryResult<RIO> TryGetRioHandle(IntPtr socket)
+		private static unsafe TryResult<RIO> TryGetRioHandle(UIntPtr socket)
 		{
 			UInt32 dwBytes;
 
@@ -69,10 +71,48 @@ namespace SXN.Net
 
 		#region Methods
 
-		public WinsockTryResult<IntPtr> TryAccept()
+		public WinsockErrorCode Activate()
 		{
+			// try start listen
+			var tryStartListen = Interop.listen(socket, 2048);
+
+			if (tryStartListen == Interop.SOCKET_ERROR)
+			{
+				goto FAIL;
+			}
+
+			return WinsockErrorCode.None;
+
+			FAIL:
+
+			return (WinsockErrorCode) Interop.WSAGetLastError();
+		}
+
+		public WinsockErrorCode Deactivate()
+		{
+			// try close socket
+			var tryCloseResultCode = Interop.closesocket(socket);
+
+			if (tryCloseResultCode == Interop.SOCKET_ERROR)
+			{
+				goto FAIL;
+			}
+
+			return WinsockErrorCode.None;
+
+			FAIL:
+
+			return (WinsockErrorCode) Interop.WSAGetLastError();
+		}
+
+		public WinsockTryResult<SOCKET> TryAccept()
+		{
+			SOCKADDR address;
+
+			var length = SOCKADDR.Size;
+
 			// Permits an incoming connection attempt on a socket.
-			var acceptedSocket = Interop.accept(socket, IntPtr.Zero, IntPtr.Zero);
+			var acceptedSocket = Interop.accept(socket, out address, ref length);
 
 			// ReSharper disable once InvertIf
 			if (acceptedSocket == Interop.INVALID_SOCKET)
@@ -81,10 +121,10 @@ namespace SXN.Net
 				var errorCode = (WinsockErrorCode) Interop.WSAGetLastError();
 
 				// return result
-				return WinsockTryResult<IntPtr>.CreateFail(errorCode);
+				return WinsockTryResult<SOCKET>.CreateFail(errorCode);
 			}
 
-			return WinsockTryResult<IntPtr>.CreateSuccess(acceptedSocket);
+			return WinsockTryResult<SOCKET>.CreateSuccess(acceptedSocket);
 		}
 
 		public static WinsockTryResult<TcpServer> TryInitialize(UInt16 port)
@@ -122,7 +162,7 @@ namespace SXN.Net
 			// 2 try disable use of the Nagle algorithm
 			unsafe
 			{
-				var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Char*) &disable, 4);
+				var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Byte*) &disable, 4);
 
 				// 2.a check if attempt has succeed
 				if (tryDisableNagle == Interop.SOCKET_ERROR)
@@ -186,40 +226,6 @@ namespace SXN.Net
 
 			// return fail
 			return WinsockTryResult<TcpServer>.CreateFail(errorCode);
-		}
-
-		public WinsockErrorCode Activate()
-		{
-			// try start listen
-			var tryStartListen = Interop.listen(socket, 2048);
-
-			if (tryStartListen == Interop.SOCKET_ERROR)
-			{
-				goto FAIL;
-			}
-
-			return WinsockErrorCode.None;
-
-			FAIL:
-
-			return (WinsockErrorCode) Interop.WSAGetLastError();
-		}
-
-		public WinsockErrorCode Deactivate()
-		{
-			// try close socket
-			var tryCloseResultCode = Interop.closesocket(socket);
-
-			if (tryCloseResultCode == Interop.SOCKET_ERROR)
-			{
-				goto FAIL;
-			}
-
-			return WinsockErrorCode.None;
-
-			FAIL:
-
-			return (WinsockErrorCode)Interop.WSAGetLastError();
 		}
 
 		#endregion

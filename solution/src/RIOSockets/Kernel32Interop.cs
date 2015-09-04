@@ -13,11 +13,6 @@ namespace SXN.Net
 		#region Constant and Static Fields
 
 		/// <summary>
-		/// Name of the source DLL file.
-		/// </summary>
-		private const String KERNEL32 = "kernel32.dll";
-
-		/// <summary>
 		/// Decommits the specified region of committed pages.
 		/// </summary>
 		/// <remarks>
@@ -38,6 +33,11 @@ namespace SXN.Net
 		/// Do not use this value with <see cref="MEM_DECOMMIT" />.
 		/// </remarks>
 		public const UInt32 MEM_RELEASE = 0x8000;
+
+		/// <summary>
+		/// Name of the source DLL file.
+		/// </summary>
+		private const String KERNEL32 = "kernel32.dll";
 
 		#endregion
 

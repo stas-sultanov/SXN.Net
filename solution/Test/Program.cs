@@ -3,12 +3,14 @@ using SXN.Net;
 
 namespace Test
 {
-	class Program
+	internal class Program
 	{
-		static void Main(String[] args)
+		#region Private methods
+
+		private static void Main(String[] args)
 		{
 			// 0 try initialize server
-			var tryInitialize = TcpServer.TryInitialize();
+			var tryInitialize = TcpServer.TryInitialize(10202);
 
 			if (!tryInitialize.Success)
 			{
@@ -22,7 +24,7 @@ namespace Test
 			Console.WriteLine("init success");
 
 			// 1 try start server
-			var tryStartResultCode = server.TryStart(10202);
+			var tryStartResultCode = server.Activate();
 
 			if (tryStartResultCode != WinsockErrorCode.None)
 			{
@@ -39,5 +41,7 @@ namespace Test
 
 			// 3 try stop
 		}
+
+		#endregion
 	}
 }

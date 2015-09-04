@@ -6,11 +6,10 @@ using System.Runtime.InteropServices;
 namespace SXN.Net.Winsock
 {
 	using SHORT = Int16;
-	using USHORT = UInt16;
 	using CHAR = Byte;
 
 	[StructLayout(LayoutKind.Sequential, Size = 16)]
-	internal unsafe struct SOCKADDR_IN
+	internal unsafe struct SOCKADDR
 	{
 		#region Constant and Static Fields
 
@@ -26,22 +25,12 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// Address family.
 		/// </summary>
-		public SHORT sin_family;
+		public SHORT sa_family;
 
 		/// <summary>
-		/// Internet Protocol (IP) port.
+		/// Up to 14 bytes of direct address.
 		/// </summary>
-		public USHORT sin_port;
-
-		/// <summary>
-		/// IP address in network byte order.
-		/// </summary>
-		public IN_ADDR sin_addr;
-
-		/// <summary>
-		/// Padding to make structure the same size as SOCKADDR.
-		/// </summary>
-		public fixed CHAR sin_zero [8];
+		public fixed CHAR sa_data [14];
 
 		#endregion
 	}

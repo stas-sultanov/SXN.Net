@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Security;
+
 // ReSharper disable InconsistentNaming
 
 namespace SXN.Net.Winsock
 {
+	using CHAR = Byte;
 	using WORD = UInt16;
 	using DWORD = UInt32;
-	using SOCKET = IntPtr;
+	using USHORT = UInt16;
+    using SOCKET = UIntPtr;
+	using GROUP = UInt32;
 
 	internal static class Interop
 	{
@@ -17,14 +21,6 @@ namespace SXN.Net.Winsock
 		/// The Internet Protocol version 4 (IPv4) address family.
 		/// </summary>
 		public const Int16 AF_INET = 2;
-
-		private const DWORD IOC_IN = 0x80000000;
-
-		private const DWORD IOC_INOUT = IOC_IN | IOC_OUT;
-
-		private const DWORD IOC_OUT = 0x40000000;
-
-		private const DWORD IOC_WS2 = 0x08000000;
 
 		/// <summary>
 		/// </summary>
@@ -54,14 +50,22 @@ namespace SXN.Net.Winsock
 		/// </summary>
 		public const WORD Version = 0x22;
 
-		private const String WS232DLL = "WS2_32.dll";
-
 		/// <summary>
 		/// Indicates to create a registered IO socket.
 		/// </summary>
 		public const Int32 WSA_FLAG_REGISTERED_IO = 0x100;
 
-		public static readonly IntPtr INVALID_SOCKET = new IntPtr(-1);
+		private const DWORD IOC_IN = 0x80000000;
+
+		private const DWORD IOC_INOUT = IOC_IN | IOC_OUT;
+
+		private const DWORD IOC_OUT = 0x40000000;
+
+		private const DWORD IOC_WS2 = 0x08000000;
+
+		private const String WS232DLL = "WS2_32.dll";
+
+		public static readonly UIntPtr INVALID_SOCKET = new UIntPtr(unchecked ((UInt64) ~0));
 
 		#endregion
 
@@ -80,7 +84,7 @@ namespace SXN.Net.Winsock
 		/// </returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true)]
-		public static extern SOCKET accept([In] SOCKET s, [Out] IntPtr addr, [In] [Out] IntPtr addrlen);
+		public static extern SOCKET accept([In] SOCKET s, [Out] out SOCKADDR addr, [In] [Out] ref Int32 addrlen);
 
 		/// <summary>
 		/// Associates a local address with a socket.
@@ -109,13 +113,13 @@ namespace SXN.Net.Winsock
 		/// <returns>The value in TCP/IP network byte order</returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true)]
-		public static extern UInt16 htons([In] UInt16 hostshort);
+		public static extern USHORT htons([In] USHORT hostshort);
 
 		/// <summary>
 		/// Places a socket in a state in which it is listening for an incoming connection.
 		/// </summary>
 		/// <param name="s">A descriptor identifying a bound, unconnected socket.</param>
-		/// <param name="backlog">The maximum length of the queue of pending connections. If set to <see cref="SOMAXCONN"/>, the underlying service provider responsible for socket s will set the backlog to a maximum reasonable value. There is no standard provision to obtain the actual backlog value.</param>
+		/// <param name="backlog">The maximum length of the queue of pending connections. If set to <see cref="SOMAXCONN" />, the underlying service provider responsible for socket s will set the backlog to a maximum reasonable value. There is no standard provision to obtain the actual backlog value.</param>
 		/// <returns>If no error occurs, returns zero. Otherwise, returns <see cref="SOCKET_ERROR" />, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true)]
@@ -132,7 +136,7 @@ namespace SXN.Net.Winsock
 		/// <returns>If no error occurs, returns zero. Otherwise, a value of <see cref="SOCKET_ERROR" /> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true)]
-		public static extern unsafe Int32 setsockopt(SOCKET s, Int32 level, Int32 optname, Char* optval, Int32 optlen);
+		public static extern unsafe Int32 setsockopt(SOCKET s, Int32 level, Int32 optname, CHAR* optval, Int32 optlen);
 
 		/// <summary>
 		/// Terminates use of the Winsock DLL.
@@ -186,7 +190,7 @@ namespace SXN.Net.Winsock
 		/// <returns>If no error occurs, returns a descriptor referencing the new socket. Otherwise, a value of <see cref="INVALID_SOCKET" /> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true, CharSet = CharSet.Ansi)]
-		internal static extern SOCKET WSASocket([In] Int32 af, [In] Int32 type, [In] Int32 protocol, [In] IntPtr lpProtocolInfo, [In] Int32 g, [In] DWORD dwFlags);
+		internal static extern SOCKET WSASocket([In] Int32 af, [In] Int32 type, [In] Int32 protocol, [In] IntPtr lpProtocolInfo, [In] GROUP g, [In] DWORD dwFlags);
 
 		/// <summary>
 		/// Initiates use of the Winsock DLL by a process.

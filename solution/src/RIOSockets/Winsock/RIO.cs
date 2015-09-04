@@ -7,7 +7,7 @@ using System.Security;
 
 namespace SXN.Net.Winsock
 {
-	using SOCKET = IntPtr;
+	using SOCKET = UIntPtr;
 	using DWORD = UInt32;
 	using RIO_CQ = IntPtr;
 	using RIO_RQ = IntPtr;
