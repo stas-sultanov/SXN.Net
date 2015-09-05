@@ -13,7 +13,8 @@ namespace SXN.Net
 		/// Specified event object handle is invalid.
 		/// </summary>
 		/// <remarks>
-		/// An application attempts to use an event object, but the specified handle is not valid. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// An application attempts to use an event object, but the specified handle is not valid.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_INVALID_HANDLE = 6,
 
@@ -21,7 +22,9 @@ namespace SXN.Net
 		/// Insufficient memory available.
 		/// </summary>
 		/// <remarks>
-		/// An application used a Windows Sockets function that directly maps to a Windows function. The Windows function is indicating a lack of required memory resources. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// An application used a Windows Sockets function that directly maps to a Windows function.
+		/// The Windows function is indicating a lack of required memory resources.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_NOT_ENOUGH_MEMORY = 8,
 
@@ -29,7 +32,9 @@ namespace SXN.Net
 		/// One or more parameters are invalid.
 		/// </summary>
 		/// <remarks>
-		/// An application used a Windows Sockets function which directly maps to a Windows function. The Windows function is indicating a problem with one or more parameters. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// An application used a Windows Sockets function which directly maps to a Windows function.
+		/// The Windows function is indicating a problem with one or more parameters.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_INVALID_PARAMETER = 87,
 
@@ -37,7 +42,8 @@ namespace SXN.Net
 		/// Overlapped operation aborted.
 		/// </summary>
 		/// <remarks>
-		/// An overlapped operation was canceled due to the closure of the socket, or the execution of the SIO_FLUSH command in WSAIoctl. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// An overlapped operation was canceled due to the closure of the socket, or the execution of the SIO_FLUSH command in <see cref="Interop.WSAIoctl"/>.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_OPERATION_ABORTED = 995,
 
@@ -45,7 +51,9 @@ namespace SXN.Net
 		/// Overlapped I/O event object not in signaled state.
 		/// </summary>
 		/// <remarks>
-		/// The application has tried to determine the status of an overlapped operation which is not yet completed. Applications that use WSAGetOverlappedResult (with the fWait flag set to FALSE) in a polling mode to determine when an overlapped operation has completed, get this error code until the operation is complete. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// The application has tried to determine the status of an overlapped operation which is not yet completed.
+		/// Applications that use WSAGetOverlappedResult (with the fWait flag set to FALSE) in a polling mode to determine when an overlapped operation has completed, get this error code until the operation is complete.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_IO_INCOMPLETE = 996,
 
@@ -53,7 +61,9 @@ namespace SXN.Net
 		/// Overlapped operations will complete later.
 		/// </summary>
 		/// <remarks>
-		/// The application has initiated an overlapped operation that cannot be completed immediately. A completion indication will be given later when the operation has been completed. Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
+		/// The application has initiated an overlapped operation that cannot be completed immediately.
+		/// A completion indication will be given later when the operation has been completed.
+		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_IO_PENDING = 997,
 

@@ -281,5 +281,44 @@ namespace SXN.Net.Winsock
 		public BOOL Send([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext) => send(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
 
 		#endregion
+
+		/// <summary>
+		/// Tries to get registered I/O handle.
+		/// </summary>
+		/// <param name="socket">A descriptor that identifies a socket.</param>
+		/// <param name="result">Contains valid object if operation was successful, <c>null</c> otherwise.</param>
+		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
+		public static unsafe Boolean TryInitialize(SOCKET socket, out RIO result)
+		{
+			// get function table id
+			var functionTableId = RIO.TableId;
+
+			// initialize functions table
+			var functionTable = new RIO_EXTENSION_FUNCTION_TABLE();
+
+			// get table size
+			var tableSize = (UInt32)sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+
+			// will contain actual table size
+			UInt32 actualTableSize;
+
+			// try get registered IO functions table
+			var tryGetTableResult = Interop.WSAIoctl(socket, Interop.SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &functionTableId, 16, &functionTable, tableSize, out actualTableSize, IntPtr.Zero, IntPtr.Zero);
+
+			// check if attempt was successful
+			if (tryGetTableResult == Interop.SOCKET_ERROR)
+			{
+				result = null;
+
+				// return fail
+				return false;
+			}
+
+			// create registered I/O handle
+			result = new RIO(ref functionTable);
+
+			// return success
+			return true;
+		}
 	}
 }

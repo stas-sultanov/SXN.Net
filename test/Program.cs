@@ -8,21 +8,19 @@ namespace SXN.Net
 
 		private static void Main()
 		{
-			// 0 try initialize server
-			var tryInitialize = TcpServer.TryInitialize(10202);
-
-			if (!tryInitialize.Success)
+			// 0 initialize server settings
+			var serverSettings = new TcpServerSettings
 			{
-				Console.WriteLine($"error initializing server socket:: {tryInitialize.ErrorCode}");
+				AcceptBacklogLength = TcpServerSettings.MaxConnections,
+				Port = 11223,
+				UseFastLoopback = true,
+				UseNagleAlgorithm = false
+			};
 
-				return;
-			}
+			// 1 initialize server
+			var server = new TcpServer( serverSettings);
 
-			var server = tryInitialize.Result;
-
-			Console.WriteLine("init success");
-
-			// 1 try activate server
+			// 2 try activate server
 			var tryStartResultCode = server.Activate();
 
 			if (tryStartResultCode != WinsockErrorCode.None)
@@ -35,7 +33,7 @@ namespace SXN.Net
 
 			if (!tryAccept.Success)
 			{
-				Console.WriteLine($"error accepting request :: {tryInitialize.ErrorCode}");
+				Console.WriteLine($"error accepting request :: {tryAccept.ErrorCode}");
 			}
 
 			Console.WriteLine($"accept success");

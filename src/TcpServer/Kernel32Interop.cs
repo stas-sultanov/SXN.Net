@@ -37,7 +37,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Name of the source DLL file.
 		/// </summary>
-		private const String KERNEL32 = "kernel32.dll";
+		private const String KERNEL32DLL = "kernel32.dll";
 
 		#endregion
 
@@ -56,7 +56,7 @@ namespace SXN.Net
 		/// </returns>
 		[ResourceExposure(ResourceScope.Process)]
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
-		[DllImport(KERNEL32, SetLastError = true)]
+		[DllImport(KERNEL32DLL, SetLastError = true)]
 		internal static extern unsafe void* VirtualAlloc([In] void* lpAddress, [In] UIntPtr dwSize, [In] UInt32 flAllocationType, [In] UInt32 flProtect);
 
 		/// <summary>
@@ -68,7 +68,7 @@ namespace SXN.Net
 		/// <returns>The type of free operation.</returns>
 		[ResourceExposure(ResourceScope.Process)]
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
-		[DllImport(KERNEL32, SetLastError = true)]
+		[DllImport(KERNEL32DLL, SetLastError = true)]
 		internal static extern unsafe Boolean VirtualFree([In] void* lpAddress, [In] UIntPtr dwSize, Int32 dwFreeType);
 
 		#endregion

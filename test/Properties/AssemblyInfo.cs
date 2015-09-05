@@ -1,39 +1,51 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
+// The name of the company.
 
-[assembly: AssemblyTitle("Test")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Test")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+[assembly: AssemblyCompany(@"Stas Sultanov")]
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
+// The configuration of the assembly.
 
-[assembly: ComVisible(false)]
+#if DEBUG
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
+[assembly: AssemblyConfiguration(@"Debug")]
 
-[assembly: Guid("43894023-b3cd-4e8d-84d7-d76320e4587e")]
+#else
 
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-// You can specify all the values or you can default the Build and Revision Numbers 
-// by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyConfiguration(@"Retail")]
 
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+#endif
+
+// The copyright of the assembly.
+
+[assembly: AssemblyCopyright(@"Copyright © 2015 Stas Sultanov")]
+
+// The culture of the assembly.
+
+[assembly: AssemblyCulture(@"")]
+
+// The description of the assembly.
+
+[assembly: AssemblyDescription(@"Contains tests of the SXN.Net assembly.")]
+
+// The version number of the file.
+// Is managed by the build process.
+
+[assembly: AssemblyFileVersion(@"255.255.255.255")]
+
+// The product name information.
+
+[assembly: AssemblyProduct(@".NET Framework Extensions")]
+
+// The title of the assembly.
+
+[assembly: AssemblyTitle(@"SXN.Net.Tests")]
+
+// The trademark of the assembly.
+
+[assembly: AssemblyTrademark(@"")]
+
+// The version number of the assembly.
+// Is managed by the build process.
+
+[assembly: AssemblyVersion(@"255.255.255.255")]
