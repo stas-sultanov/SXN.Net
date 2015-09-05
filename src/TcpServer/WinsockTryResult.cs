@@ -7,14 +7,14 @@ namespace SXN.Net
 	/// Encapsulates the results of the execution of the Try-Do methods.
 	/// </summary>
 	/// <typeparam name="T">The type of the result returned by a Try-Do method.</typeparam>
-	public struct WinsockTryResult<T> : ITryResult<T>
+	public struct WinsockTryResult<T>
 	{
 		#region Constructors
 
 		/// <summary>
-		/// Initializes a new instance of <see cref="TryResult{T}" /> structure.
+		/// Initializes a new instance of <see cref="WinsockTryResult{T}" /> structure.
 		/// </summary>
-		/// <param name="errorCode">A <see cref="Boolean" /> value that indicates whether an operation was successful.</param>
+		/// <param name="errorCode">A <see cref="bool" /> value that indicates whether an operation was successful.</param>
 		/// <param name="result">A valid <typeparamref name="T" /> object if operation was successful, default value of the <typeparamref name="T" /> type otherwise.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private WinsockTryResult(WinsockErrorCode errorCode, T result)
@@ -71,7 +71,7 @@ namespace SXN.Net
 		}
 
 		/// <summary>
-		/// Gets a <see cref="Boolean" /> value that indicates whether an operation was successful.
+		/// Gets a <see cref="bool" /> value that indicates whether an operation was successful.
 		/// </summary>
 		public Boolean Success => ErrorCode == WinsockErrorCode.None;
 

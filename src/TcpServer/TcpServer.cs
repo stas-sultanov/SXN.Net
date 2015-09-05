@@ -35,36 +35,40 @@ namespace SXN.Net
 		/// <summary>
 		/// Tries to get registered I/O handle.
 		/// </summary>
-		/// <returns>
-		/// An instance of <see cref="TryResult{T}" /> which encapsulates result of the operation.
-		/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
-		/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
-		/// </returns>
-		private static unsafe TryResult<RIO> TryGetRioHandle(UIntPtr socket)
+		/// <param name="socket">A descriptor that identifies a socket.</param>
+		/// <param name="result">Contains valid object if operation was successful, <c>null</c> otherwise.</param>
+		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
+		private static unsafe Boolean TryGetRioHandle(SOCKET socket, out RIO result)
 		{
-			UInt32 dwBytes;
-
-			// compose function table id
-			var functionTableId = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
+			// get function table id
+			var functionTableId = RIO.TableId;
 
 			// initialize functions table
 			var functionTable = new RIO_EXTENSION_FUNCTION_TABLE();
 
+			// get table size
+			var tableSize = (UInt32) sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+
+			// will contain actual table size
+			UInt32 actualTableSize;
+
 			// try get registered IO functions table
-			var tryGetTableResult = Interop.WSAIoctl(socket, Interop.SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &functionTableId, 16, &functionTable, (UInt32) sizeof(RIO_EXTENSION_FUNCTION_TABLE), out dwBytes, IntPtr.Zero, IntPtr.Zero);
+			var tryGetTableResult = Interop.WSAIoctl(socket, Interop.SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &functionTableId, 16, &functionTable, tableSize, out actualTableSize, IntPtr.Zero, IntPtr.Zero);
 
 			// check if attempt was successful
 			if (tryGetTableResult == Interop.SOCKET_ERROR)
 			{
+				result = null;
+
 				// return fail
-				return TryResult<RIO>.CreateFail();
+				return false;
 			}
 
 			// create registered I/O handle
-			var rio = new RIO(ref functionTable);
+			result = new RIO(ref functionTable);
 
 			// return success
-			return TryResult<RIO>.CreateSuccess(rio);
+			return true;
 		}
 
 		#endregion
@@ -150,9 +154,9 @@ namespace SXN.Net
 			}
 
 			// try initialize registered I/O extension
-			var tryGetRioHandle = TryGetRioHandle(serverSocket);
+			RIO rioHandle;
 
-			if (!tryGetRioHandle.Success)
+			if (!TryGetRioHandle(serverSocket, out rioHandle))
 			{
 				goto FAIL;
 			}
@@ -211,7 +215,7 @@ namespace SXN.Net
 			}
 
 			// initialize server
-			var result = new TcpServer(serverSocket, tryGetRioHandle.Result);
+			var result = new TcpServer(serverSocket, rioHandle);
 
 			// return success
 			return WinsockTryResult<TcpServer>.CreateSuccess(result);

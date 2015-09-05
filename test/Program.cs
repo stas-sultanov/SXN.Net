@@ -1,13 +1,12 @@
 ﻿using System;
-using SXN.Net;
 
-namespace Test
+namespace SXN.Net
 {
-	internal class Program
+	internal static class Program
 	{
 		#region Private methods
 
-		private static void Main(String[] args)
+		private static void Main()
 		{
 			// 0 try initialize server
 			var tryInitialize = TcpServer.TryInitialize(10202);
@@ -23,15 +22,15 @@ namespace Test
 
 			Console.WriteLine("init success");
 
-			// 1 try start server
+			// 1 try activate server
 			var tryStartResultCode = server.Activate();
 
 			if (tryStartResultCode != WinsockErrorCode.None)
 			{
-				Console.WriteLine($"error starting server:: {tryStartResultCode}");
+				Console.WriteLine($"error activating server:: {tryStartResultCode}");
 			}
 
-			// 2 try accept request
+			// 2 try accept connection
 			var tryAccept = server.TryAccept();
 
 			if (!tryAccept.Success)
@@ -39,7 +38,17 @@ namespace Test
 				Console.WriteLine($"error accepting request :: {tryInitialize.ErrorCode}");
 			}
 
-			// 3 try stop
+			Console.WriteLine($"accept success");
+
+			// 3 try deactivate server
+			var tryDeactivate = server.Deactivate();
+
+			if (tryDeactivate != WinsockErrorCode.None)
+			{
+				Console.WriteLine($"error activating server:: {tryStartResultCode}");
+			}
+
+			Console.ReadLine();
 		}
 
 		#endregion

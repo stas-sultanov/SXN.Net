@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SXN.Net</RootNamespace>
-    <AssemblyName>SXN.Net</AssemblyName>
+    <AssemblyName>SXN.Net.TcpServer</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -49,14 +49,11 @@
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\x64\Release\SXN.Net.TcpServer.XML</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SXN.Core, Version=4.4.820.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SXN.Core.4.4.0820.1\lib\net45\SXN.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Winsock\RIO.cs" />
@@ -74,9 +71,6 @@
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Winsock\Interop.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -82,6 +82,8 @@ namespace SXN.Net.Winsock
 
 		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
 
+		public static readonly Guid TableId = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
+
 		#endregion
 
 		#region Fields

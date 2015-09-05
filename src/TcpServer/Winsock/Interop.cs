@@ -10,7 +10,7 @@ namespace SXN.Net.Winsock
 	using WORD = UInt16;
 	using DWORD = UInt32;
 	using USHORT = UInt16;
-    using SOCKET = UIntPtr;
+	using SOCKET = UIntPtr;
 	using GROUP = UInt32;
 
 	internal static class Interop
