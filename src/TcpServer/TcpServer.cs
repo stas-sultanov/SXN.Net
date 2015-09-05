@@ -86,7 +86,7 @@ namespace SXN.Net
 				}
 			}
 
-			// 3 try initialize registered I/O extension
+			// 3 try initialize Registered I/O extension
 			if (!RIO.TryInitialize(serverSocket, out rioHandle))
 			{
 				rioHandle = null;
@@ -216,6 +216,10 @@ namespace SXN.Net
 			return (WinsockErrorCode) Interop.WSAGetLastError();
 		}
 
+		/// <summary>
+		/// Tries to accepts a pending connection request.
+		/// </summary>
+		/// <returns></returns>
 		public WinsockTryResult<SOCKET> TryAccept()
 		{
 			SOCKADDR address;

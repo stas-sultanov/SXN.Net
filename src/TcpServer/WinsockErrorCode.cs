@@ -42,7 +42,7 @@ namespace SXN.Net
 		/// Overlapped operation aborted.
 		/// </summary>
 		/// <remarks>
-		/// An overlapped operation was canceled due to the closure of the socket, or the execution of the SIO_FLUSH command in <see cref="Interop.WSAIoctl"/>.
+		/// An overlapped operation was canceled due to the closure of the socket, or the execution of the SIO_FLUSH command in <see cref="Interop.WSAIoctl" />.
 		/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 		/// </remarks>
 		WSA_OPERATION_ABORTED = 995,

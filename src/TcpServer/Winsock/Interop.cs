@@ -26,6 +26,9 @@ namespace SXN.Net.Winsock
 		/// </summary>
 		public const Int32 IPPROTO_TCP = 6;
 
+		/// <summary>
+		/// Control code that allows to get multiple pointers to the extension functions.
+		/// </summary>
 		public const DWORD SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER = IOC_INOUT | IOC_WS2 | 36;
 
 		/// <summary>
@@ -63,6 +66,9 @@ namespace SXN.Net.Winsock
 
 		private const DWORD IOC_WS2 = 0x08000000;
 
+		/// <summary>
+		/// Name of the source DLL file.
+		/// </summary>
 		private const String WS232DLL = "WS2_32.dll";
 
 		public static readonly UIntPtr INVALID_SOCKET = new UIntPtr(unchecked ((UInt64) ~0));

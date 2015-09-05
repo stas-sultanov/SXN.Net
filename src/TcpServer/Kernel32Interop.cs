@@ -2,15 +2,26 @@
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Security;
+using System.Threading;
+
+// ReSharper disable All
 
 namespace SXN.Net
 {
+	using HANDLE = IntPtr;
+	using ULONG_PTR = UIntPtr;
+	using DWORD = UInt32;
+	using OVERLAPPED = NativeOverlapped;
+
 	/// <summary>
 	/// Encapsulates functions of the 'kernel32'.
 	/// </summary>
 	internal static class Kernel32Interop
 	{
 		#region Constant and Static Fields
+
+		public const UInt32 INVALID_HANDLE_VALUE = 0;
 
 		/// <summary>
 		/// Decommits the specified region of committed pages.
@@ -41,7 +52,67 @@ namespace SXN.Net
 
 		#endregion
 
+		#region Private methods
+
+		/// <summary>
+		/// Attempts to dequeue an I/O completion packet from the specified I/O completion port. If there is no completion packet queued, the function waits for a pending I/O operation associated with the completion port to complete.
+		/// </summary>
+		/// <param name="CompletionPort">A handle to the completion port.</param>
+		/// <param name="lpNumberOfBytes">A pointer to a variable that receives the number of bytes transferred during an I/O operation that has completed.</param>
+		/// <param name="lpCompletionKey">A pointer to a variable that receives the completion key value associated with the file handle whose I/O operation has completed.</param>
+		/// <param name="lpOverlapped">A pointer to a variable that receives the address of the <see cref="OVERLAPPED"/> structure that was specified when the completed I/O operation was started.</param>
+		/// <param name="dwMilliseconds">The number of milliseconds that the caller is willing to wait for a completion packet to appear at the completion port. If a completion packet does not appear within the specified time, the function times out, returns FALSE, and sets *lpOverlapped to NULL.</param>
+		/// <returns>Returns nonzero (TRUE) if successful or zero (FALSE) otherwise.To get extended error information, call GetLastError.</returns>
+		[SuppressUnmanagedCodeSecurity]
+		[DllImport(KERNEL32DLL, SetLastError = true)]
+		public static extern unsafe bool GetQueuedCompletionStatus(HANDLE CompletionPort, out DWORD lpNumberOfBytes, out ULONG_PTR lpCompletionKey, out OVERLAPPED* lpOverlapped, DWORD dwMilliseconds);
+
+		#endregion
+
 		#region Methods
+
+		/// <summary>
+		/// Creates an input/output (I/O) completion port and associates it with a specified handle, or creates an I/O completion port that is not yet associated with a handle, allowing association at a later time.
+		/// Associating an instance of an opened handle with an I/O completion port allows a process to receive notification of the completion of asynchronous I/O operations involving that handle.
+		/// </summary>
+		/// <param name="FileHandle">An open file handle or <see cref="INVALID_HANDLE_VALUE" />.</param>
+		/// <param name="ExistingCompletionPort">A handle to an existing I/O completion port or <c>null</c>.</param>
+		/// <param name="CompletionKey">The per-handle user-defined completion key that is included in every I/O completion packet for the specified file handle.</param>
+		/// <param name="NumberOfConcurrentThreads">The maximum number of threads that the operating system can allow to concurrently process I/O completion packets for the I/O completion port.</param>
+		/// <returns>
+		/// If the function succeeds, the return value is the handle to an I/O completion port:
+		/// <list type="bullet">
+		///     <item>
+		///         <description>If the <paramref name="ExistingCompletionPort" /> parameter was <c>null</c>, the return value is a new handle.</description>
+		///     </item>
+		///     <item>
+		///         <description>If the <paramref name="ExistingCompletionPort" /> parameter was a valid I/O completion port handle, the return value is that same handle.</description>
+		///     </item>
+		///     <item>
+		///         <description>If the
+		///         <param name="FileHandle"></param>
+		///         parameter was a valid handle, that file handle is now associated with the returned I/O completion port.
+		///         </description>
+		///     </item>
+		/// </list>
+		/// If the function fails, the return value is <c>null</c>. To get extended error information, call the <see cref="GetLastError" /> function.
+		/// </returns>
+		[SuppressUnmanagedCodeSecurity]
+		[DllImport(KERNEL32DLL, SetLastError = true)]
+		public static extern HANDLE CreateIoCompletionPort(HANDLE FileHandle, HANDLE ExistingCompletionPort, ULONG_PTR CompletionKey, DWORD NumberOfConcurrentThreads);
+
+		/// <summary>
+		/// Retrieves the calling thread's last-error code value. The last-error code is maintained on a per-thread basis.
+		/// </summary>
+		/// <returns>
+		/// The return value is the calling thread's last-error code.
+		/// </returns>
+		/// <remarks>
+		/// Multiple threads do not overwrite each other's last-error code.
+		/// </remarks>
+		[SuppressUnmanagedCodeSecurity]
+		[DllImport(KERNEL32DLL)]
+		public static extern DWORD GetLastError();
 
 		/// <summary>
 		/// Reserves, commits, or changes the state of a region of pages in the virtual address space of the calling process. Memory allocated by this function is automatically initialized to zero.
@@ -56,6 +127,7 @@ namespace SXN.Net
 		/// </returns>
 		[ResourceExposure(ResourceScope.Process)]
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(KERNEL32DLL, SetLastError = true)]
 		internal static extern unsafe void* VirtualAlloc([In] void* lpAddress, [In] UIntPtr dwSize, [In] UInt32 flAllocationType, [In] UInt32 flProtect);
 
@@ -68,6 +140,7 @@ namespace SXN.Net
 		/// <returns>The type of free operation.</returns>
 		[ResourceExposure(ResourceScope.Process)]
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
+		[SuppressUnmanagedCodeSecurity]
 		[DllImport(KERNEL32DLL, SetLastError = true)]
 		internal static extern unsafe Boolean VirtualFree([In] void* lpAddress, [In] UIntPtr dwSize, Int32 dwFreeType);
 

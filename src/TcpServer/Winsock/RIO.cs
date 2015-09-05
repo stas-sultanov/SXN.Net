@@ -171,9 +171,9 @@ namespace SXN.Net.Winsock
 		/// </summary>
 		/// <param name="Socket">A descriptor that identifies the socket.</param>
 		/// <param name="MaxOutstandingReceive">The maximum number of outstanding receives allowed on the socket.</param>
-		/// <param name="MaxReceiveDataBuffers">The maximum number of receive data buffers on the socket.</param>
+		/// <param name="MaxReceiveDataBuffers">The maximum number of receive data buffers on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
 		/// <param name="MaxOutstandingSend">The maximum number of outstanding sends allowed on the socket.</param>
-		/// <param name="MaxSendDataBuffers">The maximum number of send data buffers on the socket.</param>
+		/// <param name="MaxSendDataBuffers">The maximum number of send data buffers on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
 		/// <param name="ReceiveCQ">A descriptor that identifies the I/O completion queue to use for receive request completions.</param>
 		/// <param name="SendCQ">A descriptor that identifies the I/O completion queue to use for send request completions.</param>
 		/// <param name="SocketContext">The socket context to associate with this request queue.</param>
@@ -280,10 +280,8 @@ namespace SXN.Net.Winsock
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public BOOL Send([In] RIO_RQ SocketQueue, [In] ref RIO_BUF pData, [In] DWORD DataBufferCount, [In] DWORD Flags, [In] PVOID RequestContext) => send(SocketQueue, ref pData, DataBufferCount, Flags, RequestContext);
 
-		#endregion
-
 		/// <summary>
-		/// Tries to get registered I/O handle.
+		/// Tries to initialize the Registered I/O handle.
 		/// </summary>
 		/// <param name="socket">A descriptor that identifies a socket.</param>
 		/// <param name="result">Contains valid object if operation was successful, <c>null</c> otherwise.</param>
@@ -291,13 +289,13 @@ namespace SXN.Net.Winsock
 		public static unsafe Boolean TryInitialize(SOCKET socket, out RIO result)
 		{
 			// get function table id
-			var functionTableId = RIO.TableId;
+			var functionTableId = TableId;
 
 			// initialize functions table
 			var functionTable = new RIO_EXTENSION_FUNCTION_TABLE();
 
 			// get table size
-			var tableSize = (UInt32)sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+			var tableSize = (UInt32) sizeof(RIO_EXTENSION_FUNCTION_TABLE);
 
 			// will contain actual table size
 			UInt32 actualTableSize;
@@ -320,5 +318,31 @@ namespace SXN.Net.Winsock
 			// return success
 			return true;
 		}
+
+		public void InitializePool()
+		{
+			//
+
+			var processorsCount = Environment.ProcessorCount;
+
+			var handles = new NumaHandle[processorsCount];
+
+			for (var index = 0; index < processorsCount; index++)
+			{
+				var handle = new NumaHandle
+				{
+					id = index,
+
+					completionPort = Cre
+				};
+			}
+		}
+
+		public NumaHandle InitializeNumaHandle(Int32 id)
+		{
+			Kernel32Interop.CreateIoCompletionPort()
+		}
+
+		#endregion
 	}
 }

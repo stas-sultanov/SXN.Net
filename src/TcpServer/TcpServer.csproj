@@ -56,7 +56,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TcpConnection.cs" />
     <Compile Include="TcpServerSettings.cs" />
+    <Compile Include="Winsock\NumaHandle.cs" />
     <Compile Include="Winsock\RIO.cs" />
     <Compile Include="Winsock\RIO_BUF.cs" />
     <Compile Include="Winsock\RIO_EXTENSION_FUNCTION_TABLE.cs" />

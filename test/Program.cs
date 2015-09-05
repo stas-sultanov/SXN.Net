@@ -18,7 +18,7 @@ namespace SXN.Net
 			};
 
 			// 1 initialize server
-			var server = new TcpServer( serverSettings);
+			var server = new TcpServer(serverSettings);
 
 			// 2 try activate server
 			var tryStartResultCode = server.Activate();
@@ -26,7 +26,11 @@ namespace SXN.Net
 			if (tryStartResultCode != WinsockErrorCode.None)
 			{
 				Console.WriteLine($"error activating server:: {tryStartResultCode}");
+
+				return;
 			}
+
+			Console.WriteLine($"server is activated");
 
 			// 2 try accept connection
 			var tryAccept = server.TryAccept();
@@ -45,6 +49,8 @@ namespace SXN.Net
 			{
 				Console.WriteLine($"error activating server:: {tryStartResultCode}");
 			}
+
+			Console.WriteLine($"server is deactivated");
 
 			Console.ReadLine();
 		}
