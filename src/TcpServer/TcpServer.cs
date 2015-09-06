@@ -12,9 +12,7 @@ namespace SXN.Net
 	{
 		#region Fields
 
-		private RIO rioHandle;
-
-		private SOCKET serverSocket;
+		private RIOSocketServer server;
 
 		#endregion
 
@@ -62,128 +60,18 @@ namespace SXN.Net
 				return WinsockErrorCode.None;
 			}
 
-			// 1 try initiates use of the Winsock DLL by a process
+			var tryInitializeServer = RIOSocketServer.TryInitialize(Settings);
+
+			if (!tryInitializeServer.Success)
 			{
-				WSADATA data;
-
-				var startupResultCode = Interop.WSAStartup(Interop.Version, out data);
-
-				// check if startup was successful
-				if (startupResultCode != WinsockErrorCode.None)
-				{
-					return startupResultCode;
-				}
+				return tryInitializeServer.ErrorCode;
 			}
 
-			// 2 try create socket
-			{
-				serverSocket = Interop.WSASocket(Interop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
+			server = tryInitializeServer.Result;
 
-				// check if socket created
-				if (Interop.INVALID_SOCKET == serverSocket)
-				{
-					goto FAIL;
-				}
-			}
-
-			// 3 try initialize Registered I/O extension
-			if (!RIO.TryInitialize(serverSocket, out rioHandle))
-			{
-				rioHandle = null;
-
-				goto FAIL;
-			}
-
-			// 4 try disable use of the Nagle algorithm if requested
-			if (Settings.UseNagleAlgorithm == false)
-			{
-				var optionValue = -1;
-
-				unsafe
-				{
-					var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Byte*) &optionValue, sizeof(Int32));
-
-					// check if attempt has succeed
-					if (tryDisableNagle == Interop.SOCKET_ERROR)
-					{
-						goto FAIL;
-					}
-				}
-			}
-
-			// 5 try enable faster operations on the loopback if requested
-			if (Settings.UseFastLoopback)
-			{
-				unsafe
-				{
-					UInt32 optionValue = 1;
-
-					UInt32 dwBytes;
-
-					var tryEnableFastLoopbackResult = Interop.WSAIoctl(serverSocket, Interop.SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), null, 0, out dwBytes, IntPtr.Zero, IntPtr.Zero);
-
-					// check if attempt has succeed
-					if (tryEnableFastLoopbackResult == Interop.SOCKET_ERROR)
-					{
-						goto FAIL;
-					}
-				}
-			}
-
-			// 6 try bind
-			{
-				// compose address
-				var address = new IN_ADDR
-				{
-					s_addr = 0
-				};
-
-				// compose socket address
-				var socketAddress = new SOCKADDR_IN
-				{
-					sin_family = Interop.AF_INET,
-					sin_port = Interop.htons(Settings.Port),
-					sin_addr = address
-				};
-
-				// try associate address with socket
-				var tryBindResult = Interop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
-
-				if (tryBindResult == Interop.SOCKET_ERROR)
-				{
-					goto FAIL;
-				}
-			}
-
-			// 7 try start listen
-			{
-				var tryStartListen = Interop.listen(serverSocket, Settings.AcceptBacklogLength);
-
-				if (tryStartListen == Interop.SOCKET_ERROR)
-				{
-					goto FAIL;
-				}
-			}
-
-			// success
 			IsActive = true;
 
 			return WinsockErrorCode.None;
-
-			FAIL:
-
-			serverSocket = UIntPtr.Zero;
-
-			rioHandle = null;
-
-			// get last error
-			var errorCode = (WinsockErrorCode) Interop.WSAGetLastError();
-
-			// terminate use of the Winsock DLL
-			Interop.WSACleanup();
-
-			// return fail
-			return errorCode;
 		}
 
 		/// <summary>
@@ -197,23 +85,11 @@ namespace SXN.Net
 				return WinsockErrorCode.None;
 			}
 
-			// try close socket
-			var tryCloseResultCode = Interop.closesocket(serverSocket);
+			server.Deactivate();
 
-			if (tryCloseResultCode == Interop.SOCKET_ERROR)
-			{
-				goto FAIL;
-			}
-
-			serverSocket = UIntPtr.Zero;
-
-			rioHandle = null;
+			server = null;
 
 			return WinsockErrorCode.None;
-
-			FAIL:
-
-			return (WinsockErrorCode) Interop.WSAGetLastError();
 		}
 
 		/// <summary>
@@ -222,6 +98,9 @@ namespace SXN.Net
 		/// <returns></returns>
 		public WinsockTryResult<SOCKET> TryAccept()
 		{
+			return WinsockTryResult<SOCKET>.CreateFail(WinsockErrorCode.None);
+
+			/*
 			SOCKADDR address;
 
 			var length = SOCKADDR.Size;
@@ -240,6 +119,7 @@ namespace SXN.Net
 			}
 
 			return WinsockTryResult<SOCKET>.CreateSuccess(acceptedSocket);
+			*/
 		}
 
 		#endregion

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using SXN.Net.Kernel;
 
 // ReSharper disable All
 
@@ -42,21 +43,28 @@ namespace SXN.Net.Winsock
 			#region Fields
 
 			/// <summary>
-			/// The handle for the I/O completion port to use for queuing a RIONotify request completion.
+			/// The handle for the I/O completion port to use for queuing a <see cref="RIO.Notify"/> request completion.
 			/// </summary>
-			/// <remarks>This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.</remarks>
+			/// <remarks>
+			/// This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
+			/// </remarks>
 			public HANDLE IocpHandle;
 
 			/// <summary>
-			/// The value to use for lpCompletionKey parameter returned by the GetQueuedCompletionStatus or GetQueuedCompletionStatusEx function when queuing a RIONotify request.
+			/// The value to use for lpCompletionKey parameter returned by the <see cref="Kernel.Interop.GetQueuedCompletionStatus"/> or <see cref="Kernel.Interop.GetQueuedCompletionStatusEx"/> function when queuing a <see cref="RIO.Notify"/> request.
 			/// </summary>
-			/// <remarks>This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.</remarks>
+			/// <remarks>
+			/// This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
+			/// </remarks>
 			public void* CompletionKey;
 
 			/// <summary>
-			/// A pointer to the <see cref="NativeOverlapped" /> structure to use when queuing a RIONotify request completion. This member must point to a valid OVERLAPPED structure.
+			/// A pointer to the <see cref="NativeOverlapped" /> structure to use when queuing a <see cref="RIO.Notify"/> request completion.
+			/// This member must point to a valid OVERLAPPED structure.
 			/// </summary>
-			/// <remarks>This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.</remarks>
+			/// <remarks>
+			/// This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
+			/// </remarks>
 			public void* Overlapped;
 
 			#endregion

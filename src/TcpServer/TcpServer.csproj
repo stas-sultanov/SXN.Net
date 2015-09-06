@@ -56,14 +56,16 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TcpConnection.cs" />
+    <Compile Include="RIOBufferPool.cs" />
+    <Compile Include="RIOSocketServer.cs" />
+    <Compile Include="TcpContext.cs" />
     <Compile Include="TcpServerSettings.cs" />
-    <Compile Include="Winsock\NumaHandle.cs" />
+    <Compile Include="Winsock\IOCPWorker.cs" />
     <Compile Include="Winsock\RIO.cs" />
     <Compile Include="Winsock\RIO_BUF.cs" />
     <Compile Include="Winsock\RIO_EXTENSION_FUNCTION_TABLE.cs" />
     <Compile Include="Winsock\IN_ADDR.cs" />
-    <Compile Include="Kernel32Interop.cs" />
+    <Compile Include="Kernel\Interop.cs" />
     <Compile Include="Winsock\SOCKADDR.cs" />
     <Compile Include="Winsock\SOCKADDR_IN.cs" />
     <Compile Include="TcpServer.cs" />

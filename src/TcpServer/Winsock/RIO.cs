@@ -74,15 +74,15 @@ namespace SXN.Net.Winsock
 
 		public const Int32 ERROR_SUCCESS = 0;
 
-		public const int RIO_INVALID_BUFFERID = 0;
+		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
 
-		public static readonly ULONG RIO_CORRUPT_CQ = 0xFFFFFFFF;
+		public static readonly RIO_CQ RIO_CORRUPT_CQ = new RIO_CQ(-1);
 
 		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
 
 		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
 
-		public static readonly Guid TableId = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
+		public static readonly Guid WSAID_MULTIPLE_RIO = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
 
 		#endregion
 
@@ -289,7 +289,7 @@ namespace SXN.Net.Winsock
 		public static unsafe Boolean TryInitialize(SOCKET socket, out RIO result)
 		{
 			// get function table id
-			var functionTableId = TableId;
+			var functionTableId = WSAID_MULTIPLE_RIO;
 
 			// initialize functions table
 			var functionTable = new RIO_EXTENSION_FUNCTION_TABLE();
@@ -317,30 +317,6 @@ namespace SXN.Net.Winsock
 
 			// return success
 			return true;
-		}
-
-		public void InitializePool()
-		{
-			//
-
-			var processorsCount = Environment.ProcessorCount;
-
-			var handles = new NumaHandle[processorsCount];
-
-			for (var index = 0; index < processorsCount; index++)
-			{
-				var handle = new NumaHandle
-				{
-					id = index,
-
-					completionPort = Cre
-				};
-			}
-		}
-
-		public NumaHandle InitializeNumaHandle(Int32 id)
-		{
-			Kernel32Interop.CreateIoCompletionPort()
 		}
 
 		#endregion

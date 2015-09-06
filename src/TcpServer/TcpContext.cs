@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using SXN.Net.Winsock;
 
@@ -23,7 +23,7 @@ namespace SXN.Net
 			this.rioHandle = rioHandle;
 
 			// create request queue
-			var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
+			//var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
 		}
 
 
