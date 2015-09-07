@@ -5,37 +5,57 @@ using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
+	using WinsockInterop = Interop;
+	using WinsockErrorCode = ErrorCode;
+	using KernelInterop = Kernel.Interop;
+	using KernelErrorCode = Kernel.ErrorCode;
+
 	/// <summary>
-	/// Provides mangement of the memory requried for the Registered I/O extension.
+	/// Provides management of the memory buffers required for the Winsock Registered I/O extensions.
 	/// </summary>
-	internal sealed class RIOBufferPool : IDisposable
+	internal sealed class RIOBufferPool
 	{
 		#region Fields
 
 		/// <summary>
-		/// The collection of the identfiers of the available segments.
+		/// The pointer to the memory buffer.
+		/// </summary>
+		private readonly IntPtr buffer;
+
+		/// <summary>
+		/// The length of the <see cref="buffer" />.
+		/// </summary>
+		private readonly UInt32 bufferLength;
+
+		/// <summary>
+		/// The identifier of the <see cref="buffer" /> within the Winsock Registered I/O extensions.
+		/// </summary>
+		private readonly IntPtr bufferId;
+
+		/// <summary>
+		/// The collection of the identifiers of the available segments.
 		/// </summary>
 		private readonly ConcurrentQueue<Int32> availableSegments;
 
 		/// <summary>
-		/// The collecion of the items of the <see cref="RIO_BUF"/> type.
+		/// The collection of the items of the <see cref="RIO_BUF" /> type.
 		/// </summary>
 		private readonly RIO_BUF[] segments;
-
-		private RIO rioHandle;
 
 		#endregion
 
 		#region Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="RIOBufferPool"/> class.
+		/// Initializes a new instance of the <see cref="RIOBufferPool" /> class.
 		/// </summary>
-		private RIOBufferPool(RIO rioHandle, IntPtr bufferId, UInt32 bufferSegmentsLength, UInt32 bufferSegmentsCount)
+		private RIOBufferPool(IntPtr buffer, UInt32 bufferLength, IntPtr bufferId, UInt32 bufferSegmentLength, UInt32 bufferSegmentsCount)
 		{
-			this.rioHandle = rioHandle;
+			this.buffer = buffer;
 
-			IsDisposed = false;
+			this.bufferLength = bufferLength;
+
+			this.bufferId = bufferId;
 
 			// initialize available segments collection
 			availableSegments = new ConcurrentQueue<Int32>();
@@ -48,116 +68,140 @@ namespace SXN.Net
 			// initialize items of the collection
 			for (var segmentIndex = 0; segmentIndex < bufferSegmentsCount; segmentIndex++)
 			{
-				// initializ item
+				// initialize item
 				segments[segmentIndex] = new RIO_BUF
 				{
 					BufferId = bufferId,
 					Offset = offset,
-					Length = bufferSegmentsLength
+					Length = bufferSegmentLength
 				};
 
-				// add id of the segment into the collection of the availabl segments
+				// add id of the segment into the collection of the available segments
 				availableSegments.Enqueue(segmentIndex);
 
 				// increment offset
-				offset += bufferSegmentsLength;
+				offset += bufferSegmentLength;
 			}
-		}
-
-		#endregion
-
-		#region Properties
-
-		/// <summary>
-		/// Gets a <see cref="Boolean" /> value which indicates whether instance is disposed.
-		/// </summary>
-		public Boolean IsDisposed
-		{
-			get;
-
-			private set;
-		}
-
-		#endregion
-
-		#region Overrides of object
-
-		~RIOBufferPool()
-		{
-			Dispose(false);
-		}
-
-		#endregion
-
-		#region Methods of IDisposable
-
-		/// <summary>
-		/// Releases resources associated with the instance.
-		/// </summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void Dispose()
-		{
-			// Release the resources
-			Dispose(true);
-
-			// Request system not to call the finalize method for a specified object
-			GC.SuppressFinalize(this);
-		}
-
-		#endregion
-
-		#region Private methods
-
-		/// <summary>
-		/// Releases resources associated with the instance.
-		/// </summary>
-		/// <param name="fromDispose">Value indicating whether method was called from the <see cref="Dispose()" /> method.</param>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void Dispose(Boolean fromDispose)
-		{
-			// Check if object is disposed already
-			if (IsDisposed)
-			{
-				return;
-			}
-
-			// Set disposed
-			IsDisposed = true;
 		}
 
 		#endregion
 
 		#region Methods
 
-		public static unsafe RIOBufferPool TryInitialize(RIO rioHandle)
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal void ReleaseBuffer(Int32 segmentId) => availableSegments.Enqueue(segmentId);
+
+		/// <summary>
+		/// Tries to create a new instance of the <see cref="RIOBufferPool" />.
+		/// </summary>
+		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="segmentLength">The length of the segment.</param>
+		/// <param name="segmentsCount">The count of the segments.</param>
+		/// <returns>
+		/// An instance of <see cref="TryResult{T}" /> which encapsulates result of the operation.
+		/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
+		/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
+		/// </returns>
+		/// <remarks>
+		/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
+		/// </remarks>
+		public static unsafe TryResult<RIOBufferPool> TryCreate(RIO rioHandle, UInt32 segmentLength, UInt32 segmentsCount)
 		{
-			var bufferSegmentLength = 2u * 1024u;
-
-			var bufferSegmentsCount = 1024u * 10u;
-
 			// calculate size of the memory buffer to allocate
-			var bufferLength = bufferSegmentLength * bufferSegmentsCount;
+			var bufferLength = segmentLength * segmentsCount;
 
-			// try allocate memory buffer
-			var memoryPointer = Kernel.Interop.VirtualAlloc(null, bufferLength, Kernel.Interop.MEM_COMMIT | Kernel.Interop.MEM_RESERVE, Kernel.Interop.PAGE_READWRITE);
+			void* memoryPointer;
 
-			if (memoryPointer == null)
+			IntPtr buffer;
+
+			IntPtr bufferId;
+
+			// 1 try allocate memory block
 			{
-				throw new NotImplementedException();
-				// TODO: FAIL, get last error
+				// try reserve and commit memory block
+				memoryPointer = KernelInterop.VirtualAlloc(null, bufferLength, KernelInterop.MEM_COMMIT | KernelInterop.MEM_RESERVE, KernelInterop.PAGE_READWRITE);
+
+				// check if allocation has failed
+				if (memoryPointer == null)
+				{
+					// get kernel error code
+					var kernelErrorCode = (KernelErrorCode) KernelInterop.GetLastError();
+
+					// return result
+					return TryResult<RIOBufferPool>.CreateFail(kernelErrorCode);
+				}
+
+				// set buffer
+				buffer = (IntPtr) memoryPointer;
 			}
 
-			// try register buffer with Regsitered I/O extension
-			var bufferId = rioHandle.RegisterBuffer(new IntPtr(memoryPointer), bufferLength);
-
-			if (bufferId == RIO.RIO_INVALID_BUFFERID)
+			// 2 try register buffer with Registered I/O extensions
 			{
-				throw new NotImplementedException();
-				// TODO: FAIL, get last error
+				bufferId = rioHandle.RegisterBuffer(buffer, bufferLength);
+
+				if (bufferId == RIO.RIO_INVALID_BUFFERID)
+				{
+					// get winsock error code
+					var winsockErrorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();
+
+					// free allocated memory
+					var freeResult = KernelInterop.VirtualFree(memoryPointer, 0, KernelInterop.MEM_RELEASE);
+
+					// set kernel error code
+					if (freeResult)
+					{
+						// return result
+						return TryResult<RIOBufferPool>.CreateFail(winsockErrorCode);
+					}
+
+					// get kernel error code
+					var kernelErrorCode = (KernelErrorCode) KernelInterop.GetLastError();
+
+					// return result
+					return TryResult<RIOBufferPool>.CreateFail(kernelErrorCode, winsockErrorCode);
+				}
 			}
 
-			return new RIOBufferPool(rioHandle, bufferId, bufferSegmentLength, bufferSegmentsCount);
+			// 3 success
+			var result = new RIOBufferPool(buffer, bufferLength, bufferId, segmentLength, segmentsCount);
+
+			// return result
+			return TryResult<RIOBufferPool>.CreateSuccess(result);
 		}
+
+		/// <summary>
+		/// Tries to destroy the instance of the <see cref="RIOBufferPool" /> and free all allocated unmanaged resources.
+		/// </summary>
+		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
+		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
+		public unsafe Boolean TryDestroy(RIO rioHandle, out UInt32 kernelErrorCode)
+		{
+			// 0 deregister buffer with Registered I/O extension
+			{
+				rioHandle.DeregisterBuffer(bufferId);
+			}
+
+			// 1 try free memory
+			{
+				var freeResult = KernelInterop.VirtualFree((void*) buffer, 0, KernelInterop.MEM_RELEASE);
+
+				if (freeResult == false)
+				{
+					kernelErrorCode = KernelInterop.GetLastError();
+
+					return false;
+				}
+			}
+
+			// 2 success
+			kernelErrorCode = 0;
+
+			return true;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Boolean TryGetBufferSegmentId(out Int32 segmentId) => availableSegments.TryDequeue(out segmentId);
 
 		#endregion
 	}

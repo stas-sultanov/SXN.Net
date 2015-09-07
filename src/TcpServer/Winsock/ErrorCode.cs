@@ -1,8 +1,8 @@
 ﻿// ReSharper disable All
 
-namespace SXN.Net
+namespace SXN.Net.Winsock
 {
-	public enum WinsockErrorCode : int
+	public enum ErrorCode : int
 	{
 		/// <summary>
 		/// No error.

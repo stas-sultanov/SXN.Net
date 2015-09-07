@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Net.Sockets;
-using SXN.Net.Winsock;
+using SXN.Net.Kernel;
 
 namespace SXN.Net
 {
@@ -52,53 +51,53 @@ namespace SXN.Net
 		/// <summary>
 		/// Activates server.
 		/// </summary>
-		public WinsockErrorCode Activate()
+		public Boolean Activate()
 		{
 			// 0 check if is active
 			if (IsActive)
 			{
-				return WinsockErrorCode.None;
+				return false;
 			}
 
 			var tryInitializeServer = RIOSocketServer.TryInitialize(Settings);
 
 			if (!tryInitializeServer.Success)
 			{
-				return tryInitializeServer.ErrorCode;
+				return false;
 			}
 
 			server = tryInitializeServer.Result;
 
 			IsActive = true;
 
-			return WinsockErrorCode.None;
+			return true;
 		}
 
 		/// <summary>
 		/// Deactivates server.
 		/// </summary>
-		public WinsockErrorCode Deactivate()
+		public Boolean Deactivate()
 		{
 			// check if is not active
 			if (!IsActive)
 			{
-				return WinsockErrorCode.None;
+				return false;
 			}
 
 			server.Deactivate();
 
 			server = null;
 
-			return WinsockErrorCode.None;
+			return true;
 		}
 
 		/// <summary>
 		/// Tries to accepts a pending connection request.
 		/// </summary>
 		/// <returns></returns>
-		public WinsockTryResult<SOCKET> TryAccept()
+		public TryResult<SOCKET> TryAccept()
 		{
-			return WinsockTryResult<SOCKET>.CreateFail(WinsockErrorCode.None);
+			return TryResult<SOCKET>.CreateFail(ErrorCode.None, Winsock.ErrorCode.None);
 
 			/*
 			SOCKADDR address;

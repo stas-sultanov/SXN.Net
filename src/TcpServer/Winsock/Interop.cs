@@ -204,35 +204,35 @@ namespace SXN.Net.Winsock
 		/// <param name="wVersionRequested">The highest version of Windows Sockets specification that the caller can use. The high-order byte specifies the minor version number; the low-order byte specifies the major version number.</param>
 		/// <param name="lpWSAData">A pointer to the <see cref="WSADATA" /> data structure that is to receive details of the Windows Sockets implementation.</param>
 		/// <returns>
-		/// If successful, the function returns <see cref="WinsockErrorCode.None" />. Otherwise, it returns one of the error codes listed below.
+		/// If successful, the function returns <see cref="ErrorCode.None" />. Otherwise, it returns one of the error codes listed below.
 		/// <list type="table">
 		///     <item>
 		///         <term>
-		///             <see cref="WinsockErrorCode.WSASYSNOTREADY" />
+		///             <see cref="ErrorCode.WSASYSNOTREADY" />
 		///         </term>
 		///         <description>The underlying network subsystem is not ready for network communication.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="WinsockErrorCode.WSAVERNOTSUPPORTED" />
+		///             <see cref="ErrorCode.WSAVERNOTSUPPORTED" />
 		///         </term>
 		///         <description>The version of Windows Sockets support requested is not provided by this particular Windows Sockets implementation.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="WinsockErrorCode.WSAEINPROGRESS" />
+		///             <see cref="ErrorCode.WSAEINPROGRESS" />
 		///         </term>
 		///         <description>A blocking Windows Sockets 1.1 operation is in progress.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="WinsockErrorCode.WSAEPROCLIM" />
+		///             <see cref="ErrorCode.WSAEPROCLIM" />
 		///         </term>
 		///         <description>A limit on the number of tasks supported by the Windows Sockets implementation has been reached.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="WinsockErrorCode.WSAEFAULT" />
+		///             <see cref="ErrorCode.WSAEFAULT" />
 		///         </term>
 		///         <description>The <paramref name="lpWSAData" /> parameter is not a valid pointer.</description>
 		///     </item>
@@ -240,7 +240,7 @@ namespace SXN.Net.Winsock
 		/// </returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true, CharSet = CharSet.Ansi, BestFitMapping = true, ThrowOnUnmappableChar = true)]
-		internal static extern WinsockErrorCode WSAStartup([In] WORD wVersionRequested, [Out] out WSADATA lpWSAData);
+		internal static extern ErrorCode WSAStartup([In] WORD wVersionRequested, [Out] out WSADATA lpWSAData);
 
 		#endregion
 	}

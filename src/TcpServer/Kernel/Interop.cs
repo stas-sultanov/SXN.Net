@@ -22,24 +22,12 @@ namespace SXN.Net.Kernel
 	{
 		#region Constant and Static Fields
 
-		public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
-
-		/// <summary>
-		/// Name of the source DLL file.
-		/// </summary>
-		private const String KERNEL32DLL = "kernel32.dll";
-
 		/// <summary>
 		/// Allocates memory charges (from the overall size of memory and the paging files on disk) for the specified reserved memory pages.
 		/// The function also guarantees that when the caller later initially accesses the memory, the contents will be zero.
 		/// Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
 		/// </summary>
 		public const DWORD MEM_COMMIT = 0x00001000;
-
-		/// <summary>
-		/// Reserves a range of the process's virtual address space without allocating any actual physical storage in memory or in the paging file on disk.
-		/// </summary>
-		public const DWORD MEM_RESERVE = 0x00002000;
 
 		/// <summary>
 		/// Decommits the specified region of committed pages.
@@ -67,6 +55,11 @@ namespace SXN.Net.Kernel
 		public const UInt32 MEM_RELEASE = 0x8000;
 
 		/// <summary>
+		/// Reserves a range of the process's virtual address space without allocating any actual physical storage in memory or in the paging file on disk.
+		/// </summary>
+		public const DWORD MEM_RESERVE = 0x00002000;
+
+		/// <summary>
 		/// Enables read-only or read/write access to the committed region of pages.
 		/// </summary>
 		/// <remarks>
@@ -74,26 +67,16 @@ namespace SXN.Net.Kernel
 		/// </remarks>
 		public const DWORD PAGE_READWRITE = 0x04;
 
+		/// <summary>
+		/// Name of the source DLL file.
+		/// </summary>
+		private const String KERNEL32DLL = "kernel32.dll";
+
+		public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
 		#endregion
 
 		#region Methods
-
-		/// <summary>
-		/// Attempts to dequeue an I/O completion packet from the specified I/O completion port.
-		/// If there is no completion packet queued, the function waits for a pending I/O operation associated with the completion port to complete.
-		/// </summary>
-		/// <param name="CompletionPort">A handle to the completion port.</param>
-		/// <param name="lpNumberOfBytes">A pointer to a variable that receives the number of bytes transferred during an I/O operation that has completed.</param>
-		/// <param name="lpCompletionKey">A pointer to a variable that receives the completion key value associated with the file handle whose I/O operation has completed.</param>
-		/// <param name="lpOverlapped">A pointer to a variable that receives the address of the <see cref="OVERLAPPED" /> structure that was specified when the completed I/O operation was started.</param>
-		/// <param name="dwMilliseconds">The number of milliseconds that the caller is willing to wait for a completion packet to appear at the completion port. If a completion packet does not appear within the specified time, the function times out, returns <c>false</c>, and sets <paramref name="lpOverlapped" /> to <c>null</c>.</param>
-		/// <returns>
-		/// Returns nonzero <c>true</c> if successful or <c>false</c> otherwise.
-		/// To get extended error information, call <see cref="GetLastError" />.
-		/// </returns>
-		[SuppressUnmanagedCodeSecurity]
-		[DllImport(KERNEL32DLL, SetLastError = true)]
-		public static extern unsafe Boolean GetQueuedCompletionStatus(HANDLE CompletionPort, out DWORD lpNumberOfBytes, out ULONG_PTR lpCompletionKey, out OVERLAPPED* lpOverlapped, DWORD dwMilliseconds);
 
 		/// <summary>
 		/// Creates an input/output (I/O) completion port and associates it with a specified handle, or creates an I/O completion port that is not yet associated with a handle, allowing association at a later time.
@@ -137,6 +120,23 @@ namespace SXN.Net.Kernel
 		public static extern DWORD GetLastError();
 
 		/// <summary>
+		/// Attempts to dequeue an I/O completion packet from the specified I/O completion port.
+		/// If there is no completion packet queued, the function waits for a pending I/O operation associated with the completion port to complete.
+		/// </summary>
+		/// <param name="CompletionPort">A handle to the completion port.</param>
+		/// <param name="lpNumberOfBytes">A pointer to a variable that receives the number of bytes transferred during an I/O operation that has completed.</param>
+		/// <param name="lpCompletionKey">A pointer to a variable that receives the completion key value associated with the file handle whose I/O operation has completed.</param>
+		/// <param name="lpOverlapped">A pointer to a variable that receives the address of the <see cref="OVERLAPPED" /> structure that was specified when the completed I/O operation was started.</param>
+		/// <param name="dwMilliseconds">The number of milliseconds that the caller is willing to wait for a completion packet to appear at the completion port. If a completion packet does not appear within the specified time, the function times out, returns <c>false</c>, and sets <paramref name="lpOverlapped" /> to <c>null</c>.</param>
+		/// <returns>
+		/// Returns nonzero <c>true</c> if successful or <c>false</c> otherwise.
+		/// To get extended error information, call <see cref="GetLastError" />.
+		/// </returns>
+		[SuppressUnmanagedCodeSecurity]
+		[DllImport(KERNEL32DLL, SetLastError = true)]
+		public static extern unsafe Boolean GetQueuedCompletionStatus(HANDLE CompletionPort, out DWORD lpNumberOfBytes, out ULONG_PTR lpCompletionKey, out OVERLAPPED* lpOverlapped, DWORD dwMilliseconds);
+
+		/// <summary>
 		/// Reserves, commits, or changes the state of a region of pages in the virtual address space of the calling process.
 		/// Memory allocated by this function is automatically initialized to zero.
 		/// </summary>
@@ -176,7 +176,7 @@ namespace SXN.Net.Kernel
 		[ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(KERNEL32DLL, SetLastError = true)]
-		internal static extern unsafe Boolean VirtualFree([In] void* lpAddress, [In] UIntPtr dwSize, Int32 dwFreeType);
+		internal static extern unsafe Boolean VirtualFree([In] void* lpAddress, [In] SIZE_T dwSize, DWORD dwFreeType);
 
 		#endregion
 	}

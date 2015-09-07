@@ -74,9 +74,9 @@ namespace SXN.Net.Winsock
 
 		public const Int32 ERROR_SUCCESS = 0;
 
-		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
-
 		public static readonly RIO_CQ RIO_CORRUPT_CQ = new RIO_CQ(-1);
+
+		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
 
 		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
 

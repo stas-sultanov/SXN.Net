@@ -18,20 +18,20 @@ namespace SXN.Net
 			};
 
 			// 1 initialize server
-			var server = new TcpServer(serverSettings);
+			var tryInitalizeServerResult = RIOSocketServer.TryInitialize(serverSettings);
 
-			// 2 try activate server
-			var tryStartResultCode = server.Activate();
-
-			if (tryStartResultCode != WinsockErrorCode.None)
+			if (tryInitalizeServerResult.Success == false)
 			{
-				Console.WriteLine($"error activating server:: {tryStartResultCode}");
+				Console.WriteLine($"Error activating server. Kernel error code: {tryInitalizeServerResult.KernelErrorCode}. Winsock error code: {tryInitalizeServerResult.WinsockErrorCode}.");
 
 				return;
 			}
 
+			var server = tryInitalizeServerResult.Result;
+
 			Console.WriteLine($"server is activated");
 
+			/*
 			// 2 try accept connection
 			var tryAccept = server.TryAccept();
 
@@ -45,12 +45,13 @@ namespace SXN.Net
 			// 3 try deactivate server
 			var tryDeactivate = server.Deactivate();
 
-			if (tryDeactivate != WinsockErrorCode.None)
+			if (tryDeactivate != ErrorCode.None)
 			{
 				Console.WriteLine($"error activating server:: {tryStartResultCode}");
 			}
 
 			Console.WriteLine($"server is deactivated");
+			*/
 
 			Console.ReadLine();
 		}

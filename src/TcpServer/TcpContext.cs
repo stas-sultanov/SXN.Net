@@ -8,12 +8,18 @@ namespace SXN.Net
 
 	public sealed class TcpContext
 	{
+		#region Fields
+
 		private readonly SOCKET socket;
 
 		private readonly RIO rioHandle;
 
+		#endregion
+
+		#region Constructors
+
 		/// <summary>
-		/// Initializes a new instance of the <see cref="TcpContext"/> class.
+		/// Initializes a new instance of the <see cref="TcpContext" /> class.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal TcpContext(SOCKET socket, RIO rioHandle)
@@ -26,7 +32,6 @@ namespace SXN.Net
 			//var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
 		}
 
-
-
+		#endregion
 	}
 }

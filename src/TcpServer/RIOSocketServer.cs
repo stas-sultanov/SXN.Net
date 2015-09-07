@@ -6,21 +6,27 @@ namespace SXN.Net
 {
 	using SOCKET = UIntPtr;
 
-	internal sealed class RIOSocketServer
+	public sealed class RIOSocketServer
 	{
+		#region Fields
+
 		private readonly RIO rioHandle;
 
 		private readonly SOCKET serverSocket;
 
 		/// <summary>
-		/// The colleciton of the 
+		/// The collection of the workers.
 		/// </summary>
 		private readonly IOCPWorker[] workers;
 
+		#endregion
+
+		#region Constructors
+
 		/// <summary>
-		/// Initializes a new instance of the <see cref="T:System.Object"/> class.
+		/// Initializes a new instance of the <see cref="T:System.Object" /> class.
 		/// </summary>
-		public RIOSocketServer(UIntPtr serverSocket, RIO rioHandle, IOCPWorker[] workers)
+		private RIOSocketServer(UIntPtr serverSocket, RIO rioHandle, IOCPWorker[] workers)
 		{
 			this.serverSocket = serverSocket;
 
@@ -29,81 +35,9 @@ namespace SXN.Net
 			this.workers = workers;
 		}
 
-		/// <summary>
-		/// Activates server.
-		/// </summary>
-		public static WinsockTryResult<RIOSocketServer> TryInitialize(TcpServerSettings settings)
-		{
-			// try initiates use of the Winsock DLL by a process
-			{
-				WSADATA data;
+		#endregion
 
-				var startupResultCode = Interop.WSAStartup(Interop.Version, out data);
-
-				// check if startup was successful
-				if (startupResultCode != WinsockErrorCode.None)
-				{
-					return WinsockTryResult<RIOSocketServer>.CreateFail(startupResultCode);
-				}
-			}
-
-			// try create server socket
-			SOCKET serverSocket;
-
-			{
-				serverSocket = Interop.WSASocket(Interop.AF_INET, (Int32)SocketType.Stream, (Int32)ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
-
-				// check if socket created
-				if (Interop.INVALID_SOCKET == serverSocket)
-				{
-					goto FAIL;
-				}
-			}
-
-			// try initialize Registered I/O extension
-			RIO rioHandle;
-
-			if (!RIO.TryInitialize(serverSocket, out rioHandle))
-			{
-				goto FAIL;
-			}
-
-			//
-			// get count of processors
-			var processorsCount = Environment.ProcessorCount;
-
-			// create IOCP workers
-			var workers = new IOCPWorker[processorsCount];
-
-			for (var processorIndex = 0; processorIndex < processorsCount; processorIndex++)
-			{
-				var tryInitializeWorker = IOCPWorker.TryInitialize(rioHandle, processorIndex);
-
-				workers[processorIndex] = tryInitializeWorker.Result;
-			}
-
-			// try configure server socket and start listen
-			if (!TryConfigureBindAndStartListen(serverSocket, settings))
-			{
-				goto FAIL;
-			}
-
-			// success
-			var server = new RIOSocketServer(serverSocket, rioHandle, null);
-
-			return WinsockTryResult<RIOSocketServer>.CreateSuccess(server);
-
-			FAIL:
-
-			// get last error
-			var errorCode = (WinsockErrorCode)Interop.WSAGetLastError();
-
-			// terminate use of the Winsock DLL
-			Interop.WSACleanup();
-
-			// return fail
-			return WinsockTryResult<RIOSocketServer>.CreateFail(errorCode);
-		}
+		#region Private methods
 
 		private static Boolean TryConfigureBindAndStartListen(SOCKET serverSocket, TcpServerSettings settings)
 		{
@@ -114,7 +48,7 @@ namespace SXN.Net
 
 				unsafe
 				{
-					var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Byte*)&optionValue, sizeof(Int32));
+					var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Byte*) &optionValue, sizeof(Int32));
 
 					// check if attempt has succeed
 					if (tryDisableNagle == Interop.SOCKET_ERROR)
@@ -181,10 +115,14 @@ namespace SXN.Net
 			return true;
 		}
 
+		#endregion
+
+		#region Methods
+
 		/// <summary>
 		/// Deactivates server.
 		/// </summary>
-		public WinsockErrorCode Deactivate()
+		public ErrorCode Deactivate()
 		{
 			// try close socket
 			var tryCloseResultCode = Interop.closesocket(serverSocket);
@@ -194,11 +132,93 @@ namespace SXN.Net
 				goto FAIL;
 			}
 
-			return WinsockErrorCode.None;
+			return ErrorCode.None;
 
 			FAIL:
 
-			return (WinsockErrorCode)Interop.WSAGetLastError();
+			return (ErrorCode) Interop.WSAGetLastError();
 		}
+
+		/// <summary>
+		/// Activates server.
+		/// </summary>
+		public static TryResult<RIOSocketServer> TryInitialize(TcpServerSettings settings)
+		{
+			// 0 try initiates use of the Winsock DLL by a process
+			{
+				WSADATA data;
+
+				var startupResultCode = Interop.WSAStartup(Interop.Version, out data);
+
+				// check if startup was successful
+				if (startupResultCode != ErrorCode.None)
+				{
+					return TryResult<RIOSocketServer>.CreateFail(startupResultCode);
+				}
+			}
+
+			// 1 try create server socket
+			SOCKET serverSocket;
+
+			{
+				serverSocket = Interop.WSASocket(Interop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
+
+				// check if socket created
+				if (Interop.INVALID_SOCKET == serverSocket)
+				{
+					goto FAIL;
+				}
+			}
+
+			// 2 try initialize Registered I/O extension
+			RIO rioHandle;
+
+			if (!RIO.TryInitialize(serverSocket, out rioHandle))
+			{
+				goto FAIL;
+			}
+
+			// 3 get count of processors
+			var processorsCount = Environment.ProcessorCount;
+
+			// 4 create IOCP workers
+			var workers = new IOCPWorker[processorsCount];
+
+			for (var processorIndex = 0; processorIndex < processorsCount; processorIndex++)
+			{
+				var tryInitializeWorker = IOCPWorker.TryCreate(rioHandle, processorIndex);
+
+				if (!tryInitializeWorker.Success)
+				{
+					goto FAIL;
+				}
+
+				workers[processorIndex] = tryInitializeWorker.Result;
+			}
+
+			// try configure server socket and start listen
+			if (!TryConfigureBindAndStartListen(serverSocket, settings))
+			{
+				goto FAIL;
+			}
+
+			// success
+			var server = new RIOSocketServer(serverSocket, rioHandle, null);
+
+			return TryResult<RIOSocketServer>.CreateSuccess(server);
+
+			FAIL:
+
+			// get last error
+			var errorCode = (ErrorCode) Interop.WSAGetLastError();
+
+			// terminate use of the Winsock DLL
+			Interop.WSACleanup();
+
+			// return fail
+			return TryResult<RIOSocketServer>.CreateFail(errorCode);
+		}
+
+		#endregion
 	}
 }

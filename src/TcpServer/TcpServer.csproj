@@ -56,6 +56,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Kernel\ErrorCode.cs" />
     <Compile Include="RIOBufferPool.cs" />
     <Compile Include="RIOSocketServer.cs" />
     <Compile Include="TcpContext.cs" />
@@ -69,9 +70,9 @@
     <Compile Include="Winsock\SOCKADDR.cs" />
     <Compile Include="Winsock\SOCKADDR_IN.cs" />
     <Compile Include="TcpServer.cs" />
-    <Compile Include="WinsockTryResult.cs" />
+    <Compile Include="TryResult.cs" />
     <Compile Include="Winsock\WSADATA.cs" />
-    <Compile Include="WinsockErrorCode.cs" />
+    <Compile Include="Winsock\ErrorCode.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -3,6 +3,11 @@ using System.Threading;
 
 namespace SXN.Net.Winsock
 {
+	using WinsockInterop = Interop;
+	using WinsockErrorCode = ErrorCode;
+	using KernelInterop = Kernel.Interop;
+	using KernelErrorCode = Kernel.ErrorCode;
+
 	/// <summary>
 	/// Encapsulates data and methods required to process IOCP request.
 	/// </summary>
@@ -19,6 +24,24 @@ namespace SXN.Net.Winsock
 		//public ConcurrentDictionary<long, RIOTcpConnection> connections;
 
 		public Thread thread;
+
+		#endregion
+
+		#region Constructors
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:System.Object" /> class.
+		/// </summary>
+		public IOCPWorker(Int32 processorId, IntPtr completionPort, IntPtr completionQueue, RIOBufferPool bufferPool)
+		{
+			ProcessorId = processorId;
+
+			CompletionPort = completionPort;
+
+			CompletionQueue = completionQueue;
+
+			this.bufferPool = bufferPool;
+		}
 
 		#endregion
 
@@ -50,64 +73,86 @@ namespace SXN.Net.Winsock
 
 		#endregion
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="T:System.Object"/> class.
-		/// </summary>
-		public IOCPWorker(Int32 processorId, IntPtr completionPort, IntPtr completionQueue)
-		{
-			ProcessorId = processorId;
-
-			CompletionPort = completionPort;
-
-			CompletionQueue = completionQueue;
-		}
-
 		#region Methods
 
-		public static unsafe WinsockTryResult<IOCPWorker> TryInitialize(RIO rioHandle, Int32 processorId)
+		/// <summary>
+		/// Tries to create a new instance of the <see cref="IOCPWorker" />.
+		/// </summary>
+		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="processorIndex">The index of the processor.</param>
+		/// <returns>
+		/// An instance of <see cref="TryResult{T}" /> which encapsulates result of the operation.
+		/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
+		/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
+		/// </returns>
+		public static unsafe TryResult<IOCPWorker> TryCreate(RIO rioHandle, Int32 processorIndex)
 		{
-			// try create new completion port
-			var completionPort = Kernel.Interop.CreateIoCompletionPort(Kernel.Interop.INVALID_HANDLE_VALUE, IntPtr.Zero, UIntPtr.Zero, 0);
-
-			if (completionPort == IntPtr.Zero)
-			{
-				var errorCode = Kernel.Interop.GetLastError();
-
-				WinsockTryResult<IOCPWorker>.CreateFail((WinsockErrorCode) (Int32) errorCode);
-			}
-
-			// compose completion method structure
-			var completionMethod = new RIO_NOTIFICATION_COMPLETION
-			{
-				// set type to IOCP
-				Type = RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION,
-				// set IOCP params
-				Iocp = new RIO_NOTIFICATION_COMPLETION.IOCP
-				{
-					// set completion port
-					IocpHandle = completionPort,
-					CompletionKey = (void*) processorId,
-					Overlapped = (void*) (-1)
-				}
-			};
-
 			var MaxOutsandingCompletions = 100u;
 
-			// create completion queue
-			var completionQueue = rioHandle.CreateCompletionQueue(MaxOutsandingCompletions, completionMethod);
+			IntPtr completionPort;
 
-			if (completionQueue == RIO.RIO_CORRUPT_CQ)
+			IntPtr completionQueue;
+
+			// 0 try create completion port
 			{
-				var errorCode = (WinsockErrorCode) Interop.WSAGetLastError();
+				completionPort = KernelInterop.CreateIoCompletionPort(KernelInterop.INVALID_HANDLE_VALUE, IntPtr.Zero, UIntPtr.Zero, 0);
 
-				WinsockTryResult<IOCPWorker>.CreateFail(errorCode);
+				// check if operation has succeed
+				if (completionPort == IntPtr.Zero)
+				{
+					// get error code
+					var kernelErrorCode = (KernelErrorCode) KernelInterop.GetLastError();
+
+					// return fail result
+					TryResult<IOCPWorker>.CreateFail(kernelErrorCode);
+				}
 			}
 
-			var rioBufferPool = RIOBufferPool.TryInitialize(rioHandle);
+			// 1 try create Registered I/O completion queue
+			{
+				// compose completion method structure
+				var completionMethod = new RIO_NOTIFICATION_COMPLETION
+				{
+					// set type to IOCP
+					Type = RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION,
 
-			var result = new IOCPWorker(processorId, completionPort, completionQueue);
+					// set IOCP parameters
+					Iocp = new RIO_NOTIFICATION_COMPLETION.IOCP
+					{
+						// set completion port
+						IocpHandle = completionPort,
+						CompletionKey = (void*) processorIndex,
+						Overlapped = (void*) (-1)
+					}
+				};
 
-			return WinsockTryResult<IOCPWorker>.CreateSuccess(result);
+				// create completion queue
+				completionQueue = rioHandle.CreateCompletionQueue(MaxOutsandingCompletions, completionMethod);
+
+				if (completionQueue == RIO.RIO_CORRUPT_CQ)
+				{
+					// get error code
+					var winsockErrorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();
+
+					// return fail result
+					TryResult<IOCPWorker>.CreateFail(winsockErrorCode);
+				}
+			}
+
+			// 2 try initialize buffer pool
+			var tryInitializeBufferPool = RIOBufferPool.TryCreate(rioHandle, 4096, 1024);
+
+			if (tryInitializeBufferPool.Success == false)
+			{
+				// return result
+				return TryResult<IOCPWorker>.CreateFail(tryInitializeBufferPool.KernelErrorCode, tryInitializeBufferPool.WinsockErrorCode);
+			}
+
+			// success
+			var result = new IOCPWorker(processorIndex, completionPort, completionQueue, tryInitializeBufferPool.Result);
+
+			// return success result
+			return TryResult<IOCPWorker>.CreateSuccess(result);
 		}
 
 		#endregion
