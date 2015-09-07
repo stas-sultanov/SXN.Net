@@ -170,12 +170,12 @@ namespace SXN.Net
 		}
 
 		/// <summary>
-		/// Tries to destroy the instance of the <see cref="RIOBufferPool" /> and free all allocated unmanaged resources.
+		/// Tries to release all allocated resources.
 		/// </summary>
 		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
 		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
 		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
-		public unsafe Boolean TryDestroy(RIO rioHandle, out UInt32 kernelErrorCode)
+		public unsafe Boolean TryRelease(RIO rioHandle, out UInt32 kernelErrorCode)
 		{
 			// 0 deregister buffer with Registered I/O extension
 			{

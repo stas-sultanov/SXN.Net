@@ -58,11 +58,12 @@
   <ItemGroup>
     <Compile Include="Kernel\ErrorCode.cs" />
     <Compile Include="RIOBufferPool.cs" />
-    <Compile Include="RIOSocketServer.cs" />
+    <Compile Include="TcpWorker.cs" />
     <Compile Include="TcpContext.cs" />
     <Compile Include="TcpServerSettings.cs" />
     <Compile Include="Winsock\IOCPWorker.cs" />
     <Compile Include="Winsock\RIO.cs" />
+    <Compile Include="Winsock\RIORESULT.cs" />
     <Compile Include="Winsock\RIO_BUF.cs" />
     <Compile Include="Winsock\RIO_EXTENSION_FUNCTION_TABLE.cs" />
     <Compile Include="Winsock\IN_ADDR.cs" />

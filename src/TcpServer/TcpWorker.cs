@@ -6,7 +6,7 @@ namespace SXN.Net
 {
 	using SOCKET = UIntPtr;
 
-	public sealed class RIOSocketServer
+	public sealed class TcpWorker
 	{
 		#region Fields
 
@@ -24,9 +24,9 @@ namespace SXN.Net
 		#region Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="T:System.Object" /> class.
+		/// Initializes a new instance of the <see cref="TcpWorker" /> class.
 		/// </summary>
-		private RIOSocketServer(UIntPtr serverSocket, RIO rioHandle, IOCPWorker[] workers)
+		private TcpWorker(UIntPtr serverSocket, RIO rioHandle, IOCPWorker[] workers)
 		{
 			this.serverSocket = serverSocket;
 
@@ -142,7 +142,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Activates server.
 		/// </summary>
-		public static TryResult<RIOSocketServer> TryInitialize(TcpServerSettings settings)
+		public static TryResult<TcpWorker> TryInitialize(TcpServerSettings settings)
 		{
 			// 0 try initiates use of the Winsock DLL by a process
 			{
@@ -153,7 +153,7 @@ namespace SXN.Net
 				// check if startup was successful
 				if (startupResultCode != ErrorCode.None)
 				{
-					return TryResult<RIOSocketServer>.CreateFail(startupResultCode);
+					return TryResult<TcpWorker>.CreateFail(startupResultCode);
 				}
 			}
 
@@ -181,19 +181,23 @@ namespace SXN.Net
 			// 3 get count of processors
 			var processorsCount = Environment.ProcessorCount;
 
-			// 4 create IOCP workers
+			// 4 create collection of the IOCP workers
 			var workers = new IOCPWorker[processorsCount];
 
+			// initialize workers
 			for (var processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 			{
-				var tryInitializeWorker = IOCPWorker.TryCreate(rioHandle, processorIndex);
+				// try create worker
+				var tryCreateWorker = IOCPWorker.TryCreate(rioHandle, processorIndex, 4096, 1024);
 
-				if (!tryInitializeWorker.Success)
+				// check if operation has succeed
+				if (!tryCreateWorker.Success)
 				{
 					goto FAIL;
 				}
 
-				workers[processorIndex] = tryInitializeWorker.Result;
+				// add to collection
+				workers[processorIndex] = tryCreateWorker.Result;
 			}
 
 			// try configure server socket and start listen
@@ -203,9 +207,9 @@ namespace SXN.Net
 			}
 
 			// success
-			var server = new RIOSocketServer(serverSocket, rioHandle, null);
+			var server = new TcpWorker(serverSocket, rioHandle, null);
 
-			return TryResult<RIOSocketServer>.CreateSuccess(server);
+			return TryResult<TcpWorker>.CreateSuccess(server);
 
 			FAIL:
 
@@ -216,7 +220,7 @@ namespace SXN.Net
 			Interop.WSACleanup();
 
 			// return fail
-			return TryResult<RIOSocketServer>.CreateFail(errorCode);
+			return TryResult<TcpWorker>.CreateFail(errorCode);
 		}
 
 		#endregion

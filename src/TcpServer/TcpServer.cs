@@ -11,7 +11,7 @@ namespace SXN.Net
 	{
 		#region Fields
 
-		private RIOSocketServer server;
+		private TcpWorker server;
 
 		#endregion
 
@@ -59,7 +59,7 @@ namespace SXN.Net
 				return false;
 			}
 
-			var tryInitializeServer = RIOSocketServer.TryInitialize(Settings);
+			var tryInitializeServer = TcpWorker.TryInitialize(Settings);
 
 			if (!tryInitializeServer.Success)
 			{

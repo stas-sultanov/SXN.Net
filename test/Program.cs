@@ -18,7 +18,7 @@ namespace SXN.Net
 			};
 
 			// 1 initialize server
-			var tryInitalizeServerResult = RIOSocketServer.TryInitialize(serverSettings);
+			var tryInitalizeServerResult = TcpWorker.TryInitialize(serverSettings);
 
 			if (tryInitalizeServerResult.Success == false)
 			{
