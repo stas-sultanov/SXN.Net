@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using SXN.Net.Kernel;
 
 // ReSharper disable All
 

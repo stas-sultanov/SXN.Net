@@ -106,7 +106,7 @@ namespace SXN.Net
 
 		#region Private methods
 
-		private unsafe async Task Process(CancellationToken cancellationToken)
+		private unsafe void Process(CancellationToken cancellationToken)
 		{
 			const Int32 maxResults = 1024;
 
