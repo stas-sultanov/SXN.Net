@@ -6,32 +6,34 @@ namespace SXN.Net
 {
 	using SOCKET = UIntPtr;
 
-	public sealed class TcpContext
+	public sealed class TcpConnection
 	{
 		#region Fields
 
 		private readonly SOCKET socket;
 
-		private readonly RIO rioHandle;
+		private readonly IntPtr requestQueue;
 
 		#endregion
 
 		#region Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="TcpContext" /> class.
+		/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal TcpContext(SOCKET socket, RIO rioHandle)
+		public TcpConnection(SOCKET socket, IntPtr requestQueue)
 		{
 			this.socket = socket;
 
-			this.rioHandle = rioHandle;
+			this.requestQueue = requestQueue;
 
 			// create request queue
 			//var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
 		}
 
 		#endregion
+
+
 	}
 }

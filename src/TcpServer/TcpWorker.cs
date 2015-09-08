@@ -10,14 +10,14 @@ namespace SXN.Net
 	{
 		#region Fields
 
-		private readonly RIO rioHandle;
+		private readonly RIOHandle rioHandle;
 
 		private readonly SOCKET serverSocket;
 
 		/// <summary>
 		/// The collection of the workers.
 		/// </summary>
-		private readonly IOCPWorker[] workers;
+		private readonly IocpWorker[] workers;
 
 		#endregion
 
@@ -26,7 +26,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TcpWorker" /> class.
 		/// </summary>
-		private TcpWorker(UIntPtr serverSocket, RIO rioHandle, IOCPWorker[] workers)
+		private TcpWorker(UIntPtr serverSocket, RIOHandle rioHandle, IocpWorker[] workers)
 		{
 			this.serverSocket = serverSocket;
 
@@ -48,10 +48,10 @@ namespace SXN.Net
 
 				unsafe
 				{
-					var tryDisableNagle = Interop.setsockopt(serverSocket, Interop.IPPROTO_TCP, Interop.TCP_NODELAY, (Byte*) &optionValue, sizeof(Int32));
+					var tryDisableNagle = WinsockInterop.setsockopt(serverSocket, WinsockInterop.IPPROTO_TCP, WinsockInterop.TCP_NODELAY, (Byte*) &optionValue, sizeof(Int32));
 
 					// check if attempt has succeed
-					if (tryDisableNagle == Interop.SOCKET_ERROR)
+					if (tryDisableNagle == WinsockInterop.SOCKET_ERROR)
 					{
 						return false;
 					}
@@ -67,10 +67,10 @@ namespace SXN.Net
 
 					UInt32 dwBytes;
 
-					var tryEnableFastLoopbackResult = Interop.WSAIoctl(serverSocket, Interop.SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), null, 0, out dwBytes, IntPtr.Zero, IntPtr.Zero);
+					var tryEnableFastLoopbackResult = WinsockInterop.WSAIoctl(serverSocket, WinsockInterop.SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), null, 0, out dwBytes, IntPtr.Zero, IntPtr.Zero);
 
 					// check if attempt has succeed
-					if (tryEnableFastLoopbackResult == Interop.SOCKET_ERROR)
+					if (tryEnableFastLoopbackResult == WinsockInterop.SOCKET_ERROR)
 					{
 						return false;
 					}
@@ -88,15 +88,15 @@ namespace SXN.Net
 				// compose socket address
 				var socketAddress = new SOCKADDR_IN
 				{
-					sin_family = Interop.AF_INET,
-					sin_port = Interop.htons(settings.Port),
+					sin_family = WinsockInterop.AF_INET,
+					sin_port = WinsockInterop.htons(settings.Port),
 					sin_addr = address
 				};
 
 				// try associate address with socket
-				var tryBindResult = Interop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
+				var tryBindResult = WinsockInterop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
 
-				if (tryBindResult == Interop.SOCKET_ERROR)
+				if (tryBindResult == WinsockInterop.SOCKET_ERROR)
 				{
 					return false;
 				}
@@ -104,9 +104,9 @@ namespace SXN.Net
 
 			// try start listen
 			{
-				var tryStartListen = Interop.listen(serverSocket, settings.AcceptBacklogLength);
+				var tryStartListen = WinsockInterop.listen(serverSocket, settings.AcceptBacklogLength);
 
-				if (tryStartListen == Interop.SOCKET_ERROR)
+				if (tryStartListen == WinsockInterop.SOCKET_ERROR)
 				{
 					return false;
 				}
@@ -122,21 +122,21 @@ namespace SXN.Net
 		/// <summary>
 		/// Deactivates server.
 		/// </summary>
-		public ErrorCode Deactivate()
+		public WinsockErrorCode Deactivate()
 		{
 			// try close socket
-			var tryCloseResultCode = Interop.closesocket(serverSocket);
+			var tryCloseResultCode = WinsockInterop.closesocket(serverSocket);
 
-			if (tryCloseResultCode == Interop.SOCKET_ERROR)
+			if (tryCloseResultCode == WinsockInterop.SOCKET_ERROR)
 			{
 				goto FAIL;
 			}
 
-			return ErrorCode.None;
+			return WinsockErrorCode.None;
 
 			FAIL:
 
-			return (ErrorCode) Interop.WSAGetLastError();
+			return (WinsockErrorCode) WinsockInterop.WSAGetLastError();
 		}
 
 		/// <summary>
@@ -148,10 +148,10 @@ namespace SXN.Net
 			{
 				WSADATA data;
 
-				var startupResultCode = Interop.WSAStartup(Interop.Version, out data);
+				var startupResultCode = WinsockInterop.WSAStartup(WinsockInterop.Version, out data);
 
 				// check if startup was successful
-				if (startupResultCode != ErrorCode.None)
+				if (startupResultCode != WinsockErrorCode.None)
 				{
 					return TryResult<TcpWorker>.CreateFail(startupResultCode);
 				}
@@ -161,19 +161,19 @@ namespace SXN.Net
 			SOCKET serverSocket;
 
 			{
-				serverSocket = Interop.WSASocket(Interop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, Interop.WSA_FLAG_REGISTERED_IO);
+				serverSocket = WinsockInterop.WSASocket(WinsockInterop.AF_INET, (Int32) SocketType.Stream, (Int32) ProtocolType.Tcp, IntPtr.Zero, 0, WinsockInterop.WSA_FLAG_REGISTERED_IO);
 
 				// check if socket created
-				if (Interop.INVALID_SOCKET == serverSocket)
+				if (WinsockInterop.INVALID_SOCKET == serverSocket)
 				{
 					goto FAIL;
 				}
 			}
 
 			// 2 try initialize Registered I/O extension
-			RIO rioHandle;
+			RIOHandle rioHandle;
 
-			if (!RIO.TryInitialize(serverSocket, out rioHandle))
+			if (!RIOHandle.TryCreate(serverSocket, out rioHandle))
 			{
 				goto FAIL;
 			}
@@ -182,13 +182,13 @@ namespace SXN.Net
 			var processorsCount = Environment.ProcessorCount;
 
 			// 4 create collection of the IOCP workers
-			var workers = new IOCPWorker[processorsCount];
+			var workers = new IocpWorker[processorsCount];
 
 			// initialize workers
 			for (var processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 			{
 				// try create worker
-				var tryCreateWorker = IOCPWorker.TryCreate(rioHandle, processorIndex, 4096, 1024);
+				var tryCreateWorker = IocpWorker.TryCreate(rioHandle, processorIndex, 4096, 1024);
 
 				// check if operation has succeed
 				if (!tryCreateWorker.Success)
@@ -214,10 +214,10 @@ namespace SXN.Net
 			FAIL:
 
 			// get last error
-			var errorCode = (ErrorCode) Interop.WSAGetLastError();
+			var errorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();
 
 			// terminate use of the Winsock DLL
-			Interop.WSACleanup();
+			WinsockInterop.WSACleanup();
 
 			// return fail
 			return TryResult<TcpWorker>.CreateFail(errorCode);

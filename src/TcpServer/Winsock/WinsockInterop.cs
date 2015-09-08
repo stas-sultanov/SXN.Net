@@ -12,10 +12,23 @@ namespace SXN.Net.Winsock
 	using USHORT = UInt16;
 	using SOCKET = UIntPtr;
 	using GROUP = UInt32;
+	using RIO_CQ = IntPtr;
+	using RIO_RQ = IntPtr;
+	using RIO_BUFFERID = IntPtr;
 
-	internal static class Interop
+	internal static class WinsockInterop
 	{
 		#region Constant and Static Fields
+
+		public static readonly RIO_CQ RIO_CORRUPT_CQ = new RIO_CQ(-1);
+
+		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
+
+		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
+
+		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
+
+		public static readonly Guid WSAID_MULTIPLE_RIO = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
 
 		/// <summary>
 		/// The Internet Protocol version 4 (IPv4) address family.
@@ -204,35 +217,35 @@ namespace SXN.Net.Winsock
 		/// <param name="wVersionRequested">The highest version of Windows Sockets specification that the caller can use. The high-order byte specifies the minor version number; the low-order byte specifies the major version number.</param>
 		/// <param name="lpWSAData">A pointer to the <see cref="WSADATA" /> data structure that is to receive details of the Windows Sockets implementation.</param>
 		/// <returns>
-		/// If successful, the function returns <see cref="ErrorCode.None" />. Otherwise, it returns one of the error codes listed below.
+		/// If successful, the function returns <see cref="WinsockErrorCode.None" />. Otherwise, it returns one of the error codes listed below.
 		/// <list type="table">
 		///     <item>
 		///         <term>
-		///             <see cref="ErrorCode.WSASYSNOTREADY" />
+		///             <see cref="WinsockErrorCode.WSASYSNOTREADY" />
 		///         </term>
 		///         <description>The underlying network subsystem is not ready for network communication.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="ErrorCode.WSAVERNOTSUPPORTED" />
+		///             <see cref="WinsockErrorCode.WSAVERNOTSUPPORTED" />
 		///         </term>
 		///         <description>The version of Windows Sockets support requested is not provided by this particular Windows Sockets implementation.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="ErrorCode.WSAEINPROGRESS" />
+		///             <see cref="WinsockErrorCode.WSAEINPROGRESS" />
 		///         </term>
 		///         <description>A blocking Windows Sockets 1.1 operation is in progress.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="ErrorCode.WSAEPROCLIM" />
+		///             <see cref="WinsockErrorCode.WSAEPROCLIM" />
 		///         </term>
 		///         <description>A limit on the number of tasks supported by the Windows Sockets implementation has been reached.</description>
 		///     </item>
 		///     <item>
 		///         <term>
-		///             <see cref="ErrorCode.WSAEFAULT" />
+		///             <see cref="WinsockErrorCode.WSAEFAULT" />
 		///         </term>
 		///         <description>The <paramref name="lpWSAData" /> parameter is not a valid pointer.</description>
 		///     </item>
@@ -240,7 +253,7 @@ namespace SXN.Net.Winsock
 		/// </returns>
 		[SuppressUnmanagedCodeSecurity]
 		[DllImport(WS232DLL, SetLastError = true, CharSet = CharSet.Ansi, BestFitMapping = true, ThrowOnUnmappableChar = true)]
-		internal static extern ErrorCode WSAStartup([In] WORD wVersionRequested, [Out] out WSADATA lpWSAData);
+		internal static extern WinsockErrorCode WSAStartup([In] WORD wVersionRequested, [Out] out WSADATA lpWSAData);
 
 		#endregion
 	}

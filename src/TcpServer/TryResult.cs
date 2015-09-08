@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using SXN.Net.Kernel;
+using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
-	using KernelErrorCode = ErrorCode;
-	using WinsockErrorCode = Winsock.ErrorCode;
-
 	/// <summary>
 	/// Encapsulates the results of the execution of the Try-Do methods.
 	/// </summary>
@@ -18,8 +16,8 @@ namespace SXN.Net
 		/// <summary>
 		/// Initializes a new instance of <see cref="TryResult{T}" /> structure.
 		/// </summary>
-		/// <param name="kernelErrorCode"><see cref="Kernel.ErrorCode.None" /> if there was no error in Kernel library, error code otherwise. </param>
-		/// <param name="winsockErrorCode"><see cref="Winsock.ErrorCode.None" /> if there was no error in Winsock library, error code otherwise. </param>
+		/// <param name="kernelErrorCode"><see cref="Kernel.KernelErrorCode.None" /> if there was no error in Kernel library, error code otherwise. </param>
+		/// <param name="winsockErrorCode"><see cref="Winsock.WinsockErrorCode.None" /> if there was no error in Winsock library, error code otherwise. </param>
 		/// <param name="result">A valid <typeparamref name="T" /> object if operation was successful, default value of the <typeparamref name="T" /> type otherwise.</param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private TryResult(KernelErrorCode kernelErrorCode, WinsockErrorCode winsockErrorCode, T result = default(T))

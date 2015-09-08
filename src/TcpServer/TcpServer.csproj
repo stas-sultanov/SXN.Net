@@ -56,28 +56,28 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Kernel\ErrorCode.cs" />
+    <Compile Include="Kernel\KernelErrorCode.cs" />
     <Compile Include="RIOBufferPool.cs" />
     <Compile Include="TcpWorker.cs" />
-    <Compile Include="TcpContext.cs" />
+    <Compile Include="TcpConnection.cs" />
     <Compile Include="TcpServerSettings.cs" />
-    <Compile Include="Winsock\IOCPWorker.cs" />
-    <Compile Include="Winsock\RIO.cs" />
+    <Compile Include="IocpWorker.cs" />
+    <Compile Include="RIOHandle.cs" />
     <Compile Include="Winsock\RIORESULT.cs" />
     <Compile Include="Winsock\RIO_BUF.cs" />
     <Compile Include="Winsock\RIO_EXTENSION_FUNCTION_TABLE.cs" />
     <Compile Include="Winsock\IN_ADDR.cs" />
-    <Compile Include="Kernel\Interop.cs" />
+    <Compile Include="Kernel\KernelInterop.cs" />
     <Compile Include="Winsock\SOCKADDR.cs" />
     <Compile Include="Winsock\SOCKADDR_IN.cs" />
     <Compile Include="TcpServer.cs" />
     <Compile Include="TryResult.cs" />
     <Compile Include="Winsock\WSADATA.cs" />
-    <Compile Include="Winsock\ErrorCode.cs" />
+    <Compile Include="Winsock\WinsockErrorCode.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION.cs" />
     <Compile Include="Winsock\RIO_NOTIFICATION_COMPLETION_TYPE.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Winsock\Interop.cs" />
+    <Compile Include="Winsock\WinsockInterop.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

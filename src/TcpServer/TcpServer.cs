@@ -97,7 +97,7 @@ namespace SXN.Net
 		/// <returns></returns>
 		public TryResult<SOCKET> TryAccept()
 		{
-			return TryResult<SOCKET>.CreateFail(ErrorCode.None, Winsock.ErrorCode.None);
+			return TryResult<SOCKET>.CreateFail(KernelErrorCode.None, Winsock.WinsockErrorCode.None);
 
 			/*
 			SOCKADDR address;

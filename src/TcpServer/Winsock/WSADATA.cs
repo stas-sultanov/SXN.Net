@@ -12,8 +12,8 @@ namespace SXN.Net.Winsock
 	/// Contains information about the Windows Sockets implementation.
 	/// </summary>
 	/// <remarks>
-	/// The <see cref="Interop.WSAStartup" /> function initiates the use of the Windows Sockets DLL by a process.
-	/// The <see cref="Interop.WSAStartup" /> function returns a pointer to the <see cref="WSADATA" /> structure in the lpWSAData parameter.
+	/// The <see cref="WinsockInterop.WSAStartup" /> function initiates the use of the Windows Sockets DLL by a process.
+	/// The <see cref="WinsockInterop.WSAStartup" /> function returns a pointer to the <see cref="WSADATA" /> structure in the lpWSAData parameter.
 	/// The current version of the Windows Sockets specification returned in the <see cref="wHighVersion" /> member of the <see cref="WSADATA" /> structure is version 2.2 encoded with the major version number in the low-byte and the minor version number in the high-byte.
 	/// </remarks>
 	[StructLayout(LayoutKind.Sequential)]
@@ -32,7 +32,7 @@ namespace SXN.Net.Winsock
 		/// The high-order byte specifies the minor version number; the low-order byte specifies the major version number.
 		/// </summary>
 		/// <remarks>
-		/// This is the same value as the <see cref="wVersion" /> member when the version requested in the wVersionRequested parameter passed to the <see cref="Interop.WSAStartup" /> function is the highest version of the Windows Sockets specification that the Ws2_32.dll can support.
+		/// This is the same value as the <see cref="wVersion" /> member when the version requested in the wVersionRequested parameter passed to the <see cref="WinsockInterop.WSAStartup" /> function is the highest version of the Windows Sockets specification that the Ws2_32.dll can support.
 		/// </remarks>
 		internal WORD wHighVersion;
 

@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using SXN.Net.Kernel;
 using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
-	using WinsockInterop = Interop;
-	using WinsockErrorCode = ErrorCode;
-	using KernelInterop = Kernel.Interop;
-	using KernelErrorCode = Kernel.ErrorCode;
-
 	/// <summary>
 	/// Provides management of the memory buffers required for the Winsock Registered I/O extensions.
 	/// </summary>
@@ -105,7 +101,7 @@ namespace SXN.Net
 		/// <remarks>
 		/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
 		/// </remarks>
-		public static unsafe TryResult<RIOBufferPool> TryCreate(RIO rioHandle, UInt32 segmentLength, UInt32 segmentsCount)
+		public static unsafe TryResult<RIOBufferPool> TryCreate(RIOHandle rioHandle, UInt32 segmentLength, UInt32 segmentsCount)
 		{
 			// calculate size of the memory buffer to allocate
 			var bufferLength = segmentLength * segmentsCount;
@@ -139,7 +135,7 @@ namespace SXN.Net
 			{
 				bufferId = rioHandle.RegisterBuffer(buffer, bufferLength);
 
-				if (bufferId == RIO.RIO_INVALID_BUFFERID)
+				if (bufferId == WinsockInterop.RIO_INVALID_BUFFERID)
 				{
 					// get winsock error code
 					var winsockErrorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();
@@ -175,7 +171,7 @@ namespace SXN.Net
 		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
 		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
 		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
-		public unsafe Boolean TryRelease(RIO rioHandle, out UInt32 kernelErrorCode)
+		public unsafe Boolean TryRelease(RIOHandle rioHandle, out UInt32 kernelErrorCode)
 		{
 			// 0 deregister buffer with Registered I/O extension
 			{

@@ -18,7 +18,7 @@ namespace SXN.Net.Kernel
 	/// <summary>
 	/// Encapsulates functions of the 'kernel32.dll'.
 	/// </summary>
-	internal static class Interop
+	internal static class KernelInterop
 	{
 		#region Constant and Static Fields
 

@@ -2,7 +2,7 @@
 
 namespace SXN.Net.Kernel
 {
-	public enum ErrorCode : int
+	public enum KernelErrorCode : int
 	{
 		/// <summary>
 		/// No error.

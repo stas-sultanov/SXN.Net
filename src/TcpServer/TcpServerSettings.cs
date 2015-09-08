@@ -10,7 +10,7 @@ namespace SXN.Net
 	{
 		#region Constant and Static Fields
 
-		public const Int32 MaxConnections = Interop.SOMAXCONN;
+		public const Int32 MaxConnections = WinsockInterop.SOMAXCONN;
 
 		#endregion
 
