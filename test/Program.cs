@@ -1,4 +1,5 @@
 ﻿using System;
+using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
@@ -31,27 +32,30 @@ namespace SXN.Net
 
 			Console.WriteLine($"server is activated");
 
-			/*
 			// 2 try accept connection
 			var tryAccept = server.TryAccept();
 
 			if (!tryAccept.Success)
 			{
-				Console.WriteLine($"error accepting request :: {tryAccept.ErrorCode}");
+				Console.WriteLine($"error on accept. Kernel error code: {tryAccept.KernelErrorCode}. Winsock error code: {tryAccept.WinsockErrorCode}");
 			}
 
 			Console.WriteLine($"accept success");
 
+			Console.WriteLine("any key to exit");
+
+			Console.ReadLine();
+
 			// 3 try deactivate server
 			var tryDeactivate = server.Deactivate();
 
-			if (tryDeactivate != ErrorCode.None)
+			if (tryDeactivate != WinsockErrorCode.None)
 			{
-				Console.WriteLine($"error activating server:: {tryStartResultCode}");
+				Console.WriteLine($"error activating server:: {tryDeactivate}");
 			}
 
 			Console.WriteLine($"server is deactivated");
-			*/
+			
 
 			Console.ReadLine();
 		}

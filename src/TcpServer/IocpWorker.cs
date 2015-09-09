@@ -48,6 +48,8 @@ namespace SXN.Net
 
 			// initialize dictionary of the connections
 			Connections = new ConcurrentDictionary<UInt64, TcpConnection>();
+
+			thread = new Thread(Process);
 		}
 
 		#endregion
@@ -106,17 +108,12 @@ namespace SXN.Net
 
 		#region Private methods
 
-		private unsafe void Process(CancellationToken cancellationToken)
+		private unsafe void Process()
 		{
 			const Int32 maxResults = 1024;
 
 			RIORESULT* results = stackalloc RIORESULT[maxResults];
 
-			UIntPtr completionKey;
-
-			UInt32 bytesCount;
-
-			NativeOverlapped* overlapped;
 			/*
 			RIOPooledSegment cachedBadBuffer = worker.bufferPool.GetBuffer();
 			Buffer.BlockCopy(_badResponseBytes, 0, cachedBadBuffer.Buffer, cachedBadBuffer.Offset, _badResponseBytes.Length);
@@ -128,9 +125,9 @@ namespace SXN.Net
 			cachedBusyBuffer.RioBuffer.Length = (uint)_busyResponseBytes.Length;
 			worker.cachedBusy = cachedBusyBuffer.RioBuffer;
 */
-			RIORESULT result;
 
-			while (!cancellationToken.IsCancellationRequested)
+			//while (!cancellationToken.IsCancellationRequested)
+			while(true)
 			{
 				// try register method to use for notification behavior with the I/O completion queue
 				var notifyResult = (WinsockErrorCode) RioHandle.Notify(CompletionQueue);
@@ -140,7 +137,13 @@ namespace SXN.Net
 					// TODO: fail
 				}
 
-				// try to dequeue the I/O completion packet from the specified I/O completion port
+				// try dequeue the I/O completion packet from the specified I/O completion port
+				UInt32 bytesCount;
+
+				NativeOverlapped* overlapped;
+
+				UIntPtr completionKey;
+
 				var getQueuedCompletionStatusResult = KernelInterop.GetQueuedCompletionStatus(CompletionPort, out bytesCount, out completionKey, out overlapped, UInt32.MaxValue);
 
 				if (getQueuedCompletionStatusResult == false)
@@ -165,7 +168,7 @@ namespace SXN.Net
 					for (var resultIndex = 0; resultIndex < resultsCount; resultIndex++)
 					{
 						// get RIORESULT
-						result = results[resultIndex];
+						var result = results[resultIndex];
 
 						// TODO : wtf ???
 						// if (result.RequestContext >= 0)
@@ -174,7 +177,7 @@ namespace SXN.Net
 
 						if (Connections.TryGetValue(result.SocketContext.ToUInt64(), out connection))
 						{
-							connection.CompleteReceive(result.RequestContext, result.BytesTransferred);
+							//connection.CompleteReceive(result.RequestContext, result.BytesTransferred);
 						}
 					}
 
@@ -243,6 +246,10 @@ namespace SXN.Net
 
 			#region 1 try create completion queue
 
+			var e = new NativeOverlapped();
+
+			var x = processorIndex;
+
 			// compose completion method structure
 			var completionMethod = new RIO_NOTIFICATION_COMPLETION
 			{
@@ -254,15 +261,15 @@ namespace SXN.Net
 				{
 					// set completion port
 					IocpHandle = completionPort,
-					CompletionKey = (void*) processorIndex,
-					Overlapped = (void*) (-1)
+					CompletionKey = (void*) &x,
+					Overlapped = &e
 				}
 			};
 
-			// create completion queue
+			// try create completion queue
 			var completionQueue = rioHandle.CreateCompletionQueue(maxOutsandingCompletions, completionMethod);
 
-			if (completionQueue == WinsockInterop.RIO_CORRUPT_CQ)
+			if (completionQueue == WinsockInterop.RIO_INVALID_CQ)
 			{
 				// get error code
 				var winsockErrorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();

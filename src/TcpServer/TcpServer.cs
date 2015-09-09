@@ -1,5 +1,4 @@
 ﻿using System;
-using SXN.Net.Kernel;
 
 namespace SXN.Net
 {
@@ -95,30 +94,9 @@ namespace SXN.Net
 		/// Tries to accepts a pending connection request.
 		/// </summary>
 		/// <returns></returns>
-		public TryResult<SOCKET> TryAccept()
+		public TryResult<TcpConnection> TryAccept()
 		{
-			return TryResult<SOCKET>.CreateFail(KernelErrorCode.None, Winsock.WinsockErrorCode.None);
-
-			/*
-			SOCKADDR address;
-
-			var length = SOCKADDR.Size;
-
-			// Permits an incoming connection attempt on a socket.
-			var acceptedSocket = Interop.accept(serverSocket, out address, ref length);
-
-			// ReSharper disable once InvertIf
-			if (acceptedSocket == Interop.INVALID_SOCKET)
-			{
-				// get last error
-				var errorCode = (WinsockErrorCode) Interop.WSAGetLastError();
-
-				// return result
-				return WinsockTryResult<SOCKET>.CreateFail(errorCode);
-			}
-
-			return WinsockTryResult<SOCKET>.CreateSuccess(acceptedSocket);
-			*/
+			return server.TryAccept();
 		}
 
 		#endregion

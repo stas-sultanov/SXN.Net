@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 // ReSharper disable All
 
@@ -64,7 +65,7 @@ namespace SXN.Net.Winsock
 			/// <remarks>
 			/// This value is valid when the <see cref="RIO_NOTIFICATION_COMPLETION.Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
 			/// </remarks>
-			public void* Overlapped;
+			public NativeOverlapped* Overlapped;
 
 			#endregion
 		}

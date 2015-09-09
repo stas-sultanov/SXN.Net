@@ -207,7 +207,12 @@ namespace SXN.Net
 			}
 
 			// success
-			var server = new TcpWorker(serverSocket, rioHandle, null);
+			var server = new TcpWorker(serverSocket, rioHandle, workers);
+
+			foreach (var worker in workers)
+			{
+				worker.thread.Start();
+			}
 
 			return TryResult<TcpWorker>.CreateSuccess(server);
 
@@ -221,6 +226,29 @@ namespace SXN.Net
 
 			// return fail
 			return TryResult<TcpWorker>.CreateFail(errorCode);
+		}
+
+		public TryResult<TcpConnection> TryAccept()
+		{
+			SOCKADDR address;
+
+			var length = SOCKADDR.Size;
+
+			// permit an incoming connection attempt on a socket
+			var acceptedSocket = WinsockInterop.accept(serverSocket, out address, ref length);
+
+			// ReSharper disable once InvertIf
+			if (acceptedSocket == WinsockInterop.INVALID_SOCKET)
+			{
+				// get last error
+				var errorCode = (WinsockErrorCode) WinsockInterop.WSAGetLastError();
+
+				// return result
+				return TryResult<TcpConnection>.CreateFail(errorCode);
+			}
+
+			// try create connection
+			return workers[0].TryCreateConnection(acceptedSocket, acceptedSocket.ToUInt32());
 		}
 
 		#endregion
