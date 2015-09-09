@@ -12,7 +12,7 @@ namespace SXN.Net.Winsock
 	/// <summary>
 	/// Specifies the method for I/O completion to be used with a <see cref="RIOHandle.RIONotify" /> function for sending or receiving network data with the Winsock registered I/O extensions.
 	/// </summary>
-	[StructLayout(LayoutKind.Sequential)]
+	[StructLayout(LayoutKind.Explicit)]
 	internal unsafe struct RIO_NOTIFICATION_COMPLETION
 	{
 		#region Nested Types
@@ -77,7 +77,7 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// The type of completion to use with the RIONotify function when sending or receiving data.
 		/// </summary>
-		//[FieldOffset(0)]
+		[FieldOffset(0)]
 		internal RIO_NOTIFICATION_COMPLETION_TYPE Type;
 
 		/// <summary>
@@ -89,7 +89,7 @@ namespace SXN.Net.Winsock
 		/// <summary>
 		/// This value is valid when the <see cref="Type" /> member is set to <see cref="RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION" />.
 		/// </summary>
-		//[FieldOffset(4)]
+		[FieldOffset(sizeof(RIO_NOTIFICATION_COMPLETION_TYPE))]
 		internal IOCP Iocp;
 
 		#endregion
