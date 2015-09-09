@@ -18,7 +18,7 @@ namespace SXN.Net
 		#region Constant and Static Fields
 
 		// TODO: move to settings
-		private const UInt32 maxOutsandingCompletions = 100u;
+		private const UInt32 maxOutsandingCompletions = 16384;
 
 		#endregion
 
@@ -248,8 +248,6 @@ namespace SXN.Net
 
 			var e = new NativeOverlapped();
 
-			var x = processorIndex;
-
 			// compose completion method structure
 			var completionMethod = new RIO_NOTIFICATION_COMPLETION
 			{
@@ -261,8 +259,8 @@ namespace SXN.Net
 				{
 					// set completion port
 					IocpHandle = completionPort,
-					CompletionKey = (void*) &x,
-					Overlapped = &e
+					CompletionKey = (UInt64) processorIndex,
+					Overlapped = (NativeOverlapped *) -1
 				}
 			};
 

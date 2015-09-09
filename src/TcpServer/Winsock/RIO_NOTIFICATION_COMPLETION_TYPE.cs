@@ -5,7 +5,7 @@ namespace SXN.Net.Winsock
 	/// <summary>
 	/// Specifies the type of completion queue notifications to use with the RIONotify function when sending or receiving data.
 	/// </summary>
-	internal enum RIO_NOTIFICATION_COMPLETION_TYPE
+	internal enum RIO_NOTIFICATION_COMPLETION_TYPE : int
 	{
 		/// <summary>
 		/// An event handle is used to signal completion queue notifications.
