@@ -84,7 +84,9 @@ namespace SXN.Net.Winsock
 		/// </summary>
 		private const String WS232DLL = "WS2_32.dll";
 
-		public static readonly UIntPtr INVALID_SOCKET = new UIntPtr(unchecked ((UInt64) ~0));
+
+
+		public static readonly UIntPtr INVALID_SOCKET = UIntPtr.Subtract(UIntPtr.Zero, 1);  // new UIntPtr(unchecked ((UInt64) ~0));
 
 		#endregion
 

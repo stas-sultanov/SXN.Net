@@ -140,9 +140,9 @@ namespace SXN.Net
 				// try dequeue the I/O completion packet from the specified I/O completion port
 				UInt32 bytesCount;
 
-				NativeOverlapped* overlapped;
-
 				UIntPtr completionKey;
+
+				NativeOverlapped* overlapped;
 
 				var getQueuedCompletionStatusResult = KernelInterop.GetQueuedCompletionStatus(CompletionPort, out bytesCount, out completionKey, out overlapped, UInt32.MaxValue);
 
@@ -246,22 +246,23 @@ namespace SXN.Net
 
 			#region 1 try create completion queue
 
-			var e = new NativeOverlapped();
-
 			// compose completion method structure
 			var completionMethod = new RIO_NOTIFICATION_COMPLETION
 			{
 				// set type to IOCP
 				Type = RIO_NOTIFICATION_COMPLETION_TYPE.RIO_IOCP_COMPLETION,
-
-				// set IOCP parameters
-				Iocp = new RIO_NOTIFICATION_COMPLETION.IOCP
+				union =
 				{
-					// set completion port
-					IocpHandle = completionPort,
-					CompletionKey = (UInt64) processorIndex,
-					Overlapped = (NativeOverlapped *) -1
-				}
+					// set IOCP parameters
+					Iocp = new RIO_NOTIFICATION_COMPLETION.UNION.IOCP
+					{
+						// set completion port
+						IocpHandle = completionPort,
+						// set completion key
+						CompletionKey = (UInt64) processorIndex,
+						Overlapped = (NativeOverlapped*) -1
+					}
+				},
 			};
 
 			// try create completion queue
