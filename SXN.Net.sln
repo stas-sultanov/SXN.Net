@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpServer.Tests", "Test\Tcp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpServer", "src\TcpServer\TcpServer.csproj", "{09D61337-624F-4D21-AC32-232E1C790E1C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TcpServerCli", "src\TcpServerCli\TcpServerCli.vcxproj", "{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,16 @@ Global
 		{09D61337-624F-4D21-AC32-232E1C790E1C}.Release|x64.Build.0 = Release|x64
 		{09D61337-624F-4D21-AC32-232E1C790E1C}.Release|x86.ActiveCfg = Release|x86
 		{09D61337-624F-4D21-AC32-232E1C790E1C}.Release|x86.Build.0 = Release|x86
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Debug|x64.ActiveCfg = Debug|x64
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Debug|x64.Build.0 = Debug|x64
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Debug|x86.ActiveCfg = Debug|Win32
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Debug|x86.Build.0 = Debug|Win32
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Release|Any CPU.ActiveCfg = Release|Win32
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Release|x64.ActiveCfg = Release|x64
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Release|x64.Build.0 = Release|x64
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Release|x86.ActiveCfg = Release|Win32
+		{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

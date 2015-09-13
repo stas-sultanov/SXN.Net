@@ -1,5 +1,5 @@
 ﻿using System;
-using SXN.Net.Winsock;
+//using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
@@ -9,10 +9,11 @@ namespace SXN.Net
 
 		private static void Main()
 		{
+			
 			// 0 initialize server settings
-			var serverSettings = new TcpServerSettings
+			var serverSettings = new TcpWorkerSettings
 			{
-				AcceptBacklogLength = TcpServerSettings.MaxConnections,
+				AcceptBacklogLength = 100,
 				Port = 11223,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false

@@ -111,9 +111,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\src\TcpServer\TcpServer.csproj">
-      <Project>{09d61337-624f-4d21-ac32-232e1c790e1c}</Project>
-      <Name>TcpServer</Name>
+    <ProjectReference Include="..\src\TcpServerCli\TcpServerCli.vcxproj">
+      <Project>{30aef4fc-3713-44a8-a807-96e8a32e3b0b}</Project>
+      <Name>TcpServerCli</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
