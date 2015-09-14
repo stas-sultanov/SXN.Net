@@ -9,6 +9,7 @@ namespace SXN
 {
 	namespace Net
 	{
+		[Serializable]
 		public ref class TcpServerException sealed: Exception
 		{
 			internal:

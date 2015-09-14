@@ -20,19 +20,25 @@ namespace SXN.Net
 			};
 
 			// 1 initialize server
-			var tryInitalizeServerResult = TcpWorker.TryInitialize(serverSettings);
+			TcpWorker server;
 
-			if (tryInitalizeServerResult.Success == false)
+			try
 			{
-				Console.WriteLine($"Error activating server. Kernel error code: {tryInitalizeServerResult.KernelErrorCode}. Winsock error code: {tryInitalizeServerResult.WinsockErrorCode}.");
+				server = new TcpWorker(serverSettings);
+			}
+			catch (TcpServerException e)
+			{
+				//Console.WriteLine($"Error activating server. Kernel error code: {tryInitalizeServerResult.KernelErrorCode}. Winsock error code: {tryInitalizeServerResult.WinsockErrorCode}.");
+
+				Console.WriteLine($"Error activating server.");
 
 				return;
 			}
 
-			var server = tryInitalizeServerResult.Result;
 
 			Console.WriteLine($"server is activated");
 
+			/*
 			// 2 try accept connection
 			var tryAccept = server.TryAccept();
 
@@ -42,21 +48,11 @@ namespace SXN.Net
 			}
 
 			Console.WriteLine($"accept success");
+			*/
 
 			Console.WriteLine("any key to exit");
 
 			Console.ReadLine();
-
-			// 3 try deactivate server
-			var tryDeactivate = server.Deactivate();
-
-			if (tryDeactivate != WinsockErrorCode.None)
-			{
-				Console.WriteLine($"error activating server:: {tryDeactivate}");
-			}
-
-			Console.WriteLine($"server is deactivated");
-			
 
 			Console.ReadLine();
 		}

@@ -2,10 +2,8 @@
 
 #include "stdafx.h"
 
-#include "TcpServer.h"
+#include "WinsockErrorCode.h"
 
 #include "TcpWorkerSettings.h"
 
-#include "WinsockErrorCode.h"
-
-#include "WinsockHandle.h"
+#include "TcpWorker.h"

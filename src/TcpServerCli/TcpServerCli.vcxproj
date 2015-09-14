@@ -136,12 +136,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
-    <ClInclude Include="BufferPool.h" />
+    <ClInclude Include="RioBufferPool.h" />
     <ClInclude Include="Stdafx.h" />
     <ClInclude Include="TcpServer.h" />
     <ClInclude Include="TcpServerException.h" />

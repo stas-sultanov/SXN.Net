@@ -11,31 +11,31 @@ namespace SXN
 	namespace Net
 	{
 		/// <summary>
-		/// Provides management of the memory segments within the Winsock Registered I/O extensions.
+		/// Provides management of the memory buffers within the Winsock Registered I/O extensions.
 		/// </summary>
-		private ref class BufferPool sealed
+		private ref class RioBufferPool sealed
 		{
 			private:
 
 			#pragma region Fields
 
 			/// <summary>
-			/// A pointer to the object that provides work with Winsock.
+			/// A pointer to the object that provides work with Winsock extensions.
 			/// </summary>
-			initonly WinsockHandle* winsockHandle;
+			initonly WinsockHandle^ winsockHandle;
 
 			/// <summary>
-			/// A pointer to the memory buffer.
+			/// A pointer to the aligned memory block.
 			/// </summary>
-			initonly LPVOID buffer;
+			initonly LPVOID memoryBlock;
 
 			/// <summary>
-			/// The length of the <see cref="buffer" />.
+			/// The length of the <see cref="memoryBlock" />.
 			/// </summary>
-			initonly UInt32 bufferLength;
+			initonly UInt32 memoryBlockLength;
 
 			/// <summary>
-			/// The identifier of the <see cref="buffer" /> within the Winsock Registered I/O extensions.
+			/// The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.
 			/// </summary>
 			initonly RIO_BUFFERID rioBufferId;
 
@@ -47,34 +47,34 @@ namespace SXN
 			/// <summary>
 			/// The collection of the items of the <see cref="RIO_BUF" /> type.
 			/// </summary>
-			initonly RIO_BUF* segments;
+			initonly RIO_BUF* buffers;
 
 			#pragma endregion
 
 			internal:
 
-			#pragma region Constructors
+			#pragma region Constructor & Destructor
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="BufferPool" /> class.
 			/// </summary>
-			/// <param name="rioHandle">A pointer to the object that provides work with Winsock.</param>
-			/// <param name="segmentLength">The length of the single segment.</param>
-			/// <param name="segmentsCount">The count of the segments to manage.</param>
-			/// <exception cref="TcpServerException">If any error occurs.</exception>
+			/// <param name="rioHandle">A pointer to the object that provides work with Winsock extensions.</param>
+			/// <param name="bufferLength">The length of the single buffer to manage.</param>
+			/// <param name="segmentsCount">The count of the buffers to manage.</param>
 			/// <remarks>
 			/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
 			/// </remarks>
-			BufferPool(WinsockHandle* winsockHandle, unsigned int segmentLength, unsigned int segmentsCount)
+			/// <exception cref="TcpServerException">If error occurs.</exception>
+			RioBufferPool(WinsockHandle^ winsockHandle, unsigned int bufferLength, unsigned int buffersCount)
 			{
 				// set winsock handle
 				this->winsockHandle = winsockHandle;
 
 				// calculate and set the length of the memory buffer
-				bufferLength = segmentLength * segmentsCount;
+				memoryBlockLength = bufferLength * buffersCount;
 
-				// reserve and commit memory block
-				LPVOID buffer = ::VirtualAlloc(NULL, bufferLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				// reserve and commit aligned memory block
+				LPVOID buffer = ::VirtualAlloc(NULL, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// check if operation has failed
 				if (buffer == NULL)
@@ -87,7 +87,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				rioBufferId = winsockHandle->RIORegisterBuffer((PCHAR) buffer, bufferLength);
+				rioBufferId = winsockHandle->RIORegisterBuffer((PCHAR) buffer, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
@@ -106,12 +106,12 @@ namespace SXN
 				//availableSegments = new ConcurrentQueue<Int32>();
 
 				// initialize collection of the buffer segments
-				segments = new RIO_BUF[segmentsCount];
+				buffers = new RIO_BUF[buffersCount];
 
 				int offset = 0u;
 
 				// initialize items of the collection
-				for (int segmentIndex = 0; segmentIndex < segmentsCount; segmentIndex++)
+				for (int segmentIndex = 0; segmentIndex < buffersCount; segmentIndex++)
 				{
 					// initialize item
 					RIO_BUF rioBuf;
@@ -120,19 +120,34 @@ namespace SXN
 
 					rioBuf.Offset = offset;
 
-					rioBuf.Length = segmentLength;
+					rioBuf.Length = bufferLength;
 
-					segments[segmentIndex] = rioBuf;
+					buffers[segmentIndex] = rioBuf;
 
 					// add id of the segment into the collection of the available segments
 					//availableSegments.Enqueue(segmentIndex);
 
 					// increment offset
-					offset += segmentLength;
+					offset += bufferLength;
 				}
 			}
 
+			/// <summary>
+			/// Releases all associated resources.
+			/// </summary>
+			~RioBufferPool()
+			{
+				// delete buffers array
+				delete buffers;
 
+				// deregister buffer within the Registered I/O extensions
+				// ignore result
+				winsockHandle->RIODeregisterBuffer(rioBufferId);
+
+				// free allocated memory
+				// ignore result
+				::VirtualFree(memoryBlock, 0, MEM_RELEASE);
+			}
 
 			#pragma endregion
 
@@ -144,37 +159,6 @@ namespace SXN
 			}
 
 			/*
-			/// <summary>
-			/// Tries to release all allocated resources.
-			/// </summary>
-			/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
-			/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
-			/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
-			public unsafe Boolean TryRelease(RIOHandle rioHandle, out UInt32 kernelErrorCode)
-			{
-				// 0 deregister buffer with Registered I/O extension
-				{
-					rioHandle.DeregisterBuffer(bufferId);
-				}
-
-				// 1 try free memory
-				{
-					var freeResult = KernelInterop.VirtualFree((void*)buffer, 0, KernelInterop.MEM_RELEASE);
-
-					if (freeResult == false)
-					{
-						kernelErrorCode = KernelInterop.GetLastError();
-
-						return false;
-					}
-				}
-
-				// 2 success
-				kernelErrorCode = 0;
-
-				return true;
-			}
-
 			public Boolean TryGetBufferSegmentId(out Int32 segmentId) = > availableSegments.TryDequeue(out segmentId);
 			*/
 

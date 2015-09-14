@@ -7,3 +7,5 @@
 #include <WinSock2.h>
 
 #include <MSWSock.h>
+
+#pragma comment(lib, "Ws2_32.lib")

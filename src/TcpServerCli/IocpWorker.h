@@ -3,7 +3,7 @@
 #include "Stdafx.h"
 #include "WinsockHandle.h"
 #include "TcpServerException.h"
-#include "BufferPool.h"
+#include "RioBufferPool.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -19,9 +19,9 @@ namespace SXN
 			#pragma region Fields
 
 			/// <summary>
-			/// A pointer to the object that provides work with Winsock.
+			/// A pointer to the object that provides work with Winsock extensions.
 			/// </summary>
-			initonly WinsockHandle* winsockHandle;
+			initonly WinsockHandle^ winsockHandle;
 
 			/// <summary>
 			/// The unique identifier of the worker within the <see cref = "TcpWorker"/>.
@@ -36,7 +36,7 @@ namespace SXN
 			/// <summary>
 			/// The completion queue.
 			/// </summary>
-			RIO_CQ completionQueue;
+			initonly RIO_CQ completionQueue;
 
 			/// <summary>
 			/// The dictionary of the connections.
@@ -46,18 +46,18 @@ namespace SXN
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			initonly BufferPool^ bufferPool;
+			initonly RioBufferPool^ bufferPool;
 
 			#pragma endregion
 
 			internal:
 
-			#pragma region Constructors
+			#pragma region Constructor & Destructor
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="IocpWorker" /> class.
 			/// </summary>
-			/// <param name="rioHandle">A pointer to the object that provides work with Winsock.</param>
+			/// <param name="rioHandle">A pointer to the object that provides work with Winsock extensions.</param>
 			/// <param name="processorIndex">The index of the processor.</param>
 			/// <param name="segmentLength">The length of the segment.</param>
 			/// <param name="segmentsCount">The count of the segments.</param>
@@ -66,7 +66,7 @@ namespace SXN
 			/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
 			/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
 			/// </returns>
-			IocpWorker(WinsockHandle *winsockHandle, Int32 processorIndex, UInt32 segmentLength, UInt32 segmentsCount)
+			IocpWorker(WinsockHandle ^winsockHandle, Int32 processorIndex, UInt32 segmentLength, UInt32 segmentsCount)
 			{
 				// set winsock handle
 				this->winsockHandle = winsockHandle;
@@ -117,7 +117,22 @@ namespace SXN
 				#pragma endregion
 
 				// create buffer pool
-				bufferPool = gcnew BufferPool(winsockHandle, segmentLength, segmentsCount);
+				bufferPool = gcnew RioBufferPool(winsockHandle, segmentLength, segmentsCount);
+			}
+
+			/// <summary>
+			/// Releases all associated resources.
+			/// </summary>
+			~IocpWorker()
+			{
+				// release buffer pool
+				delete bufferPool;
+
+				// close completion queue
+				winsockHandle->RIOCloseCompletionQueue(completionQueue);
+
+				// clo
+				//::Clos
 			}
 
 			#pragma endregion

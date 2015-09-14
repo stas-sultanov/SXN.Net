@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Stdafx.h"
+
 using namespace System;
 
 namespace SXN
@@ -7,17 +9,17 @@ namespace SXN
 	namespace Net
 	{
 		/// <summary>
-		/// Specifies the configuration settings of the <see cref="TcpWorker" /> class.
+		/// Specifies the configuration settings of the TCP worker.
 		/// </summary>
-		public ref struct TcpWorkerSettings
+		public value struct TcpWorkerSettings
 		{
+			public :
+
 			#pragma region Constant and Static Fields
 
-			//public const Int32 MaxConnections = WinsockInterop.SOMAXCONN;
+			const Int32 MaxConnections = SOMAXCONN;
 
 			#pragma endregion
-
-			public:
 
 			#pragma region Properties
 
