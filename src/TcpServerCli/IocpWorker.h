@@ -4,6 +4,7 @@
 #include "WinsockHandle.h"
 #include "TcpServerException.h"
 #include "RioBufferPool.h"
+#include "TcpConnection.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -101,7 +102,7 @@ namespace SXN
 				// set IOCP overlapped to invalid
 				completionSettings.Iocp.Overlapped = (PVOID) -1;
 
-				// create completion queue
+				// create RIO completion queue
 				completionQueue = winsockHandle->RIOCreateCompletionQueue(100, &completionSettings);
 
 				// check if operation has failed
@@ -131,11 +132,43 @@ namespace SXN
 				// close completion queue
 				winsockHandle->RIOCloseCompletionQueue(completionQueue);
 
-				// clo
-				//::Clos
+				// close completion port
+				// ignore result
+				::CloseHandle(completionPort);
 			}
 
 			#pragma endregion
+
+#pragma region Methods
+			
+			TcpConnection^ TryCreateConnection(SOCKET socket, UInt64 id)
+			{
+				ULONG maxOutstandingReceive = 10u;
+
+				ULONG maxOutstandingSend = 10u;
+
+				// create request queue
+				RIO_RQ requestQueue = winsockHandle->RIOCreateRequestQueue(socket, maxOutstandingReceive, (ULONG) 1, maxOutstandingSend, (ULONG) 1, completionQueue, completionQueue, &id);
+
+				if (requestQueue == RIO_INVALID_RQ)
+				{
+					// get error code
+					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+					// throw exception
+					throw gcnew TcpServerException(winsockErrorCode);
+				}
+
+				TcpConnection^ connection = gcnew TcpConnection(socket, requestQueue);
+
+				// add connection into the collection of the connections
+				//Connections.TryAdd(id, connection);
+
+				return connection;
+			}
+
+#pragma endregion
+
 		};
 	}
 }
