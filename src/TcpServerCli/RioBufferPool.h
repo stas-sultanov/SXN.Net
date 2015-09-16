@@ -87,7 +87,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				rioBufferId = winsockHandle->RIORegisterBuffer((PCHAR) buffer, memoryBlockLength);
+				rioBufferId = winsockHandle->RIORegisterBuffer((PCHAR)buffer, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)

@@ -13,7 +13,7 @@ namespace SXN
 		/// </summary>
 		public value struct TcpWorkerSettings
 		{
-			public :
+			public:
 
 			#pragma region Constant and Static Fields
 

@@ -4,7 +4,8 @@
 
 using namespace System;
 
-namespace TcpServer {
+namespace TcpServer
+{
 
 	public ref class Class333
 	{

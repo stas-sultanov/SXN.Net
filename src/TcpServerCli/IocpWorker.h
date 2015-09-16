@@ -97,10 +97,10 @@ namespace SXN
 				completionSettings.Iocp.IocpHandle = completionPort;
 
 				// set IOCP completion key to id of current worker
-				completionSettings.Iocp.CompletionKey = (PVOID) processorIndex;
+				completionSettings.Iocp.CompletionKey = (PVOID)processorIndex;
 
 				// set IOCP overlapped to invalid
-				completionSettings.Iocp.Overlapped = (PVOID) -1;
+				completionSettings.Iocp.Overlapped = (PVOID)-1;
 
 				// create RIO completion queue
 				completionQueue = winsockHandle->RIOCreateCompletionQueue(100, &completionSettings);
@@ -139,8 +139,8 @@ namespace SXN
 
 			#pragma endregion
 
-#pragma region Methods
-			
+			#pragma region Methods
+
 			TcpConnection^ TryCreateConnection(SOCKET socket, UInt64 id)
 			{
 				ULONG maxOutstandingReceive = 10u;
@@ -148,7 +148,7 @@ namespace SXN
 				ULONG maxOutstandingSend = 10u;
 
 				// create request queue
-				RIO_RQ requestQueue = winsockHandle->RIOCreateRequestQueue(socket, maxOutstandingReceive, (ULONG) 1, maxOutstandingSend, (ULONG) 1, completionQueue, completionQueue, &id);
+				RIO_RQ requestQueue = winsockHandle->RIOCreateRequestQueue(socket, maxOutstandingReceive, (ULONG)1, maxOutstandingSend, (ULONG)1, completionQueue, completionQueue, &id);
 
 				if (requestQueue == RIO_INVALID_RQ)
 				{
@@ -167,7 +167,7 @@ namespace SXN
 				return connection;
 			}
 
-#pragma endregion
+			#pragma endregion
 
 		};
 	}

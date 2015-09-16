@@ -8,19 +8,19 @@ namespace SXN
 	{
 		public ref class TcpConnection
 		{
-		private:
+			private:
 
-#pragma region Fields
+			#pragma region Fields
 
 			initonly SOCKET socket;
 
 			initonly RIO_RQ requestQueue;
 
-#pragma endregion
+			#pragma endregion
 
-		internal:
+			internal:
 
-#pragma region Constructor
+			#pragma region Constructor
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
@@ -35,7 +35,7 @@ namespace SXN
 				//var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
 			}
 
-#pragma endregion
+			#pragma endregion
 		};
 	}
 }

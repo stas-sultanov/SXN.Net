@@ -10,7 +10,7 @@ namespace SXN
 	namespace Net
 	{
 		[Serializable]
-		public ref class TcpServerException sealed: Exception
+		public ref class TcpServerException sealed : Exception
 		{
 			internal:
 
@@ -20,7 +20,7 @@ namespace SXN
 			}
 
 			TcpServerException(int kernelErrorCode)
-				: TcpServerException((WinsockErrorCode) 0, kernelErrorCode)
+				: TcpServerException((WinsockErrorCode)0, kernelErrorCode)
 			{
 			}
 

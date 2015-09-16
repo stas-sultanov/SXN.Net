@@ -7,9 +7,9 @@ namespace SXN
 	namespace Net
 	{
 		/// <summary>
-		/// Specifies the error code occured within the winsock library.
+		/// Specifies the error code occurred within the winsock library.
 		/// </summary>
-		public enum class WinsockErrorCode: int
+		public enum class WinsockErrorCode : int
 		{
 			/// <summary>
 			/// No error.

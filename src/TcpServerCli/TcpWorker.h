@@ -34,7 +34,7 @@ namespace SXN
 
 			#pragma endregion
 
-			public :
+			public:
 
 			#pragma region Methods
 
