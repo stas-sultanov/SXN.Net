@@ -140,7 +140,8 @@
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
     <ClInclude Include="RioBufferPool.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Stdafx.h" />
+    <ClInclude Include="TcpConnection.h" />
     <ClInclude Include="TcpServer.h" />
     <ClInclude Include="TcpServerException.h" />
     <ClInclude Include="TcpWorker.h" />
