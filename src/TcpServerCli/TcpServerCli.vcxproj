@@ -140,7 +140,7 @@
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
     <ClInclude Include="RioBufferPool.h" />
-    <ClInclude Include="Stdafx.h" />
+    <ClInclude Include="stdafx.h" />
     <ClInclude Include="TcpServer.h" />
     <ClInclude Include="TcpServerException.h" />
     <ClInclude Include="TcpWorker.h" />
@@ -150,13 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
-    <ClCompile Include="Stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="TcpServer.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
