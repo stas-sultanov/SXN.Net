@@ -12,6 +12,7 @@ using namespace System::Security::Permissions;
 
 // The configuration of the assembly.
 
+/*
 #if DEBUG
 
 [assembly:AssemblyConfiguration("Debug")]
@@ -21,6 +22,7 @@ using namespace System::Security::Permissions;
 [assembly:AssemblyConfiguration("Retail")]
 
 #endif
+*/
 
 // The copyright of the assembly.
 

@@ -92,94 +92,90 @@ namespace SXN
 					workers[processorIndex] = worker;
 				}
 
-				/*
+				
 				// try configure server socket and start listen
 				if (!TryConfigureBindAndStartListen(serverSocket, settings))
 				{
-					goto FAIL;
-				}*/
+					// get error code
+					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
+					// throw exception
+					throw gcnew TcpServerException(winsockErrorCode);
+				}
 			}
 
-			/*
-					private static Boolean TryConfigureBindAndStartListen(SOCKET serverSocket, TcpServerSettings settings)
-		{
-			// try disable use of the Nagle algorithm if requested
-			if (settings.UseNagleAlgorithm == false)
-			{
-				var optionValue = -1;
 
-				unsafe
+			private:
+
+			static Boolean TryConfigureBindAndStartListen(SOCKET serverSocket, TcpWorkerSettings settings)
+			{
+				// try disable use of the Nagle algorithm if requested
+				if (settings.UseNagleAlgorithm == false)
 				{
-					var tryDisableNagle = WinsockInterop.setsockopt(serverSocket, WinsockInterop.IPPROTO_TCP, WinsockInterop.TCP_NODELAY, (Byte*) &optionValue, sizeof(Int32));
+					DWORD optionValue = -1;
+
+					int disableNagleResult = ::setsockopt(serverSocket, IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
 
 					// check if attempt has succeed
-					if (tryDisableNagle == WinsockInterop.SOCKET_ERROR)
+					if (disableNagleResult == SOCKET_ERROR)
 					{
 						return false;
 					}
 				}
-			}
 
-			// try enable faster operations on the loopback if requested
-			if (settings.UseFastLoopback)
-			{
-				unsafe
+				// try enable faster operations on the loopback if requested
+				if (settings.UseFastLoopback)
 				{
 					UInt32 optionValue = 1;
 
-					UInt32 dwBytes;
+					DWORD dwBytes;
 
-					var tryEnableFastLoopbackResult = WinsockInterop.WSAIoctl(serverSocket, WinsockInterop.SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), null, 0, out dwBytes, IntPtr.Zero, IntPtr.Zero);
+					int enableFastLoopbackResult = ::WSAIoctl(serverSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
 
 					// check if attempt has succeed
-					if (tryEnableFastLoopbackResult == WinsockInterop.SOCKET_ERROR)
+					if (enableFastLoopbackResult == SOCKET_ERROR)
 					{
 						return false;
 					}
 				}
-			}
 
-			// try bind
-			{
-				// compose address
-				var address = new IN_ADDR
+				// try bind
 				{
-					s_addr = 0
-				};
+					// compose address
+					IN_ADDR address;
+					
+					address.S_un.S_addr = 0;
 
-				// compose socket address
-				var socketAddress = new SOCKADDR_IN
-				{
-					sin_family = WinsockInterop.AF_INET,
-					sin_port = WinsockInterop.htons(settings.Port),
-					sin_addr = address
-				};
+					// compose socket address
+					SOCKADDR_IN socketAddress;
 
-				// try associate address with socket
-				var tryBindResult = WinsockInterop.bind(serverSocket, ref socketAddress, SOCKADDR_IN.Size);
+					socketAddress.sin_family = AF_INET;
+					socketAddress.sin_port = ::htons(settings.Port);
+					socketAddress.sin_addr = address;
 
-				if (tryBindResult == WinsockInterop.SOCKET_ERROR)
-				{
-					return false;
+					// try associate address with socket
+					int bindResult = ::bind(serverSocket, (sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
+
+					if (bindResult == SOCKET_ERROR)
+					{
+						return false;
+					}
 				}
-			}
 
-			// try start listen
-			{
-				var tryStartListen = WinsockInterop.listen(serverSocket, settings.AcceptBacklogLength);
-
-				if (tryStartListen == WinsockInterop.SOCKET_ERROR)
+				// try start listen
 				{
-					return false;
+					int startListen = ::listen(serverSocket, 200);
+
+					if (startListen == SOCKET_ERROR)
+					{
+						return false;
+					}
 				}
+
+				return true;
 			}
 
-			return true;
-		}
-			*/
-
-			#pragma endregion
+				#pragma endregion
 		};
 	}
 }
