@@ -13,6 +13,16 @@ namespace SXN
 		/// </summary>
 		public value struct TcpWorkerSettings
 		{
+			private:
+
+			#pragma region Fields
+
+			static initonly Int32 processorsCount;
+
+			Int32 useProcessorsCount;
+
+			#pragma endregion
+
 			public:
 
 			#pragma region Constant and Static Fields
@@ -21,7 +31,29 @@ namespace SXN
 
 			#pragma endregion
 
+			static TcpWorkerSettings()
+			{
+				// get number of processors
+				SYSTEM_INFO sysinfo;
+
+				::GetSystemInfo(&sysinfo);
+
+				processorsCount = sysinfo.dwNumberOfProcessors;
+			}
+
+
 			#pragma region Properties
+
+			/// <summary>
+			/// The number of processors on the current machine.
+			/// </summary>
+			static property Int32 ProcessorsCount
+			{
+				Int32 get()
+				{
+					return processorsCount;
+				}
+			}
 
 			/// <summary>
 			/// Specifies the port on which to listen for incoming connection attempts.
@@ -29,13 +61,29 @@ namespace SXN
 			property UInt16 Port;
 
 			/// <summary>
-			/// Specifies the maximum length of the queue of pending connections.
+			/// The length in bytes of the memory buffer for receive operations.
 			/// </summary>
 			/// <remarks>
-			/// If set to <see cref="MaxConnections" />, the underlying service provider responsible will set the backlog to a maximum reasonable value.
-			/// There is no standard provision to obtain the actual backlog value.
+			/// Must be less than maximum number of ports.
+			/// Value will be ceiled to the number of used processors.
 			/// </remarks>
-			property Int32 AcceptBacklogLength;
+			property UInt16 ConnectinosBacklogLength;
+
+			/// <summary>
+			/// The length in bytes of the memory buffer for receive operations.
+			/// </summary>
+			/// <remarks>
+			/// Value will be ceiled.
+			/// </remarks>
+			property Int32 ReciveBufferLength;
+
+			/// <summary>
+			/// The length in bytes of the memory buffer for receive operations.
+			/// </summary>
+			/// <remarks>
+			/// Value will be ceiled.
+			/// </remarks>
+			property Int32 SendBufferLength;
 
 			/// <summary>
 			/// Determines whether the Nagle algorithm is used by the server.
@@ -54,7 +102,56 @@ namespace SXN
 			/// </remarks>
 			property Boolean UseFastLoopback;
 
+			/// <summary>
+			/// The number of processors to use.
+			/// </summary>
+			/// <remarks>
+			/// If value is not specified or is zero or is greater than actual number of processors, then all available processors will be used.
+			/// </remarks>
+			property Int32 UseProcessorsCount
+			{
+				Int32 get()
+				{
+					return useProcessorsCount;
+				}
+
+				void set(Int32 value)
+				{
+					if ((value < 1) || (value > processorsCount))
+					{
+						throw gcnew ArgumentOutOfRangeException("value");
+					}
+				}
+			}
+
 			#pragma endregion
+
+
+			internal:
+
+			/**
+			TcpWorkerSettings^ Validate()
+			{
+				// get number of procssors
+				SYSTEM_INFO sysinfo;
+
+				:: GetSystemInfo(&sysinfo);
+
+				UInt16 numCPU = sysinfo.dwNumberOfProcessors;
+
+				TcpWorkerSettings^ result = gcnew TcpWorkerSettings();
+
+				if (NumberOfProcessors.HasValue)
+				{
+					if ((NumberOfProcessors.Value == 0) || (NumberOfProcessors.Value > numCPU))
+					{
+						throw gcnew ArgumentOutOfRangeException();
+					}
+				}
+
+				result->NumberOfProcessors = NumberOfProcessors.HasValue ? NumberOfProcessors.Value == 0  : numCPU;
+			}
+			/**/
 		};
 	}
 }
