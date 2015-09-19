@@ -22,7 +22,7 @@ namespace SXN
 			/// <summary>
 			/// A pointer to the object that provides work with Winsock extensions.
 			/// </summary>
-			initonly WinsockHandle^ winsockHandle;
+			initonly WinSocket^ winsockHandle;
 
 			/// <summary>
 			/// A pointer to the aligned memory block.
@@ -65,7 +65,7 @@ namespace SXN
 			/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
 			/// </remarks>
 			/// <exception cref="TcpServerException">If error occurs.</exception>
-			RioBufferPool(WinsockHandle^ winsockHandle, unsigned int bufferLength, unsigned int buffersCount)
+			RioBufferPool(WinSocket^ winsockHandle, unsigned int bufferLength, unsigned int buffersCount)
 			{
 				// set winsock handle
 				this->winsockHandle = winsockHandle;

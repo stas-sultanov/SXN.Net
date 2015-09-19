@@ -26,11 +26,11 @@ using namespace System::Security::Permissions;
 
 // The copyright of the assembly.
 
-[assembly:AssemblyCopyright("Copyright © 2015 Stas Sultanov")]
+[assembly:AssemblyCopyright("Copyright © 2015 Stas Sultanov")];
 
 // The culture of the assembly.
 
-[assembly:AssemblyCulture("")]
+[assembly:AssemblyCulture("")];
 
 // The description of the assembly.
 
@@ -38,21 +38,21 @@ using namespace System::Security::Permissions;
 
 // The product name information.
 
-[assembly:AssemblyProduct("Tcp Net")]
+[assembly:AssemblyProduct("Tcp Net")];
 
 // The title of the assembly.
 
-[assembly:AssemblyTitle("SXN.Net")]
+[assembly:AssemblyTitle("SXN.Net")];
 
 // The trademark of the assembly.
 
-[assembly:AssemblyTrademark("")]
+[assembly:AssemblyTrademark("")];
 
 // The version number of the assembly.
 // Is managed by the build process.
 
-[assembly:AssemblyVersion("255.255.255.255")]
+[assembly:AssemblyVersion("255.255.255.255")];
 
 // Indicate that the assembly is not visible to COM
 
-[assembly:ComVisible(false)]
+[assembly:ComVisible(false)];

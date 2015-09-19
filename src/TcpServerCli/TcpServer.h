@@ -2,13 +2,23 @@
 
 #pragma once
 
+#include "Stdafx.h"
+
 using namespace System;
 
 namespace TcpServer
 {
 
-	public ref class Class333
+	public class Class333 final
 	{
-		// TODO: Add your methods for this class here.
+		const SOCKET socket;
+
+		public:
+
+		/*
+		Class333()
+		{
+			socket = 100;
+		}*/
 	};
 }

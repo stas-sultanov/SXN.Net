@@ -13,8 +13,10 @@ namespace SXN.Net
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				AcceptBacklogLength = 100,
-				Port = 11223,
+				Port = 11224,
+				ReciveBufferLength = 1024,
+				SendBufferLength = 1024,
+				ConnectinosBacklogLength = 128,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};

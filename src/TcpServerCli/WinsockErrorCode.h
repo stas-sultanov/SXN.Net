@@ -225,8 +225,7 @@ namespace SXN
 			/// <remarks>
 			/// An address incompatible with the requested protocol was used.All sockets are created with an associated address family (that is, AF_INET for Internet Protocols) and a generic protocol type(that is, SOCK_STREAM). This error is returned if an incorrect protocol is explicitly requested in the socket call, or if an address of the wrong family is used for a socket, for example, in sendto.
 			/// </remarks>
-			AddressFamilyNotSupported = WSAEAFNOSUPPORT
-			/*	,
+			AddressFamilyNotSupported = WSAEAFNOSUPPORT,
 
 			/// <summary>
 			/// Address already in use.
@@ -234,7 +233,7 @@ namespace SXN
 			/// <remarks>
 			/// Typically, only one usage of each socket address(protocol/IP address/port) is permitted.This error occurs if an application attempts to bind a socket to an IP address/port that has already been used for an existing socket, or a socket that was not closed properly, or one that is still in the process of closing.For server applications that need to bind multiple sockets to the same port number, consider using setsockopt (SO_REUSEADDR). Client applications usually need not call bind at all—connect chooses an unused port automatically.When bind is called with a wildcard address (involving ADDR_ANY), a WSAEADDRINUSE error could be delayed until the specific address is committed.This could happen with a call to another function later, including connect, listen, WSAConnect, or WSAJoinLeaf.
 			/// </remarks>
-			WSAEADDRINUSE = 10048,
+			AddressAlreadyInUse = WSAEADDRINUSE,
 
 			/// <summary>
 			/// Cannot assign requested address.
@@ -242,7 +241,7 @@ namespace SXN
 			/// <remarks>
 			/// The requested address is not valid in its context. This normally results from an attempt to bind to an address that is not valid for the local computer.This can also result from connect, sendto, WSAConnect, WSAJoinLeaf, or WSASendTo when the remote address or port is not valid for a remote computer (for example, address or port 0).
 			/// </remarks>
-			WSAEADDRNOTAVAIL = 10049,
+			AddressNotAvailable = WSAEADDRNOTAVAIL,
 
 			/// <summary>
 			/// Network is down.
@@ -250,7 +249,7 @@ namespace SXN
 			/// <remarks>
 			/// A socket operation encountered a dead network.This could indicate a serious failure of the network system(that is, the protocol stack that the Windows Sockets DLL runs over), the network interface, or the local network itself.
 			/// </remarks>
-			WSAENETDOWN = 10050,
+			NetworkDown = WSAENETDOWN,
 
 			/// <summary>
 			/// Network is unreachable.
@@ -258,7 +257,7 @@ namespace SXN
 			/// <remarks>
 			/// A socket operation was attempted to an unreachable network.This usually means the local software knows no route to reach the remote host.
 			/// </remarks>
-			WSAENETUNREACH = 10051,
+			NetworkUnreachable = WSAENETUNREACH,
 
 			/// <summary>
 			/// Network dropped connection on reset.
@@ -266,7 +265,7 @@ namespace SXN
 			/// <remarks>
 			/// The connection has been broken due to keep-alive activity detecting a failure while the operation was in progress.It can also be returned by setsockopt if an attempt is made to set SO_KEEPALIVE on a connection that has already failed.
 			/// </remarks>
-			WSAENETRESET = 10052,
+			NetworkReset = WSAENETRESET,
 
 			/// <summary>
 			/// Software caused connection abort.
@@ -274,7 +273,7 @@ namespace SXN
 			/// <remarks>
 			/// An established connection was aborted by the software in your host computer, possibly due to a data transmission time-out or protocol error.
 			/// </remarks>
-			WSAECONNABORTED = 10053,
+			ConnectionAborted = WSAECONNABORTED,
 
 			/// <summary>
 			/// Connection reset by peer.
@@ -282,7 +281,7 @@ namespace SXN
 			/// <remarks>
 			/// An existing connection was forcibly closed by the remote host. This normally results if the peer application on the remote host is suddenly stopped, the host is rebooted, the host or remote network interface is disabled, or the remote host uses a hard close(see setsockopt for more information on the SO_LINGER option on the remote socket). This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.Operations that were in progress fail with WSAENETRESET.Subsequent operations fail with WSAECONNRESET.
 			/// </remarks>
-			WSAECONNRESET = 10054,
+			ConnectionReset = WSAECONNRESET,
 
 			/// <summary>
 			/// No buffer space available.
@@ -290,7 +289,7 @@ namespace SXN
 			/// <remarks>
 			/// An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full.
 			/// </remarks>
-			WSAENOBUFS = 10055,
+			NoBufferSpace = WSAENOBUFS,
 
 			/// <summary>
 			/// Socket is already connected.
@@ -298,7 +297,7 @@ namespace SXN
 			/// <remarks>
 			/// A connect request was made on an already-connected socket. Some implementations also return this error if sendto is called on a connected SOCK_DGRAM socket (for SOCK_STREAM sockets, the to parameter in sendto is ignored) although other implementations treat this as a legal occurrence.
 			/// </remarks>
-			WSAEISCONN = 10056,
+			IsConnected = WSAEISCONN,
 
 			/// <summary>
 			/// Socket is not connected.
@@ -306,7 +305,7 @@ namespace SXN
 			/// <remarks>
 			/// A request to send or receive data was disallowed because the socket is not connected and (when sending on a datagram socket using sendto) no address was supplied.Any other type of operation might also return this error—for example, setsockopt setting SO_KEEPALIVE if the connection has been reset.
 			/// </remarks>
-			WSAENOTCONN = 10057,
+			NotConnected = WSAENOTCONN,
 
 			/// <summary>
 			/// Cannot send after socket shutdown.
@@ -314,7 +313,7 @@ namespace SXN
 			/// <remarks>
 			/// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
 			/// </remarks>
-			WSAESHUTDOWN = 10058,
+			Shutdown = WSAESHUTDOWN,
 
 			/// <summary>
 			/// Too many references.
@@ -322,7 +321,7 @@ namespace SXN
 			/// <remarks>
 			/// Too many references to some kernel object.
 			/// </remarks>
-			WSAETOOMANYREFS = 10059,
+			TooManyReferences = WSAETOOMANYREFS,
 
 			/// <summary>
 			/// Connection timed out.
@@ -330,7 +329,7 @@ namespace SXN
 			/// <remarks>
 			/// A connection attempt failed because the connected party did not properly respond after a period of time, or the established connection failed because the connected host has failed to respond.
 			/// </remarks>
-			WSAETIMEDOUT = 10060,
+			TimedOut = WSAETIMEDOUT,
 
 			/// <summary>
 			/// Connection refused.
@@ -338,7 +337,7 @@ namespace SXN
 			/// <remarks>
 			/// No connection could be made because the target computer actively refused it. This usually results from trying to connect to a service that is inactive on the foreign host—that is, one with no server application running.
 			/// </remarks>
-			WSAECONNREFUSED = 10061,
+			ConnectionRefused = WSAECONNREFUSED,
 
 			/// <summary>
 			/// Cannot translate name.
@@ -346,7 +345,7 @@ namespace SXN
 			/// <remarks>
 			/// Cannot translate a name.
 			/// </remarks>
-			WSAELOOP = 10062,
+			Loop = WSAELOOP,
 
 			/// <summary>
 			/// Name too long.
@@ -354,7 +353,7 @@ namespace SXN
 			/// <remarks>
 			/// A name component or a name was too long.
 			/// </remarks>
-			WSAENAMETOOLONG = 10063,
+			NameTooLong = WSAENAMETOOLONG,
 
 			/// <summary>
 			/// Host is down.
@@ -362,7 +361,7 @@ namespace SXN
 			/// <remarks>
 			/// A socket operation failed because the destination host is down.A socket operation encountered a dead host.Networking activity on the local host has not been initiated. These conditions are more likely to be indicated by the error WSAETIMEDOUT.
 			/// </remarks>
-			WSAEHOSTDOWN = 10064,
+			HostDown = WSAEHOSTDOWN,
 
 			/// <summary>
 			/// No route to host.
@@ -370,8 +369,9 @@ namespace SXN
 			/// <remarks>
 			/// A socket operation was attempted to an unreachable host.See WSAENETUNREACH.
 			/// </remarks>
-			WSAEHOSTUNREACH = 10065,
+			HostUnreachable = WSAEHOSTUNREACH
 
+			/*
 			/// <summary>
 			/// Directory not empty.
 			/// </summary>

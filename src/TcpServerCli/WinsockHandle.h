@@ -10,13 +10,15 @@ namespace SXN
 	namespace Net
 	{
 		/// <summary>
-		/// Provides work with Winsock extensions.
+		/// Encapsulates data and methods required to work with Winsock.
 		/// </summary>
-		private ref class WinsockHandle sealed
+		private ref class WinSocket sealed
 		{
-			private:
+			public:
 
 			#pragma region Fields
+
+			initonly SOCKET socket;
 
 			initonly LPFN_ACCEPTEX pAcceptEx;
 
@@ -55,10 +57,22 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="WinsockHandle" /> class.
 			/// </summary>
-			/// <param name="socket">A descriptor that identifies a socket.</param>
 			/// <exception cref="TcpServerException">If error occurs.</exception>
-			inline WinsockHandle(SOCKET socket)
+			inline WinSocket()
 			{
+				// 1 create server socket
+				this->socket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+
+				// check if socket is created
+				if (INVALID_SOCKET == socket)
+				{
+					// get error code
+					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+					// throw exception
+					throw gcnew TcpServerException(winsockErrorCode);
+				}
+
 				// get guid size
 				DWORD idSize = sizeof(GUID);
 
@@ -77,7 +91,7 @@ namespace SXN
 					DWORD actualTableSize;
 
 					// try get registered IO functions table
-					int getResult = ::WSAIoctl(socket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, idSize, &table, tableSize, &actualTableSize, NULL, NULL);
+					int getResult = WSAIoctl(SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, idSize, &table, tableSize, &actualTableSize, NULL, NULL);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
@@ -122,7 +136,7 @@ namespace SXN
 					GUID id = WSAID_ACCEPTEX;
 
 					// will contain result
-					LPFN_ACCEPTEX ptr;
+					LPFN_ACCEPTEX pAcceptExpTmp;
 
 					// get pointer size
 					DWORD ptrSize = sizeof(LPFN_ACCEPTEX);
@@ -130,7 +144,7 @@ namespace SXN
 					DWORD actualPtrSize;
 
 					// get function pointer
-					int getResult = ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, idSize, &ptr, ptrSize, &actualPtrSize, NULL, NULL);
+					int getResult = WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, &id, idSize, &pAcceptExpTmp, ptrSize, &actualPtrSize, NULL, NULL);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
@@ -143,30 +157,13 @@ namespace SXN
 					}
 
 					// set pointer
-					pAcceptEx = ptr;
+					pAcceptEx = pAcceptExpTmp;
 				}
 			}
 
 			#pragma endregion
 
-			#pragma region Methods
-
-			/// <summary>
-			/// Accepts a new connection, returns the local and remote address, and receives the first block of data sent by the client application.
-			/// </summary>
-			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the <see cref="listen"> function. A server application waits for attempts to connect on this socket.</param>
-			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
-			/// <returns>
-			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.
-			/// If the function fails, returns <see cref="FALSE"/>.
-			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
-			/// If <see cref ="WSAGetLastError"/> returns <see cref ="ERROR_IO_PENDING"/>, then the operation was successfully initiated and is still in progress.
-			/// If the error is <see cref ="WSAECONNRESET"/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
-			/// </returns>
-			inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
-			{
-				return pAcceptEx(sListenSocket, sAcceptSocket, lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, lpdwBytesReceived, lpOverlapped);
-			}
+			#pragma region Methods of the Registered I/O Extensions
 
 			/// <summary>
 			/// Closes an existing completion queue used for I/O completion notification by send and receive requests with the Winsock registered I/O extensions.
@@ -194,7 +191,6 @@ namespace SXN
 			/// <summary>
 			/// Creates a registered I/O socket descriptor using a specified socket and I/O completion queues for use with the Winsock registered I/O extensions.
 			/// </summary>
-			/// <param name="Socket">A descriptor that identifies the socket.</param>
 			/// <param name="MaxOutstandingReceive">The maximum number of outstanding receives allowed on the socket.</param>
 			/// <param name="MaxReceiveDataBuffers">The maximum number of receive data buffers on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
 			/// <param name="MaxOutstandingSend">The maximum number of outstanding sends allowed on the socket.</param>
@@ -206,9 +202,9 @@ namespace SXN
 			/// If no error occurs, returns a descriptor referencing a new request queue.
 			/// Otherwise, a value of <see cref="WinsockInterop.RIO_INVALID_RQ" /> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
 			/// </returns>
-			inline RIO_RQ RIOCreateRequestQueue(SOCKET Socket, ULONG MaxOutstandingReceive, ULONG MaxReceiveDataBuffers, ULONG MaxOutstandingSend, ULONG MaxSendDataBuffers, RIO_CQ ReceiveCQ, RIO_CQ SendCQ, PVOID SocketContext)
+			inline RIO_RQ RIOCreateRequestQueue(ULONG MaxOutstandingReceive, ULONG MaxReceiveDataBuffers, ULONG MaxOutstandingSend, ULONG MaxSendDataBuffers, RIO_CQ ReceiveCQ, RIO_CQ SendCQ, PVOID SocketContext)
 			{
-				return pRIOCreateRequestQueue(Socket, MaxOutstandingReceive, MaxReceiveDataBuffers, MaxOutstandingSend, MaxSendDataBuffers, ReceiveCQ, SendCQ, SocketContext);
+				return pRIOCreateRequestQueue(socket, MaxOutstandingReceive, MaxReceiveDataBuffers, MaxOutstandingSend, MaxSendDataBuffers, ReceiveCQ, SendCQ, SocketContext);
 			}
 
 			/// <summary>
@@ -321,6 +317,83 @@ namespace SXN
 			inline BOOL RIOSend(RIO_RQ SocketQueue, PRIO_BUF pData, DWORD DataBufferCount, DWORD Flags, PVOID RequestContext)
 			{
 				return pRIOSend(SocketQueue, pData, DataBufferCount, Flags, RequestContext);
+			}
+
+			#pragma endregion
+
+			#pragma region WSA Methods
+
+			/// <summary>
+			/// Accepts a new connection, returns the local and remote address, and receives the first block of data sent by the client application.
+			/// </summary>
+			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the <see cref="listen"/> function. A server application waits for attempts to connect on this socket.</param>
+			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
+			/// <returns>
+			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.
+			/// If the function fails, returns <see cref="FALSE"/>.
+			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
+			/// If <see cref ="WSAGetLastError"/> returns <see cref ="ERROR_IO_PENDING"/>, then the operation was successfully initiated and is still in progress.
+			/// If the error is <see cref ="WSAECONNRESET"/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
+			/// </returns>
+			inline BOOL AcceptEx(SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
+			{
+				return pAcceptEx(socket, sAcceptSocket, lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, lpdwBytesReceived, lpOverlapped);
+			}
+
+			/// <summary>
+			/// Controls the mode of a socket.
+			/// </summary>
+			/// <param name="dwIoControlCode">The control code of operation to perform.</param>
+			/// <param name="lpvInBuffer">A pointer to the input buffer.</param>
+			/// <param name="cbInBuffer">The size, in bytes, of the input buffer.</param>
+			/// <param name="lpvOutBuffer">A pointer to the output buffer.</param>
+			/// <param name="cbOutBuffer">The size, in bytes, of the output buffer.</param>
+			/// <param name="lpcbBytesReturned">A pointer to actual number of bytes of output.</param>
+			/// <param name="lpOverlapped">A pointer to a <see cref="WSAOVERLAPPED"/> structure (ignored for non-overlapped sockets).</param>
+			/// <param name="lpCompletionRoutine">A pointer to the completion routine called when the operation has been completed.</param>
+			/// <returns>
+			/// Upon successful completion, returns zero. Otherwise, a value of <see cref="SOCKET_ERROR" /> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
+			/// </returns>
+			/// <remarks>
+			/// The function is used to set or retrieve operating parameters associated with the socket, the transport protocol, or the communications subsystem.
+			/// </remarks>
+			inline int WSAIoctl(DWORD dwIoControlCode, LPVOID lpvInBuffer, DWORD cbInBuffer, LPVOID lpvOutBuffer, DWORD cbOutBuffer, LPDWORD lpcbBytesReturned, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
+			{
+				return ::WSAIoctl(socket, dwIoControlCode, lpvInBuffer, cbInBuffer, lpvOutBuffer, cbOutBuffer, lpcbBytesReturned, lpOverlapped, lpCompletionRoutine);
+			}
+
+			/// <summary>
+			/// Sets a socket option.
+			/// </summary>
+			/// <param name="level">The level at which the option is defined.</param>
+			/// <param name="optname">The socket option for which the value is to be set.</param>
+			/// <param name="optval">A pointer to the buffer in which the value for the requested option is specified.</param>
+			/// <param name="optlen">The size, in bytes, of the buffer pointed to by the <paramref name="optval" /> parameter.</param>
+			/// <returns>If no error occurs, returns zero. Otherwise, a value of <see cref="SOCKET_ERROR" /> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
+			inline int setsockopt(int level, int optname, const char *optval, int optlen)
+			{
+				return ::setsockopt(socket, level, optname, optval, optlen);
+			}
+
+			/// <summary>
+			/// Associates a local address with a socket.
+			/// </summary>
+			/// <param name="name">A pointer to a <see cref="SOCKADDR_IN" /> structure of the local address to assign to the bound socket .</param>
+			/// <param name="namelen">The length, in bytes, of the value pointed to by the <paramref name="name" /> parameter.</param>
+			/// <returns>If no error occurs, returns zero. Otherwise, returns <see cref="SOCKET_ERROR" />, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
+			inline int bind(const struct sockaddr *name, int namelen)
+			{
+				return ::bind(socket, name, namelen);
+			}
+
+			/// <summary>
+			/// Places a socket in a state in which it is listening for an incoming connection.
+			/// </summary>
+			/// <param name="backlog">The maximum length of the queue of pending connections. If set to <see cref="SOMAXCONN" />, the underlying service provider responsible for socket s will set the backlog to a maximum reasonable value. There is no standard provision to obtain the actual backlog value.</param>
+			/// <returns>If no error occurs, returns zero. Otherwise, returns <see cref="SOCKET_ERROR" />, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.</returns>
+			inline int listen(int backlog)
+			{
+				return ::listen(socket, backlog);
 			}
 
 			#pragma endregion

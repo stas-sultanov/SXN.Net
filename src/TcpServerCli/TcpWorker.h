@@ -18,14 +18,9 @@ namespace SXN
 			#pragma region Fields
 
 			///<summary>
-			///The handle of the server socket.
-			///<summary/>
-			initonly SOCKET serverSocket;
-
-			///<summary>
 			///The handle of the Winsock extensions socket.
 			///<summary/>
-			initonly WinsockHandle^ winsockHandle;
+			initonly WinSocket^ serverSocket;
 
 			/// <summary>
 			/// The collection of the workers.
@@ -60,39 +55,9 @@ namespace SXN
 					}
 				}
 
-				// 1 create server socket
-				SOCKET serverSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
-
-				// check if socket is created
-				if (INVALID_SOCKET == serverSocket)
-				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
-				}
-
 				// 2 initialize Winsock extensions handle
-				winsockHandle = gcnew WinsockHandle(serverSocket);
+				serverSocket = gcnew WinSocket();
 
-				// 3 get count of processors
-				int processorsCount = 2;
-
-				// 4 create collection of the IOCP workers
-				workers = gcnew array<IocpWorker^>(processorsCount);
-
-				// initialize workers
-				for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
-				{
-					// create process worker
-					IocpWorker^ worker = gcnew IocpWorker(winsockHandle, processorIndex, 4096, 1024);
-
-					// add to collection
-					workers[processorIndex] = worker;
-				}
-
-				
 				// try configure server socket and start listen
 				if (!TryConfigureBindAndStartListen(serverSocket, settings))
 				{
@@ -102,21 +67,42 @@ namespace SXN
 					// throw exception
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
+
+				// 3 get count of processors
+				int processorsCount = TcpWorkerSettings::ProcessorsCount;
+
+				// get the length of the connections backlog per processor
+				int perWorkerConnectionBacklogLength = settings.ConnectinosBacklogLength / processorsCount;
+
+				// 4 create collection of the IOCP workers
+				workers = gcnew array<IocpWorker^>(processorsCount);
+
+				// initialize workers
+				for (int processorIndex = 0; processorIndex < TcpWorkerSettings::ProcessorsCount; processorIndex++)
+				{
+					// create process worker
+					IocpWorker^ worker = gcnew IocpWorker(serverSocket, processorIndex, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+
+					// add to collection
+					workers[processorIndex] = worker;
+				}
+
+
 			}
 
 
 			private:
 
-			static Boolean TryConfigureBindAndStartListen(SOCKET serverSocket, TcpWorkerSettings settings)
+			static Boolean TryConfigureBindAndStartListen(WinSocket^ serverSocket, TcpWorkerSettings settings)
 			{
 				// try disable use of the Nagle algorithm if requested
 				if (settings.UseNagleAlgorithm == false)
 				{
 					DWORD optionValue = -1;
 
-					int disableNagleResult = ::setsockopt(serverSocket, IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
+					int disableNagleResult = serverSocket->setsockopt(IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
 
-					// check if attempt has succeed
+					// check if operation has failed
 					if (disableNagleResult == SOCKET_ERROR)
 					{
 						return false;
@@ -130,7 +116,7 @@ namespace SXN
 
 					DWORD dwBytes;
 
-					int enableFastLoopbackResult = ::WSAIoctl(serverSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
+					int enableFastLoopbackResult = serverSocket->WSAIoctl(SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
 
 					// check if attempt has succeed
 					if (enableFastLoopbackResult == SOCKET_ERROR)
@@ -154,7 +140,7 @@ namespace SXN
 					socketAddress.sin_addr = address;
 
 					// try associate address with socket
-					int bindResult = ::bind(serverSocket, (sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
+					int bindResult = serverSocket->bind((sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
 
 					if (bindResult == SOCKET_ERROR)
 					{
@@ -164,7 +150,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = ::listen(serverSocket, 200);
+					int startListen = serverSocket->listen(200);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -175,7 +161,7 @@ namespace SXN
 				return true;
 			}
 
-				#pragma endregion
+			#pragma endregion
 		};
 	}
 }
