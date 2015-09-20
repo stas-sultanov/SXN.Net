@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "WinsockHandle.h"
+#include "WinsockEx.h"
 #include "TcpServerException.h"
 
 using namespace System;
@@ -22,7 +22,7 @@ namespace SXN
 			/// <summary>
 			/// A pointer to the object that provides work with Winsock extensions.
 			/// </summary>
-			initonly WinSocket^ winsockHandle;
+			initonly WinsockEx* pWinsockEx;
 
 			/// <summary>
 			/// A pointer to the aligned memory block.
@@ -58,17 +58,17 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="BufferPool" /> class.
 			/// </summary>
-			/// <param name="rioHandle">A pointer to the object that provides work with Winsock extensions.</param>
+			/// <param name="pWinsockEx">A pointer to the object that provides work with Winsock extensions.</param>
 			/// <param name="bufferLength">The length of the single buffer to manage.</param>
 			/// <param name="segmentsCount">The count of the buffers to manage.</param>
 			/// <remarks>
 			/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
 			/// </remarks>
 			/// <exception cref="TcpServerException">If error occurs.</exception>
-			RioBufferPool(WinSocket^ winsockHandle, unsigned int bufferLength, unsigned int buffersCount)
+			RioBufferPool(WinsockEx* pWinsockEx, unsigned int bufferLength, unsigned int buffersCount)
 			{
 				// set winsock handle
-				this->winsockHandle = winsockHandle;
+				this->pWinsockEx = pWinsockEx;
 
 				// calculate and set the length of the memory buffer
 				memoryBlockLength = bufferLength * buffersCount;
@@ -87,7 +87,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				rioBufferId = winsockHandle->RIORegisterBuffer((PCHAR)buffer, memoryBlockLength);
+				rioBufferId = pWinsockEx->RIORegisterBuffer((PCHAR)buffer, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
@@ -142,7 +142,7 @@ namespace SXN
 
 				// deregister buffer within the Registered I/O extensions
 				// ignore result
-				winsockHandle->RIODeregisterBuffer(rioBufferId);
+				//winsockHandle->RIODeregisterBuffer(rioBufferId);
 
 				// free allocated memory
 				// ignore result

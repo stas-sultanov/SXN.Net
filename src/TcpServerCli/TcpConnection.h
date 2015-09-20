@@ -16,6 +16,10 @@ namespace SXN
 
 			initonly RIO_RQ requestQueue;
 
+			initonly PVOID addrBuf;
+
+			initonly LPOVERLAPPED acceptOverlapped;
+
 			#pragma endregion
 
 			internal:
@@ -25,14 +29,23 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(SOCKET socket, RIO_RQ requestQueue)
+			inline TcpConnection(SOCKET socket, PVOID addrBuf, RIO_RQ requestQueue, LPOVERLAPPED accceptk)
 			{
 				this->socket = socket;
 
 				this->requestQueue = requestQueue;
 
+				this->addrBuf = addrBuf;
+
+				this->acceptOverlapped = accceptk;
+
 				// create request queue
 				//var rq = rioHandle.CreateRequestQueue(socket, 24, 1, 24, 1, )
+			}
+
+			!TcpConnection()
+			{
+				delete addrBuf;
 			}
 
 			#pragma endregion

@@ -103,7 +103,9 @@ namespace SXN
 			/// Bad address.
 			/// </summary>
 			/// <remarks>
-			/// The system detected an invalid pointer address in attempting to use a pointer argument of a call.This error occurs if an application passes an invalid pointer value, or if the length of the buffer is too small. For instance, if the length of an argument, which is a sockaddr structure, is smaller than the sizeof(sockaddr).
+			/// The system detected an invalid pointer address in attempting to use a pointer argument of a call.
+			/// This error occurs if an application passes an invalid pointer value, or if the length of the buffer is too small.
+			/// For instance, if the length of an argument, which is a sockaddr structure, is smaller than the sizeof(sockaddr).
 			/// </remarks>
 			Fault = WSAEFAULT,
 
@@ -369,16 +371,16 @@ namespace SXN
 			/// <remarks>
 			/// A socket operation was attempted to an unreachable host.See WSAENETUNREACH.
 			/// </remarks>
-			HostUnreachable = WSAEHOSTUNREACH
+			HostUnreachable = WSAEHOSTUNREACH,
 
-			/*
+			
 			/// <summary>
 			/// Directory not empty.
 			/// </summary>
 			/// <remarks>
 			/// Cannot remove a directory that is not empty.
 			/// </remarks>
-			WSAENOTEMPTY = 10066,
+			NotEmpty = WSAENOTEMPTY,
 
 			/// <summary>
 			/// Too many processes.
@@ -386,7 +388,7 @@ namespace SXN
 			/// <remarks>
 			/// A Windows Sockets implementation may have a limit on the number of applications that can use it simultaneously. WSAStartup may fail with this error if the limit has been reached.
 			/// </remarks>
-			WSAEPROCLIM = 10067,
+			ProcessLimit = WSAEPROCLIM,
 
 			/// <summary>
 			/// User quota exceeded.
@@ -394,7 +396,7 @@ namespace SXN
 			/// <remarks>
 			/// Ran out of user quota.
 			/// </remarks>
-			WSAEUSERS = 10068,
+			Users = WSAEUSERS,
 
 			/// <summary>
 			/// Disk quota exceeded.
@@ -402,7 +404,7 @@ namespace SXN
 			/// <remarks>
 			/// Ran out of disk quota.
 			/// </remarks>
-			WSAEDQUOT = 10069,
+			DiskQuota = WSAEDQUOT,
 
 			/// <summary>
 			/// Stale file handle reference.
@@ -410,7 +412,7 @@ namespace SXN
 			/// <remarks>
 			/// The file handle reference is no longer available.
 			/// </remarks>
-			WSAESTALE = 10070,
+			Stale = WSAESTALE/*,
 
 			/// <summary>
 			/// Item is remote.

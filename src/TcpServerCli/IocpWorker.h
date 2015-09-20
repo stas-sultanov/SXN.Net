@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "WinsockHandle.h"
+#include "WinsockEx.h"
 #include "TcpServerException.h"
 #include "RioBufferPool.h"
 #include "TcpConnection.h"
 
 using namespace System;
+using namespace System::Threading;
 using namespace System::Collections::Generic;
 
 namespace SXN
@@ -20,12 +21,17 @@ namespace SXN
 			#pragma region Fields
 
 			/// <summary>
-			/// A pointer to the object that provides work with Winsock extensions.
-			/// </summary>
-			initonly WinSocket^ serverSocket;
+			/// The descriptor of the listening socket.
+			/// <summary/>
+			initonly SOCKET listenSocket;
 
 			/// <summary>
-			/// The unique identifier of the worker within the <see cref = "TcpWorker"/>.
+			/// A pointer to the object that provides work with Winsock extensions.
+			/// </summary>
+			WinsockEx* pWinsockEx;
+
+			/// <summary>
+			/// The unique identifier of the worker.
 			/// </summary>
 			initonly Int32 Id;
 
@@ -55,6 +61,8 @@ namespace SXN
 			/// </summary>
 			initonly RioBufferPool^ bufferPool;
 
+			initonly Thread^ mainThread;
+
 			#pragma endregion
 
 			internal:
@@ -64,8 +72,9 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="IocpWorker" /> class.
 			/// </summary>
-			/// <param name="serverSocket">A pointer to the object that provides work with Winsock extensions.</param>
-			/// <param name="processorIndex">The index of the processor.</param>
+			/// <param name="listenSocket">The descriptor of the listening socket.</param>
+			/// <param name="pWinsockEx">A pointer to the object that provides work with Winsock extensions.</param>
+			/// <param name="id">The unique identifier of the worker.</param>
 			/// <param name="segmentLength">The length of the segment.</param>
 			/// <param name="segmentsCount">The count of the segments.</param>
 			/// <returns>
@@ -73,16 +82,31 @@ namespace SXN
 			/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
 			/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
 			/// </returns>
-			IocpWorker(WinSocket ^serverSocket, Int32 processorIndex, UInt32 segmentLength, UInt32 segmentsCount)
+			IocpWorker(SOCKET listenSocket, WinsockEx* pWinsockEx, Int32 id, UInt32 segmentLength, UInt32 segmentsCount)
 			{
+				// set listen socket
+				this->listenSocket = listenSocket;
+
 				// set winsock handle
-				this->serverSocket = serverSocket;
+				this->pWinsockEx = pWinsockEx;
 
 				// create I/O completion port
-				ioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
+				ioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 
 				// check if operation has failed
 				if (ioCompletionPort == NULL)
+				{
+					// get error code
+					DWORD kernelErrorCode = ::GetLastError();
+
+					// throw exception
+					throw gcnew TcpServerException(kernelErrorCode);
+				}
+
+				// associate the listening socket with the completion port
+				HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)listenSocket, ioCompletionPort, 0, 0);
+
+				if ((associateResult == NULL) || (associateResult != ioCompletionPort))
 				{
 					// get error code
 					DWORD kernelErrorCode = ::GetLastError();
@@ -103,13 +127,13 @@ namespace SXN
 				completionSettings.Iocp.IocpHandle = ioCompletionPort;
 
 				// set IOCP completion key to id of current worker
-				completionSettings.Iocp.CompletionKey = (PVOID)processorIndex;
+				completionSettings.Iocp.CompletionKey = (PVOID) id;
 
 				// set IOCP overlapped to invalid
 				completionSettings.Iocp.Overlapped = (PVOID)-1;
 
 				// create the completion queue for the Registered I/O receive operations
-				rioReciveCompletionQueue = serverSocket->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
+				rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
 
 				// check if operation has failed
 				if (rioReciveCompletionQueue == RIO_INVALID_CQ)
@@ -122,7 +146,7 @@ namespace SXN
 				}
 
 				// create the completion queue for the Registered I/O send operations
-				rioSendCompletionQueue = serverSocket->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
+				rioSendCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
 
 				// check if operation has failed
 				if (rioReciveCompletionQueue == RIO_INVALID_CQ)
@@ -137,7 +161,7 @@ namespace SXN
 				#pragma endregion
 
 				// create buffer pool
-				bufferPool = gcnew RioBufferPool(serverSocket, segmentLength, segmentsCount * 2);
+				bufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount * 2);
 
 				// initialize connections array
 				connections = gcnew array<TcpConnection^>(segmentsCount);
@@ -146,11 +170,17 @@ namespace SXN
 				for (int index = 0; index < segmentsCount; index++)
 				{
 					// create connection
-					TcpConnection^ connection = CreateConnection(index);
+					TcpConnection^ connection = CreateConnection(id, index);
 
 					// add to collection
 					connections[index] = connection;
 				}
+
+				ThreadStart^ threadDelegate = gcnew ThreadStart(this, &IocpWorker::DoWork);
+
+				mainThread = gcnew Thread(threadDelegate);
+
+				mainThread->Start();
 			}
 
 			/// <summary>
@@ -162,7 +192,7 @@ namespace SXN
 				delete bufferPool;
 
 				// close completion queue
-				serverSocket->RIOCloseCompletionQueue(rioReciveCompletionQueue);
+				pWinsockEx->RIOCloseCompletionQueue(rioReciveCompletionQueue);
 
 				// close completion port
 				// ignore result
@@ -173,7 +203,23 @@ namespace SXN
 
 			#pragma region Methods
 
-			TcpConnection^ CreateConnection(int id)
+			void DoWork()
+			{
+				while (true)
+				{
+					DWORD numberOfBytes;
+
+					ULONG_PTR completionKey;
+
+					LPOVERLAPPED over;
+
+					BOOL res = ::GetQueuedCompletionStatus(ioCompletionPort, &numberOfBytes, &completionKey, &over, WSA_INFINITE);
+				
+					System::Console::WriteLine("result: {0} port: {1} key: {2}", (Int64) res, (Int64) ioCompletionPort,(Int64) completionKey);
+				}
+			}
+
+			TcpConnection^ CreateConnection(int workerId, int connectionId)
 			{
 				// create connection socket
 				SOCKET connectionSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
@@ -188,15 +234,16 @@ namespace SXN
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
 
-				OVERLAPPED ov;
-				memset(&ov, 0, sizeof(ov));
+				LPOVERLAPPED ov = new OVERLAPPED();
+
+				memset(ov, 0, sizeof(ov));
 
 				DWORD dwBytes;
 
-				char *lpoutbuf = new char[1024];
+				PVOID lpoutbuf = new char[(sizeof(sockaddr_in) + 16) * 2];
 
 				// accept connections
-				BOOL acceptResult = serverSocket->AcceptEx(connectionSocket, lpoutbuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &ov);
+				BOOL acceptResult = pWinsockEx->AcceptEx(listenSocket, connectionSocket, lpoutbuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, ov);
 
 				// check if operation has succeed
 				if (acceptResult == FALSE)
@@ -209,38 +256,13 @@ namespace SXN
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
 					}
-					else
-					{
-						/**
-						// Wait for AcceptEx events and also process WorkerRoutine() returns
-						while (TRUE)
-						{
-							
-							int Index = ::WSAWaitForMultipleEvents(1, &ov.hEvent, FALSE, WSA_INFINITE, TRUE);
-
-							if (Index == WSA_WAIT_FAILED)
-							{
-								// get error code
-								WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-								// throw exception
-								throw gcnew TcpServerException(winsockErrorCode);
-							}
-
-							if (Index != WAIT_IO_COMPLETION)
-							{
-								// The AcceptEx() event is ready, break the wait loop
-								break;
-							}
-						}/**/
-					}
 				}
 
 				// associate the connection socket with the completion port
-				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE)connectionSocket, ioCompletionPort, NULL, 0);
+				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE) connectionSocket, ioCompletionPort, 0, 0);
 
 				// check if operation has succeed
-				if (resultPort == NULL)
+				if ((resultPort == NULL) || (resultPort != ioCompletionPort))
 				{
 					// get error code
 					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -249,12 +271,17 @@ namespace SXN
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
 
+				SOCKET tListenSocket = listenSocket;
+
+				int iResult = ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,	(char *)&tListenSocket, sizeof(SOCKET));
+
+				/**/
 				ULONG maxOutstandingReceive = 1u;
 
 				ULONG maxOutstandingSend = 1u;
 
 				// create request queue
-				RIO_RQ requestQueue = serverSocket->RIOCreateRequestQueue(maxOutstandingReceive, (ULONG)1, maxOutstandingSend, (ULONG)1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&id);
+				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, (ULONG)1, maxOutstandingSend, (ULONG)1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
 
 				// check if operation has succeed
 				if (requestQueue == RIO_INVALID_RQ)
@@ -265,8 +292,10 @@ namespace SXN
 					// throw exception
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
+				/**/
 
-				TcpConnection^ connection = gcnew TcpConnection(connectionSocket, requestQueue);
+				// create connection handle
+				TcpConnection^ connection = gcnew TcpConnection(connectionSocket, lpoutbuf, 0, ov);
 
 				// add connection into the collection of the connections
 				//Connections.TryAdd(id, connection);

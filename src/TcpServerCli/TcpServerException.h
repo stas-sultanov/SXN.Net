@@ -20,13 +20,22 @@ namespace SXN
 			}
 
 			TcpServerException(int kernelErrorCode)
-				: TcpServerException((WinsockErrorCode)0, kernelErrorCode)
+				: TcpServerException((WinsockErrorCode) 0, kernelErrorCode)
 			{
 			}
 
 			TcpServerException(WinsockErrorCode winsockErrorCode, int kernelErrorCode)
 			{
+				WErrorCode = winsockErrorCode;
+
+				KErrorCode = kernelErrorCode;
 			}
+
+			public:
+			
+			property WinsockErrorCode WErrorCode;
+
+			property int KErrorCode;
 		};
 	}
 }

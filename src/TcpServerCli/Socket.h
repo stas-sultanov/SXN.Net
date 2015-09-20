@@ -1,6 +1,9 @@
 #pragma once
 
+#pragma once
+
 #include "Stdafx.h"
+#include "WinsockErrorCode.h"
 #include "TcpServerException.h"
 
 using namespace System;
@@ -10,74 +13,90 @@ namespace SXN
 	namespace Net
 	{
 		/// <summary>
-		/// Encapsulates data and methods required to work with Winsock.
+		/// Encapsulates data and methods required to work with Windows implementation of the socket.
 		/// </summary>
-		private ref class WinSocket sealed
+		private struct WinSocket
 		{
-			public:
+			private:
 
-			#pragma region Fields
+			#pragma region Static Fields
 
-			initonly SOCKET socket;
+			static BOOL isInitialized;
 
-			initonly LPFN_ACCEPTEX pAcceptEx;
+			static LPFN_ACCEPTEX pAcceptEx;
 
-			initonly LPFN_RIORECEIVE pRIOReceive;
+			static LPFN_RIORECEIVE pRIOReceive;
 
-			initonly LPFN_RIORECEIVEEX pRIOReceiveEx;
+			static LPFN_RIORECEIVEEX pRIOReceiveEx;
 
-			initonly LPFN_RIOSEND pRIOSend;
+			static LPFN_RIOSEND pRIOSend;
 
-			initonly LPFN_RIOSENDEX pRIOSendEx;
+			static LPFN_RIOSENDEX pRIOSendEx;
 
-			initonly LPFN_RIOCLOSECOMPLETIONQUEUE pRIOCloseCompletionQueue;
+			static LPFN_RIOCLOSECOMPLETIONQUEUE pRIOCloseCompletionQueue;
 
-			initonly LPFN_RIOCREATECOMPLETIONQUEUE pRIOCreateCompletionQueue;
+			static LPFN_RIOCREATECOMPLETIONQUEUE pRIOCreateCompletionQueue;
 
-			initonly LPFN_RIOCREATEREQUESTQUEUE pRIOCreateRequestQueue;
+			static LPFN_RIOCREATEREQUESTQUEUE pRIOCreateRequestQueue;
 
-			initonly LPFN_RIODEQUEUECOMPLETION pRIODequeueCompletion;
+			static LPFN_RIODEQUEUECOMPLETION pRIODequeueCompletion;
 
-			initonly LPFN_RIODEREGISTERBUFFER pRIODeregisterBuffer;
+			static LPFN_RIODEREGISTERBUFFER pRIODeregisterBuffer;
 
-			initonly LPFN_RIONOTIFY pRIONotify;
+			static LPFN_RIONOTIFY pRIONotify;
 
-			initonly LPFN_RIOREGISTERBUFFER pRIORegisterBuffer;
+			static LPFN_RIOREGISTERBUFFER pRIORegisterBuffer;
 
-			initonly LPFN_RIORESIZECOMPLETIONQUEUE pRIOResizeCompletionQueue;
+			static LPFN_RIORESIZECOMPLETIONQUEUE pRIOResizeCompletionQueue;
 
-			initonly LPFN_RIORESIZEREQUESTQUEUE pRIOResizeRequestQueue;
+			static LPFN_RIORESIZEREQUESTQUEUE pRIOResizeRequestQueue;
 
 			#pragma endregion
 
-			public:
+			#pragma region Static Constructor
 
-			#pragma region Constructor
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="WinsockHandle" /> class.
-			/// </summary>
-			/// <exception cref="TcpServerException">If error occurs.</exception>
-			inline WinSocket()
+			static WinsockErrorCode Initialize()
 			{
-				// 1 create server socket
-				this->socket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
-
-				// check if socket is created
-				if (INVALID_SOCKET == socket)
+				// check if already initialized
+				if (isInitialized)
 				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+					return WinsockErrorCode::None;
 				}
 
-				// get guid size
-				DWORD idSize = sizeof(GUID);
+				// 0 initiate use of the Winsock DLL by a process
+				{
+					WSADATA data;
 
-				// declare rio functions table
-				RIO_EXTENSION_FUNCTION_TABLE table;
+					int startupResultCode = ::WSAStartup(MAKEWORD(2, 2), &data);
+
+					// check if startup was successful
+					if (startupResultCode != 0)
+					{
+						// return error code
+						return (WinsockErrorCode)startupResultCode;
+					}
+				}
+
+				// system socket
+				SOCKET socketHandle = NULL;
+
+				// Registered I/O functions table
+				RIO_EXTENSION_FUNCTION_TABLE rioTable;
+
+				// pointer to AcceptEx function
+				LPFN_ACCEPTEX pAcceptEx = NULL;
+
+				// socket handle
+				{
+					// create temporary socket
+					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+
+					// check if socket is created
+					if (INVALID_SOCKET == socketHandle)
+					{
+						goto FAIL;
+					}
+				}
 
 				// Registered I/O
 				{
@@ -91,43 +110,13 @@ namespace SXN
 					DWORD actualTableSize;
 
 					// try get registered IO functions table
-					int getResult = WSAIoctl(SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, idSize, &table, tableSize, &actualTableSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
 					{
-						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
+						goto FAIL;
 					}
-
-					pRIOReceive = table.RIOReceive;
-
-					pRIOReceiveEx = table.RIOReceiveEx;
-
-					pRIOSend = table.RIOSend;
-
-					pRIOSendEx = table.RIOSendEx;
-
-					pRIOCloseCompletionQueue = table.RIOCloseCompletionQueue;
-
-					pRIOCreateCompletionQueue = table.RIOCreateCompletionQueue;
-
-					pRIOCreateRequestQueue = table.RIOCreateRequestQueue;
-
-					pRIODequeueCompletion = table.RIODequeueCompletion;
-
-					pRIODeregisterBuffer = table.RIODeregisterBuffer;
-
-					pRIONotify = table.RIONotify;
-
-					pRIORegisterBuffer = table.RIORegisterBuffer;
-
-					pRIOResizeCompletionQueue = table.RIOResizeCompletionQueue;
-
-					pRIOResizeRequestQueue = table.RIOResizeRequestQueue;
 				}
 
 				// AcceptEx
@@ -135,8 +124,140 @@ namespace SXN
 					// get extension id
 					GUID id = WSAID_ACCEPTEX;
 
-					// will contain result
-					LPFN_ACCEPTEX pAcceptExpTmp;
+					// get pointer size
+					DWORD ptrSize = sizeof(LPFN_ACCEPTEX);
+
+					DWORD actualPtrSize;
+
+					// get function pointer
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, NULL, NULL);
+
+					// check if operation was not successful
+					if (getResult == SOCKET_ERROR)
+					{
+						goto FAIL;
+					}
+				}
+
+				// initialize and return result
+				result = 0;
+
+				return gcnew WinSocket(socketHandle, &rioTable, pAcceptEx);
+
+				FAIL:
+
+				// get error code
+				int winsockErrorCode = ::WSAGetLastError();
+
+				// close socket if it was initialized
+				if (socketHandle != INVALID_SOCKET)
+				{
+					::closesocket(socketHandle);
+				}
+
+				// set result
+				result = 0;
+
+				// return error code
+				return nullptr;
+			}
+
+			#pragma endregion
+
+			#pragma region Constructor
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="WinSocket" /> class.
+			/// </summary>
+			/// <exception cref="TcpServerException">If error occurs.</exception>
+			inline WinSocket(SOCKET socket, PRIO_EXTENSION_FUNCTION_TABLE pTableRIO, LPFN_ACCEPTEX pAcceptEx)
+			{
+				this->socket = socket;
+
+				this->pAcceptEx = pAcceptEx;
+
+				this->pRIOReceive = pTableRIO->RIOReceive;
+
+				this->pRIOReceiveEx = pTableRIO->RIOReceiveEx;
+
+				this->pRIOSend = pTableRIO->RIOSend;
+
+				this->pRIOSendEx = pTableRIO->RIOSendEx;
+
+				this->pRIOCloseCompletionQueue = pTableRIO->RIOCloseCompletionQueue;
+
+				this->pRIOCreateCompletionQueue = pTableRIO->RIOCreateCompletionQueue;
+
+				this->pRIOCreateRequestQueue = pTableRIO->RIOCreateRequestQueue;
+
+				this->pRIODequeueCompletion = pTableRIO->RIODequeueCompletion;
+
+				this->pRIODeregisterBuffer = pTableRIO->RIODeregisterBuffer;
+
+				this->pRIONotify = pTableRIO->RIONotify;
+
+				this->pRIORegisterBuffer = pTableRIO->RIORegisterBuffer;
+
+				this->pRIOResizeCompletionQueue = pTableRIO->RIOResizeCompletionQueue;
+
+				this->pRIOResizeRequestQueue = pTableRIO->RIOResizeRequestQueue;
+			}
+
+			#pragma endregion
+
+			public:
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="WinsockHandle" /> class.
+			/// </summary>
+			inline static WinSocket ^ Create(int% result)
+			{
+				// system socket
+				SOCKET socketHandle = NULL;
+
+				// Registered I/O functions table
+				RIO_EXTENSION_FUNCTION_TABLE rioTable;
+
+				// pointer to AcceptEx function
+				LPFN_ACCEPTEX pAcceptEx = NULL;
+
+				// socket handle
+				{
+					// create socket
+					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+
+					// check if socket is created
+					if (INVALID_SOCKET == socketHandle)
+					{
+						goto FAIL;
+					}
+				}
+
+				// Registered I/O
+				{
+					// get extension id
+					GUID id = WSAID_MULTIPLE_RIO;
+
+					// get table size
+					DWORD tableSize = sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+
+					// will contain actual table size
+					DWORD actualTableSize;
+
+					// try get registered IO functions table
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+
+					// check if operation was not successful
+					if (getResult == SOCKET_ERROR)
+					{
+						goto FAIL;
+					}
+				}
+
+				// AcceptEx
+				{
+					// get extension id
+					GUID id = WSAID_ACCEPTEX;
 
 					// get pointer size
 					DWORD ptrSize = sizeof(LPFN_ACCEPTEX);
@@ -144,21 +265,36 @@ namespace SXN
 					DWORD actualPtrSize;
 
 					// get function pointer
-					int getResult = WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, &id, idSize, &pAcceptExpTmp, ptrSize, &actualPtrSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, NULL, NULL);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
 					{
-						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
+						goto FAIL;
 					}
-
-					// set pointer
-					pAcceptEx = pAcceptExpTmp;
 				}
+
+				// initialize and return result
+				result = 0;
+
+				return gcnew WinSocket(socketHandle, &rioTable, pAcceptEx);
+
+				FAIL:
+
+				// get error code
+				int winsockErrorCode = ::WSAGetLastError();
+
+				// close socket if it was initialized
+				if (socketHandle != INVALID_SOCKET)
+				{
+					::closesocket(socketHandle);
+				}
+
+				// set result
+				result = 0;
+
+				// return error code
+				return nullptr;
 			}
 
 			#pragma endregion
@@ -321,12 +457,11 @@ namespace SXN
 
 			#pragma endregion
 
-			#pragma region WSA Methods
+			#pragma region Methods of the WSA Extensions
 
 			/// <summary>
 			/// Accepts a new connection, returns the local and remote address, and receives the first block of data sent by the client application.
 			/// </summary>
-			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the <see cref="listen"/> function. A server application waits for attempts to connect on this socket.</param>
 			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
 			/// <returns>
 			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.

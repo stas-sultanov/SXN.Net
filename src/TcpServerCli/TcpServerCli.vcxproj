@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
     <ClInclude Include="RioBufferPool.h" />
+    <ClInclude Include="Socket.h" />
     <ClInclude Include="Stdafx.h" />
     <ClInclude Include="TcpConnection.h" />
     <ClInclude Include="TcpServer.h" />
@@ -147,7 +148,7 @@
     <ClInclude Include="TcpWorker.h" />
     <ClInclude Include="TcpWorkerSettings.h" />
     <ClInclude Include="WinsockErrorCode.h" />
-    <ClInclude Include="WinsockHandle.h" />
+    <ClInclude Include="WinsockEx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />

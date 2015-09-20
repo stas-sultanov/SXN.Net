@@ -1,10 +1,8 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "WinsockErrorCode.h"
 #include "TcpWorkerSettings.h"
-#include "TcpServerException.h"
-#include "WinsockHandle.h"
+#include "WinsockEx.h"
 #include "IocpWorker.h"
 
 namespace SXN
@@ -17,10 +15,15 @@ namespace SXN
 
 			#pragma region Fields
 
-			///<summary>
-			///The handle of the Winsock extensions socket.
-			///<summary/>
-			initonly WinSocket^ serverSocket;
+			/// <summary>
+			/// The descriptor of the listening socket.
+			/// <summary/>
+			initonly SOCKET listenSocket;
+
+			/// <summary>
+			/// A pointer to the object that provides work with Winsock extensions.
+			/// <summary/>
+			initonly WinsockEx* pWinsockEx;
 
 			/// <summary>
 			/// The collection of the workers.
@@ -38,7 +41,7 @@ namespace SXN
 			/// </summary>
 			TcpWorker(TcpWorkerSettings settings)
 			{
-				// 0 initiate use of the Winsock DLL by a process
+				// 0 initialize Winsock
 				{
 					WSADATA data;
 
@@ -48,6 +51,21 @@ namespace SXN
 					if (startupResultCode != 0)
 					{
 						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) startupResultCode;
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
+				// initialize listen socket
+				{
+					listenSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+
+					// check if operation has failed
+					if (listenSocket == INVALID_SOCKET)
+					{
+						// get error code
 						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
 						// throw exception
@@ -55,52 +73,67 @@ namespace SXN
 					}
 				}
 
-				// 2 initialize Winsock extensions handle
-				serverSocket = gcnew WinSocket();
+				// initialize winsock extensions
+				{
+					pWinsockEx = Initialize(listenSocket);
+
+					if (pWinsockEx == NULL)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
 
 				// try configure server socket and start listen
-				if (!TryConfigureBindAndStartListen(serverSocket, settings))
 				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					Boolean configResult = ConfigureBindAndStartListen(listenSocket, settings);
 
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+					if (!configResult)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
 				}
 
-				// 3 get count of processors
-				int processorsCount = TcpWorkerSettings::ProcessorsCount;
-
-				// get the length of the connections backlog per processor
-				int perWorkerConnectionBacklogLength = settings.ConnectinosBacklogLength / processorsCount;
-
-				// 4 create collection of the IOCP workers
-				workers = gcnew array<IocpWorker^>(processorsCount);
-
-				// initialize workers
-				for (int processorIndex = 0; processorIndex < TcpWorkerSettings::ProcessorsCount; processorIndex++)
+				// create and configure sub workers
 				{
-					// create process worker
-					IocpWorker^ worker = gcnew IocpWorker(serverSocket, processorIndex, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+					// 3 get count of processors
+					int processorsCount = TcpWorkerSettings::ProcessorsCount;
 
-					// add to collection
-					workers[processorIndex] = worker;
+					// get the length of the connections backlog per processor
+					int perWorkerConnectionBacklogLength = settings.ConnectinosBacklogLength / processorsCount;
+
+					// 4 create collection of the IOCP workers
+					workers = gcnew array<IocpWorker^>(processorsCount);
+
+					// initialize workers
+					for (int index = 0; index < TcpWorkerSettings::ProcessorsCount; index++)
+					{
+						// create process worker
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+
+						// add to collection
+						workers[index] = worker;
+					}
 				}
-
-
 			}
-
 
 			private:
 
-			static Boolean TryConfigureBindAndStartListen(WinSocket^ serverSocket, TcpWorkerSettings settings)
+			static Boolean ConfigureBindAndStartListen(SOCKET listenSocket, TcpWorkerSettings settings)
 			{
 				// try disable use of the Nagle algorithm if requested
 				if (settings.UseNagleAlgorithm == false)
 				{
 					DWORD optionValue = -1;
 
-					int disableNagleResult = serverSocket->setsockopt(IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
+					int disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
 
 					// check if operation has failed
 					if (disableNagleResult == SOCKET_ERROR)
@@ -116,7 +149,7 @@ namespace SXN
 
 					DWORD dwBytes;
 
-					int enableFastLoopbackResult = serverSocket->WSAIoctl(SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
+					int enableFastLoopbackResult = ::WSAIoctl(listenSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
 
 					// check if attempt has succeed
 					if (enableFastLoopbackResult == SOCKET_ERROR)
@@ -140,7 +173,7 @@ namespace SXN
 					socketAddress.sin_addr = address;
 
 					// try associate address with socket
-					int bindResult = serverSocket->bind((sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
+					int bindResult = ::bind(listenSocket, (sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
 
 					if (bindResult == SOCKET_ERROR)
 					{
@@ -150,7 +183,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = serverSocket->listen(200);
+					int startListen = ::listen(listenSocket, 200);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -159,6 +192,60 @@ namespace SXN
 				}
 
 				return true;
+			}
+
+			#pragma endregion
+
+			#pragma region Static Constructor
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="WinsockEx" /> class.
+			/// </summary>
+			static WinsockEx* Initialize(SOCKET listenSocket)
+			{
+				// get pointer to AcceptEx function
+				LPFN_ACCEPTEX pAcceptEx;
+				{
+					// get extension id
+					GUID extensionId = WSAID_ACCEPTEX;
+
+					// will contain actual pointer size
+					DWORD actualPtrSize;
+
+					// get function pointer
+					int getAcceptExResult = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pAcceptEx, sizeof(LPFN_ACCEPTEX), &actualPtrSize, NULL, NULL);
+
+					// check if operation has failed
+					if (getAcceptExResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// get Registered I/O functions table
+				RIO_EXTENSION_FUNCTION_TABLE rioTable;
+				{
+					// get extension id
+					GUID id = WSAID_MULTIPLE_RIO;
+
+					// get table size
+					DWORD tableSize = sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+
+					// will contain actual table size
+					DWORD actualTableSize;
+
+					// try get registered IO functions table
+					int getResult = ::WSAIoctl(listenSocket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+
+					// check if operation was not successful
+					if (getResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// compose and return result
+				return new WinsockEx(pAcceptEx, rioTable);
 			}
 
 			#pragma endregion
