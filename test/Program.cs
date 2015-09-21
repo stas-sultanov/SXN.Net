@@ -16,7 +16,7 @@ namespace SXN.Net
 				Port = 11227,
 				ReciveBufferLength = 1024,
 				SendBufferLength = 1024,
-				ConnectinosBacklogLength = 4,
+				ConnectinosBacklogLength = 8,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};
