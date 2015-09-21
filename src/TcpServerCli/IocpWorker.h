@@ -5,6 +5,7 @@
 #include "TcpServerException.h"
 #include "RioBufferPool.h"
 #include "TcpConnection.h"
+#include "Overlap.h"
 
 using namespace System;
 using namespace System::Threading;
@@ -26,6 +27,11 @@ namespace SXN
 			initonly SOCKET listenSocket;
 
 			/// <summary>
+			/// The completion port of the listening socket.
+			/// </summary>
+			initonly HANDLE completionPort;
+
+			/// <summary>
 			/// A pointer to the object that provides work with Winsock extensions.
 			/// </summary>
 			WinsockEx* pWinsockEx;
@@ -35,10 +41,11 @@ namespace SXN
 			/// </summary>
 			initonly Int32 Id;
 
+
 			/// <summary>
-			/// The I/O completion port.
+			/// The completion port of the of the Registered I/O operations.
 			/// </summary>
-			initonly HANDLE ioCompletionPort;
+			initonly HANDLE rioCompletionPort;
 
 			/// <summary>
 			/// The completion queue of the Registered I/O receive operations.
@@ -82,31 +89,22 @@ namespace SXN
 			/// <see cref="TryResult{T}.Success" /> contains <c>true</c> if operation was successful, <c>false</c> otherwise.
 			/// <see cref="TryResult{T}.Result" /> contains valid object if operation was successful, <c>null</c> otherwise.
 			/// </returns>
-			IocpWorker(SOCKET listenSocket, WinsockEx* pWinsockEx, Int32 id, UInt32 segmentLength, UInt32 segmentsCount)
+			IocpWorker(SOCKET listenSocket, HANDLE completionPort, WinsockEx* pWinsockEx, Int32 id, UInt32 segmentLength, UInt32 segmentsCount)
 			{
 				// set listen socket
 				this->listenSocket = listenSocket;
+
+				// set completion port
+				this->completionPort = completionPort;
 
 				// set winsock handle
 				this->pWinsockEx = pWinsockEx;
 
 				// create I/O completion port
-				ioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+				rioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 
 				// check if operation has failed
-				if (ioCompletionPort == NULL)
-				{
-					// get error code
-					DWORD kernelErrorCode = ::GetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(kernelErrorCode);
-				}
-
-				// associate the listening socket with the completion port
-				HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)listenSocket, ioCompletionPort, 0, 0);
-
-				if ((associateResult == NULL) || (associateResult != ioCompletionPort))
+				if (rioCompletionPort == NULL)
 				{
 					// get error code
 					DWORD kernelErrorCode = ::GetLastError();
@@ -124,7 +122,7 @@ namespace SXN
 				completionSettings.Type = RIO_IOCP_COMPLETION;
 
 				// set IOCP handle to completion port
-				completionSettings.Iocp.IocpHandle = ioCompletionPort;
+				completionSettings.Iocp.IocpHandle = rioCompletionPort;
 
 				// set IOCP completion key to id of current worker
 				completionSettings.Iocp.CompletionKey = (PVOID) id;
@@ -196,7 +194,7 @@ namespace SXN
 
 				// close completion port
 				// ignore result
-				::CloseHandle(ioCompletionPort);
+				::CloseHandle(completionPort);
 			}
 
 			#pragma endregion
@@ -211,11 +209,11 @@ namespace SXN
 
 					ULONG_PTR completionKey;
 
-					LPOVERLAPPED over;
+					WSAOVERLAPPEDPLUS* over;
 
-					BOOL res = ::GetQueuedCompletionStatus(ioCompletionPort, &numberOfBytes, &completionKey, &over, WSA_INFINITE);
+					BOOL res = ::GetQueuedCompletionStatus(completionPort, &numberOfBytes, &completionKey, (LPOVERLAPPED *) &over, WSA_INFINITE);
 				
-					System::Console::WriteLine("result: {0} port: {1} key: {2}", (Int64) res, (Int64) ioCompletionPort,(Int64) completionKey);
+					System::Console::WriteLine("result: {0} port: {1} num bytes: {2} key: {3} commmand : {4}", (Int64) res, (Int64) numberOfBytes, (Int64) completionPort,(Int64) completionKey, (Int64) over->action);
 				}
 			}
 
@@ -234,9 +232,11 @@ namespace SXN
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
 
-				LPOVERLAPPED ov = new OVERLAPPED();
+				WSAOVERLAPPEDPLUS* ov = new WSAOVERLAPPEDPLUS();
 
-				memset(ov, 0, sizeof(ov));
+				memset(ov, 0, sizeof(WSAOVERLAPPEDPLUS));
+
+				ov->action = workerId * 10000 + connectionId;
 
 				DWORD dwBytes;
 
@@ -259,10 +259,10 @@ namespace SXN
 				}
 
 				// associate the connection socket with the completion port
-				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE) connectionSocket, ioCompletionPort, 0, 0);
+				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE) connectionSocket, rioCompletionPort, 0, 0);
 
 				// check if operation has succeed
-				if ((resultPort == NULL) || (resultPort != ioCompletionPort))
+				if ((resultPort == NULL) || (resultPort != rioCompletionPort))
 				{
 					// get error code
 					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();

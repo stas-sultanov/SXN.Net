@@ -21,6 +21,11 @@ namespace SXN
 			initonly SOCKET listenSocket;
 
 			/// <summary>
+			/// The completion port of the listening socket.
+			/// </summary>
+			initonly HANDLE completionPort;
+
+			/// <summary>
 			/// A pointer to the object that provides work with Winsock extensions.
 			/// <summary/>
 			initonly WinsockEx* pWinsockEx;
@@ -51,7 +56,7 @@ namespace SXN
 					if (startupResultCode != 0)
 					{
 						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) startupResultCode;
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode)startupResultCode;
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -70,6 +75,34 @@ namespace SXN
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
+				// initialize IOCP
+				{
+					// create I/O completion port
+					completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+
+					// check if operation has failed
+					if (completionPort == NULL)
+					{
+						// get error code
+						DWORD kernelErrorCode = ::GetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(kernelErrorCode);
+					}
+
+					// associate the listening socket with the completion port
+					HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)listenSocket, completionPort, 0, 0);
+
+					if ((associateResult == NULL) || (associateResult != completionPort))
+					{
+						// get error code
+						DWORD kernelErrorCode = ::GetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(kernelErrorCode);
 					}
 				}
 
@@ -116,7 +149,7 @@ namespace SXN
 					for (int index = 0; index < TcpWorkerSettings::ProcessorsCount; index++)
 					{
 						// create process worker
-						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, completionPort, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[index] = worker;
@@ -133,7 +166,7 @@ namespace SXN
 				{
 					DWORD optionValue = -1;
 
-					int disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *) &optionValue, sizeof(Int32));
+					int disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&optionValue, sizeof(Int32));
 
 					// check if operation has failed
 					if (disableNagleResult == SOCKET_ERROR)
@@ -162,7 +195,7 @@ namespace SXN
 				{
 					// compose address
 					IN_ADDR address;
-					
+
 					address.S_un.S_addr = 0;
 
 					// compose socket address
@@ -173,7 +206,7 @@ namespace SXN
 					socketAddress.sin_addr = address;
 
 					// try associate address with socket
-					int bindResult = ::bind(listenSocket, (sockaddr *) &socketAddress, sizeof(SOCKADDR_IN));
+					int bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
 
 					if (bindResult == SOCKET_ERROR)
 					{

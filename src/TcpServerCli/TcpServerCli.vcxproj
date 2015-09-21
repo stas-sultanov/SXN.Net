@@ -139,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
+    <ClInclude Include="Overlap.h" />
     <ClInclude Include="RioBufferPool.h" />
     <ClInclude Include="Socket.h" />
     <ClInclude Include="Stdafx.h" />
