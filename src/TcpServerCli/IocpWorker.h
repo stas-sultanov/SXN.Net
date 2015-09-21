@@ -127,8 +127,9 @@ namespace SXN
 				// set IOCP completion key to id of current worker
 				completionSettings.Iocp.CompletionKey = (PVOID) id;
 
+				// TODO: fix this
 				// set IOCP overlapped to invalid
-				completionSettings.Iocp.Overlapped = (PVOID)-1;
+				completionSettings.Iocp.Overlapped = new OVERLAPPED();
 
 				// create the completion queue for the Registered I/O receive operations
 				rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
