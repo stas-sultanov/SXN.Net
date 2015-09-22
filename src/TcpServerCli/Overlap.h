@@ -2,6 +2,8 @@
 
 #include "Stdafx.h"
 
+#define SOCK_ACTION_ACCEPT 2
+
 namespace SXN
 {
 	namespace Net
@@ -11,6 +13,10 @@ namespace SXN
 			public:
 
 			int action;
+
+			int connectionId;
+
+			SOCKET connectionSocket;
 		};
 	}
 }

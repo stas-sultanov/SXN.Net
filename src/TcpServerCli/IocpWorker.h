@@ -24,7 +24,7 @@ namespace SXN
 			/// <summary>
 			/// The descriptor of the listening socket.
 			/// <summary/>
-			initonly SOCKET listenSocket;
+			SOCKET listenSocket;
 
 			/// <summary>
 			/// The completion port of the listening socket.
@@ -101,7 +101,8 @@ namespace SXN
 				this->pWinsockEx = pWinsockEx;
 
 				// create I/O completion port
-				rioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+				//rioCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+				rioCompletionPort = completionPort;
 
 				// check if operation has failed
 				if (rioCompletionPort == NULL)
@@ -206,6 +207,20 @@ namespace SXN
 			{
 				while (true)
 				{
+					int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+					if (rioRecieveNotify != ERROR_SUCCESS)
+					{
+						System::Console::WriteLine("RIONotify:recive:{0}", (WinsockErrorCode) rioRecieveNotify);
+					}
+
+					int rioSendNotify = this->pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+					if (rioSendNotify != ERROR_SUCCESS)
+					{
+						System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
+					}
+
 					DWORD numberOfBytes;
 
 					ULONG_PTR completionKey;
@@ -214,7 +229,34 @@ namespace SXN
 
 					BOOL res = ::GetQueuedCompletionStatus(completionPort, &numberOfBytes, &completionKey, (LPOVERLAPPED *) &over, WSA_INFINITE);
 				
-					System::Console::WriteLine("result: {0} port: {1} num bytes: {2} key: {3} commmand : {4}", (Int64) res, (Int64) numberOfBytes, (Int64) completionPort,(Int64) completionKey, (Int64) over->action);
+					if (res)
+					{
+						System::Console::WriteLine("iocp_port: {0} num_bytes: {1} key: {2} commmand : {3} connectionid : {4}", (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey, (Int32)over->action, (Int32)over->connectionId);
+					}
+					else
+					{
+						System::Console::WriteLine("GetQueuedCompletionStatus: fail");
+
+					}
+
+					if (over->action == SOCK_ACTION_ACCEPT)
+					{
+						SOCKET temp = listenSocket;
+
+						int setSocketOptionResult = ::setsockopt(over->connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *) &temp, sizeof(SOCKET));
+
+						if (setSocketOptionResult == SOCKET_ERROR)
+						{
+							// get error code
+							WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+							System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
+						}
+
+						System::Console::WriteLine("Accept status ok");
+					}
+
+					
 				}
 			}
 
@@ -237,7 +279,11 @@ namespace SXN
 
 				memset(ov, 0, sizeof(WSAOVERLAPPEDPLUS));
 
-				ov->action = workerId * 10000 + connectionId;
+				ov->action = SOCK_ACTION_ACCEPT;
+
+				ov->connectionId = connectionId;
+
+				ov->connectionSocket = connectionSocket;
 
 				DWORD dwBytes;
 
@@ -295,8 +341,10 @@ namespace SXN
 				}
 				/**/
 
+				pWinsockEx->RIOReceive(requestQueue, ,1, RIO_MSG_DONT_NOTIFY, (LPVOID)connectionId);
+
 				// create connection handle
-				TcpConnection^ connection = gcnew TcpConnection(connectionSocket, lpoutbuf, 0, ov);
+				TcpConnection^ connection = gcnew TcpConnection(connectionSocket, lpoutbuf, requestQueue, ov);
 
 				// add connection into the collection of the connections
 				//Connections.TryAdd(id, connection);
