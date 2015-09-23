@@ -49,6 +49,8 @@ namespace SXN
 			/// </summary>
 			initonly RIO_BUF* buffers;
 
+			INT bufferLength;
+
 			#pragma endregion
 
 			internal:
@@ -70,14 +72,16 @@ namespace SXN
 				// set winsock handle
 				this->pWinsockEx = pWinsockEx;
 
+				this->bufferLength = bufferLength;
+
 				// calculate and set the length of the memory buffer
 				memoryBlockLength = bufferLength * buffersCount;
 
 				// reserve and commit aligned memory block
-				LPVOID buffer = ::VirtualAlloc(NULL, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				memoryBlock = ::VirtualAlloc(NULL, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// check if operation has failed
-				if (buffer == NULL)
+				if (memoryBlock == NULL)
 				{
 					// get kernel error code
 					int kernelErrorCode = ::GetLastError();
@@ -87,7 +91,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				rioBufferId = pWinsockEx->RIORegisterBuffer((PCHAR)buffer, memoryBlockLength);
+				rioBufferId = pWinsockEx->RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
@@ -96,7 +100,7 @@ namespace SXN
 					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
 					// try free allocated memory and ignore result
-					::VirtualFree(buffer, 0, MEM_RELEASE);
+					::VirtualFree(memoryBlock, 0, MEM_RELEASE);
 
 					// throw exception
 					throw gcnew TcpServerException(winsockErrorCode);
@@ -163,6 +167,16 @@ namespace SXN
 			*/
 
 			#pragma endregion
+
+			PRIO_BUF GetBuffer(int id)
+			{
+				return this->buffers + id;
+			}
+
+			char* GetData(int id)
+			{
+				return ((PCHAR) this->memoryBlock) + id * bufferLength;
+			}
 		};
 	}
 }
