@@ -151,7 +151,7 @@ namespace SXN
 					for (int index = 0; index < TcpWorkerSettings::ProcessorsCount; index++)
 					{
 						// create process worker
-						IocpWorker^ worker = gcnew IocpWorker(listenSocket, completionPort, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[index] = worker;
@@ -263,6 +263,44 @@ namespace SXN
 					}
 				}
 
+				// get pointer to DisconnectEx function
+				LPFN_DISCONNECTEX pDisconnectEx;
+				{
+					// get extension id
+					GUID extensionId = WSAID_DISCONNECTEX;
+
+					// will contain actual pointer size
+					DWORD actualPtrSize;
+
+					// get function pointer
+					int result = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pDisconnectEx, sizeof(LPFN_DISCONNECTEX), &actualPtrSize, NULL, NULL);
+
+					// check if operation has failed
+					if (result == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// get pointer to GetAcceptExSockaddrs function
+				LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
+				{
+					// get extension id
+					GUID extensionId = WSAID_GETACCEPTEXSOCKADDRS;
+
+					// will contain actual pointer size
+					DWORD actualPtrSize;
+
+					// get function pointer
+					int result = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pGetAcceptExSockaddrs, sizeof(LPFN_GETACCEPTEXSOCKADDRS), &actualPtrSize, NULL, NULL);
+
+					// check if operation has failed
+					if (result == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
 				// get Registered I/O functions table
 				RIO_EXTENSION_FUNCTION_TABLE rioTable;
 				{
@@ -286,7 +324,7 @@ namespace SXN
 				}
 
 				// compose and return result
-				return new WinsockEx(pAcceptEx, rioTable);
+				return new WinsockEx(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
 			}
 
 			void AcceptConnections()
@@ -326,6 +364,8 @@ namespace SXN
 
 							System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
 						}
+
+
 
 						System::Console::WriteLine("AcceptOK:: iocp_port: {0} num_bytes: {1} key: {2} commmand : {3} connectionid : {4}", (Int32) completionPort, (Int32) numberOfBytesTransferred, (Int32)completionKey, (Int32)overlapped->action, (Int32)overlapped->connectionId);
 					}

@@ -15,9 +15,13 @@ namespace SXN
 		{
 			private:
 
-			#pragma region Static Fields
+			#pragma region Fields
 
 			LPFN_ACCEPTEX pAcceptEx;
+
+			LPFN_DISCONNECTEX pDisconnectEx;
+
+			LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
 
 			LPFN_RIORECEIVE pRIOReceive;
 
@@ -54,9 +58,13 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="WinSocket" /> class.
 			/// </summary>
-			inline WinsockEx(LPFN_ACCEPTEX pAcceptEx, RIO_EXTENSION_FUNCTION_TABLE& rioTable)
+			inline WinsockEx(LPFN_ACCEPTEX pAcceptEx, LPFN_DISCONNECTEX pDisconnectEx, LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs, RIO_EXTENSION_FUNCTION_TABLE& rioTable)
 			{
 				this->pAcceptEx = pAcceptEx;
+
+				this->pDisconnectEx = pDisconnectEx;
+
+				this->pGetAcceptExSockaddrs = pGetAcceptExSockaddrs;
 
 				this->pRIOReceive = rioTable.RIOReceive;
 
@@ -83,6 +91,43 @@ namespace SXN
 				this->pRIOResizeCompletionQueue = rioTable.RIOResizeCompletionQueue;
 
 				this->pRIOResizeRequestQueue = rioTable.RIOResizeRequestQueue;
+			}
+
+			#pragma endregion
+
+			#pragma region Methods of the Extensions
+
+			/// <summary>
+			/// Accepts a new connection, returns the local and remote address, and receives the first block of data sent by the client application.
+			/// </summary>
+			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the listen function.</param>
+			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
+			/// <returns>
+			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.
+			/// If the function fails, returns <see cref="FALSE"/>.
+			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
+			/// If <see cref ="WSAGetLastError"/> returns <see cref ="ERROR_IO_PENDING"/>, then the operation was successfully initiated and is still in progress.
+			/// If the error is <see cref ="WSAECONNRESET"/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
+			/// </returns>
+			inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
+			{
+				return pAcceptEx(sListenSocket, sAcceptSocket, lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, lpdwBytesReceived, lpOverlapped);
+			}
+
+			/// <summary>
+			/// Closes a connection on a socket, and allows the socket handle to be reused.
+			/// </summary>
+			inline BOOL DisconnectEx(SOCKET hSocket, LPOVERLAPPED lpOverlapped, DWORD dwFlags, DWORD reserved)
+			{
+				return pDisconnectEx(hSocket, lpOverlapped, dwFlags, reserved);
+			}
+
+			/// <summary>
+			/// Parses the data obtained from a call to the <see href="AcceptEx"/> function and passes the local and remote addresses to a sockaddr structure.
+			/// </summary>
+			inline void GetAcceptExSockaddrs(PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPSOCKADDR *LocalSockaddr, LPINT LocalSockaddrLength, LPSOCKADDR *RemoteSockaddr, LPINT RemoteSockaddrLength)
+			{
+				pGetAcceptExSockaddrs(lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, LocalSockaddr, LocalSockaddrLength, RemoteSockaddr, RemoteSockaddrLength);
 			}
 
 			#pragma endregion
@@ -242,27 +287,6 @@ namespace SXN
 			inline BOOL RIOSend(RIO_RQ SocketQueue, PRIO_BUF pData, DWORD DataBufferCount, DWORD Flags, PVOID RequestContext)
 			{
 				return pRIOSend(SocketQueue, pData, DataBufferCount, Flags, RequestContext);
-			}
-
-			#pragma endregion
-
-			#pragma region Methods of the WSA Extensions
-
-			/// <summary>
-			/// Accepts a new connection, returns the local and remote address, and receives the first block of data sent by the client application.
-			/// </summary>
-			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the listen function.</param>
-			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
-			/// <returns>
-			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.
-			/// If the function fails, returns <see cref="FALSE"/>.
-			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
-			/// If <see cref ="WSAGetLastError"/> returns <see cref ="ERROR_IO_PENDING"/>, then the operation was successfully initiated and is still in progress.
-			/// If the error is <see cref ="WSAECONNRESET"/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
-			/// </returns>
-			inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
-			{
-				return pAcceptEx(sListenSocket, sAcceptSocket, lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, lpdwBytesReceived, lpOverlapped);
 			}
 
 			#pragma endregion
