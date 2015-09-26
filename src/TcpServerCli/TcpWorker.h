@@ -279,8 +279,6 @@ namespace SXN
 							System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
 						}
 
-
-
 						System::Console::WriteLine("AcceptOK:: iocp_port: {0} num_bytes: {1} key: {2} commmand : {3} connectionid : {4}", (Int32) completionPort, (Int32) numberOfBytesTransferred, (Int32)completionKey, (Int32)overlapped->action, (Int32)overlapped->connectionId);
 					}
 				}

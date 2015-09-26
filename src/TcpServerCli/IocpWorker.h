@@ -60,9 +60,17 @@ namespace SXN
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			initonly RioBufferPool^ bufferPool;
+			initonly RioBufferPool^ receiveBufferPool;
+
+			/// <summary>
+			/// The Registered I/O buffer pool.
+			/// </summary>
+			initonly RioBufferPool^ sendBufferPool;
 
 			initonly Thread^ mainThread;
+
+			const char* testMessage = "HTTP/1.1 200 OK\r\nServer:SXN.Ion\r\nContent-Length:0\r\nDate:Sat, 26 Sep 2015 17:45:57 GMT\r\n\r\n";
+
 
 			#pragma endregion
 
@@ -154,7 +162,9 @@ namespace SXN
 
 				// create buffer pool
 
-				bufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount * 16);
+				receiveBufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount);
+
+				sendBufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount);
 
 				// initialize connections array
 				connections = gcnew array<TcpConnection^>(segmentsCount);
@@ -164,6 +174,8 @@ namespace SXN
 				{
 					// create connection
 					TcpConnection^ connection = CreateConnection(id, index);
+
+					connection->StartRecieve();
 
 					// add to collection
 					connections[index] = connection;
@@ -182,7 +194,7 @@ namespace SXN
 			~IocpWorker()
 			{
 				// release buffer pool
-				delete bufferPool;
+				delete receiveBufferPool;
 
 				// close completion queue
 				pWinsockEx->RIOCloseCompletionQueue(rioReciveCompletionQueue);
@@ -275,25 +287,14 @@ namespace SXN
 				}
 				/**/
 
-				PRIO_BUF rioRecivieBuffer = bufferPool->GetBuffer(connectionId);
-
-				BOOL rioReceiveResult = pWinsockEx->RIOReceive(requestQueue, rioRecivieBuffer, 1, 0 /*RIO_MSG_DONT_NOTIFY*/, (LPVOID)connectionId);
-
-				// check if operation has failed
-				if (rioReceiveResult == false)
-				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
-				}
-
 				// create connection handle
-				TcpConnection^ connection = gcnew TcpConnection(connectionSocket, lpoutbuf, requestQueue, ov);
+				TcpConnection^ connection = gcnew TcpConnection(pWinsockEx, connectionId, connectionSocket, lpoutbuf, requestQueue, ov);
 
-				// add connection into the collection of the connections
-				//Connections.TryAdd(id, connection);
+				connection->receiveBuffer = receiveBufferPool->GetBuffer(connectionId);
+
+				connection->sendBuffer = sendBufferPool->GetBuffer(connectionId);
+
+				memcpy(sendBufferPool->GetData(connectionId), testMessage, strlen(testMessage));
 
 				return connection;
 			}
@@ -329,32 +330,64 @@ namespace SXN
 
 					LPOVERLAPPED over;
 
-					BOOL res = ::GetQueuedCompletionStatus(completionPort, &numberOfBytes, &completionKey, &over, INFINITE);
+					BOOL res = ::GetQueuedCompletionStatus(completionPort, &numberOfBytes, &completionKey, &over, /*INFINITE*/ 2000);
 
 					if (!res)
 					{
 						continue;
 					}
 
-					System::Console::WriteLine("Thread: {0}, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
+					System::Console::WriteLine("Thread: {0} IOCP, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
 
 					// dequeue Registered IO completion results
-					INT rioDequeue = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, results, 128);
+					INT receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, results, 128);
 
 					//System::Console::WriteLine("Thread: {0}, RIODequeueCompletion count {1}", this->Id, rioDequeue);
-
-					for (int resultIndex = 0; resultIndex < rioDequeue; resultIndex++)
+					for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
 					{
 						RIORESULT result = results[resultIndex];
 
-						System::Console::WriteLine("Thread: {0}, BytesTransferred {1}, RequestContext {2}, SocketContext {3}, Status {4}", Id, result.BytesTransferred, result.RequestContext, result.SocketContext, result.Status);
+						System::Console::WriteLine("Thread: {0} Receive, BytesTransferred {1}, RequestContext {2}, SocketContext {3}, Status {4}", Id, result.BytesTransferred, result.RequestContext, result.SocketContext, result.Status);
 
-						char *data = bufferPool->GetData(result.RequestContext);
+						int connectionId = result.RequestContext;
 
-						String^ s = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(IntPtr(data));
+						//char *data = receiveBufferPool->GetData(connectionId);
 
-						System::Console::WriteLine("Data :: {0}", s);
+						//String^ s = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(IntPtr(data));
+
+						//System::Console::WriteLine("Data :: {0}", s);
+
+						TcpConnection^ x = connections[connectionId];
+
+						x->StartSend(strlen(testMessage));
+
+
 					}
+
+					// dequeue Registered IO completion results
+					int sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, results, 128);
+
+					//System::Console::WriteLine("Thread: {0}, RIODequeueCompletion count {1}", this->Id, rioDequeue);
+
+					for (int resultIndex = 0; resultIndex < sendCompletionsCount; resultIndex++)
+					{
+						RIORESULT result = results[resultIndex];
+
+						System::Console::WriteLine("Thread: {0} Send, BytesTransferred {1}, RequestContext {2}, SocketContext {3}, Status {4}", Id, result.BytesTransferred, result.RequestContext, result.SocketContext, result.Status);
+					
+						int connectionId = result.RequestContext;
+
+						TcpConnection^ x = connections[connectionId];
+
+						BOOL disconnectResult = pWinsockEx->DisconnectEx(x->socket, nullptr, TF_REUSE_SOCKET, 0);
+
+					}
+
+					this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+					this->pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+
 				}
 			}
 		};
