@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using SXN.Net.Winsock;
 
 namespace SXN.Net
 {
@@ -33,7 +32,5 @@ namespace SXN.Net
 		}
 
 		#endregion
-
-
 	}
 }

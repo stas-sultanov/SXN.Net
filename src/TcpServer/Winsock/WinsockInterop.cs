@@ -20,16 +20,6 @@ namespace SXN.Net.Winsock
 	{
 		#region Constant and Static Fields
 
-		public static readonly RIO_CQ RIO_CORRUPT_CQ = new RIO_CQ(-1);
-
-		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
-
-		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
-
-		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
-
-		public static readonly Guid WSAID_MULTIPLE_RIO = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
-
 		/// <summary>
 		/// The Internet Protocol version 4 (IPv4) address family.
 		/// </summary>
@@ -84,9 +74,17 @@ namespace SXN.Net.Winsock
 		/// </summary>
 		private const String WS232DLL = "WS2_32.dll";
 
+		public static readonly UIntPtr INVALID_SOCKET = UIntPtr.Subtract(UIntPtr.Zero, 1); // new UIntPtr(unchecked ((UInt64) ~0));
 
+		public static readonly RIO_CQ RIO_CORRUPT_CQ = new RIO_CQ(-1);
 
-		public static readonly UIntPtr INVALID_SOCKET = UIntPtr.Subtract(UIntPtr.Zero, 1);  // new UIntPtr(unchecked ((UInt64) ~0));
+		public static readonly RIO_BUFFERID RIO_INVALID_BUFFERID = RIO_BUFFERID.Zero;
+
+		public static readonly RIO_CQ RIO_INVALID_CQ = RIO_CQ.Zero;
+
+		public static readonly RIO_RQ RIO_INVALID_RQ = RIO_RQ.Zero;
+
+		public static readonly Guid WSAID_MULTIPLE_RIO = new Guid("8509e081-96dd-4005-b165-9e2ee8c79e3f");
 
 		#endregion
 

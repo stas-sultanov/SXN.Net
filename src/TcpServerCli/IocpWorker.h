@@ -354,13 +354,9 @@ namespace SXN
 						String^ s = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(IntPtr(data));
 
 						System::Console::WriteLine("Data :: {0}", s);
-
-
-
 					}
 				}
 			}
-
 		};
 	}
 }

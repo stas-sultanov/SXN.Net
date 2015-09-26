@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using SXN.Net.Kernel;
 using SXN.Net.Winsock;
 
@@ -127,7 +126,7 @@ namespace SXN.Net
 */
 
 			//while (!cancellationToken.IsCancellationRequested)
-			while(true)
+			while (true)
 			{
 				// try register method to use for notification behavior with the I/O completion queue
 				var notifyResult = (WinsockErrorCode) RioHandle.Notify(CompletionQueue);
@@ -262,7 +261,7 @@ namespace SXN.Net
 						CompletionKey = (UInt64) processorIndex,
 						Overlapped = (NativeOverlapped*) -1
 					}
-				},
+				}
 			};
 
 			// try create completion queue
@@ -298,18 +297,6 @@ namespace SXN.Net
 			return TryResult<IocpWorker>.CreateSuccess(result);
 		}
 
-		/// <summary>
-		/// Tries to free all allocated unmanaged resources.
-		/// </summary>
-		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
-		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
-		public Boolean TryRelease(out UInt32 kernelErrorCode)
-		{
-			return BufferPool.TryRelease(RioHandle, out kernelErrorCode);
-		}
-
-		#endregion
-
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal TryResult<TcpConnection> TryCreateConnection(SOCKET socket, UInt64 id)
 		{
@@ -334,5 +321,17 @@ namespace SXN.Net
 
 			return TryResult<TcpConnection>.CreateSuccess(connection);
 		}
+
+		/// <summary>
+		/// Tries to free all allocated unmanaged resources.
+		/// </summary>
+		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
+		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
+		public Boolean TryRelease(out UInt32 kernelErrorCode)
+		{
+			return BufferPool.TryRelease(RioHandle, out kernelErrorCode);
+		}
+
+		#endregion
 	}
 }

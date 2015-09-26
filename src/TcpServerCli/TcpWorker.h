@@ -110,7 +110,7 @@ namespace SXN
 
 				// initialize winsock extensions
 				{
-					pWinsockEx = Initialize(listenSocket);
+					pWinsockEx = WinsockEx::Initialize(listenSocket);
 
 					if (pWinsockEx == NULL)
 					{
@@ -239,93 +239,7 @@ namespace SXN
 
 			#pragma region Static Constructor
 
-			/// <summary>
-			/// Initializes a new instance of the <see cref="WinsockEx" /> class.
-			/// </summary>
-			static WinsockEx* Initialize(SOCKET listenSocket)
-			{
-				// get pointer to AcceptEx function
-				LPFN_ACCEPTEX pAcceptEx;
-				{
-					// get extension id
-					GUID extensionId = WSAID_ACCEPTEX;
 
-					// will contain actual pointer size
-					DWORD actualPtrSize;
-
-					// get function pointer
-					int getAcceptExResult = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pAcceptEx, sizeof(LPFN_ACCEPTEX), &actualPtrSize, NULL, NULL);
-
-					// check if operation has failed
-					if (getAcceptExResult == SOCKET_ERROR)
-					{
-						return NULL;
-					}
-				}
-
-				// get pointer to DisconnectEx function
-				LPFN_DISCONNECTEX pDisconnectEx;
-				{
-					// get extension id
-					GUID extensionId = WSAID_DISCONNECTEX;
-
-					// will contain actual pointer size
-					DWORD actualPtrSize;
-
-					// get function pointer
-					int result = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pDisconnectEx, sizeof(LPFN_DISCONNECTEX), &actualPtrSize, NULL, NULL);
-
-					// check if operation has failed
-					if (result == SOCKET_ERROR)
-					{
-						return NULL;
-					}
-				}
-
-				// get pointer to GetAcceptExSockaddrs function
-				LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
-				{
-					// get extension id
-					GUID extensionId = WSAID_GETACCEPTEXSOCKADDRS;
-
-					// will contain actual pointer size
-					DWORD actualPtrSize;
-
-					// get function pointer
-					int result = ::WSAIoctl(listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), &pGetAcceptExSockaddrs, sizeof(LPFN_GETACCEPTEXSOCKADDRS), &actualPtrSize, NULL, NULL);
-
-					// check if operation has failed
-					if (result == SOCKET_ERROR)
-					{
-						return NULL;
-					}
-				}
-
-				// get Registered I/O functions table
-				RIO_EXTENSION_FUNCTION_TABLE rioTable;
-				{
-					// get extension id
-					GUID id = WSAID_MULTIPLE_RIO;
-
-					// get table size
-					DWORD tableSize = sizeof(RIO_EXTENSION_FUNCTION_TABLE);
-
-					// will contain actual table size
-					DWORD actualTableSize;
-
-					// try get registered IO functions table
-					int getResult = ::WSAIoctl(listenSocket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
-
-					// check if operation was not successful
-					if (getResult == SOCKET_ERROR)
-					{
-						return NULL;
-					}
-				}
-
-				// compose and return result
-				return new WinsockEx(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
-			}
 
 			void AcceptConnections()
 			{

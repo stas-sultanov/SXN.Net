@@ -23,14 +23,6 @@ namespace SXN
 
 			LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
 
-			LPFN_RIORECEIVE pRIOReceive;
-
-			LPFN_RIORECEIVEEX pRIOReceiveEx;
-
-			LPFN_RIOSEND pRIOSend;
-
-			LPFN_RIOSENDEX pRIOSendEx;
-
 			LPFN_RIOCLOSECOMPLETIONQUEUE pRIOCloseCompletionQueue;
 
 			LPFN_RIOCREATECOMPLETIONQUEUE pRIOCreateCompletionQueue;
@@ -43,15 +35,21 @@ namespace SXN
 
 			LPFN_RIONOTIFY pRIONotify;
 
+			LPFN_RIORECEIVE pRIOReceive;
+
+			LPFN_RIORECEIVEEX pRIOReceiveEx;
+
 			LPFN_RIOREGISTERBUFFER pRIORegisterBuffer;
 
 			LPFN_RIORESIZECOMPLETIONQUEUE pRIOResizeCompletionQueue;
 
 			LPFN_RIORESIZEREQUESTQUEUE pRIOResizeRequestQueue;
 
-			#pragma endregion
+			LPFN_RIOSEND pRIOSend;
 
-			public:
+			LPFN_RIOSENDEX pRIOSendEx;
+
+			#pragma endregion
 
 			#pragma region Constructor
 
@@ -66,14 +64,6 @@ namespace SXN
 
 				this->pGetAcceptExSockaddrs = pGetAcceptExSockaddrs;
 
-				this->pRIOReceive = rioTable.RIOReceive;
-
-				this->pRIOReceiveEx = rioTable.RIOReceiveEx;
-
-				this->pRIOSend = rioTable.RIOSend;
-
-				this->pRIOSendEx = rioTable.RIOSendEx;
-
 				this->pRIOCloseCompletionQueue = rioTable.RIOCloseCompletionQueue;
 
 				this->pRIOCreateCompletionQueue = rioTable.RIOCreateCompletionQueue;
@@ -86,11 +76,114 @@ namespace SXN
 
 				this->pRIONotify = rioTable.RIONotify;
 
+				this->pRIOReceive = rioTable.RIOReceive;
+
+				this->pRIOReceiveEx = rioTable.RIOReceiveEx;
+
 				this->pRIORegisterBuffer = rioTable.RIORegisterBuffer;
 
 				this->pRIOResizeCompletionQueue = rioTable.RIOResizeCompletionQueue;
 
 				this->pRIOResizeRequestQueue = rioTable.RIOResizeRequestQueue;
+
+				this->pRIOSend = rioTable.RIOSend;
+
+				this->pRIOSendEx = rioTable.RIOSendEx;
+			}
+
+			#pragma endregion
+
+			#pragma region Methods
+
+			static inline int GetExtension(SOCKET socket, GUID extensionId, LPVOID ptr)
+			{
+				// will contain actual pointer size
+				DWORD actualPtrSize;
+
+				// get function pointer
+				return ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), ptr, sizeof(LPFN_ACCEPTEX), &actualPtrSize, NULL, NULL);
+			}
+
+			#pragma endregion
+
+			public:
+
+			#pragma region Methods
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="WinsockEx" /> class.
+			/// </summary>
+			/// <param name="socket">A descriptor that identifies the socket.</param>
+			/// <returns>
+			/// If the function succeeds, the return value is the pointer to the instance of the class.
+			/// If the function fails, the return value is <c>null</c>.
+			/// To get extended error information, call <see cref="WSAGetLastError" />.
+			/// </returns>
+			static WinsockEx* Initialize(SOCKET socket)
+			{
+				// get pointer to AcceptEx function
+				LPFN_ACCEPTEX pAcceptEx;
+				{
+					// get pointer
+					int getResult = GetExtension(socket, WSAID_ACCEPTEX, &pAcceptEx);
+
+					// check if operation has failed
+					if (getResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// get pointer to DisconnectEx function
+				LPFN_DISCONNECTEX pDisconnectEx;
+				{
+					// get pointer
+					int getResult = GetExtension(socket, WSAID_DISCONNECTEX, &pDisconnectEx);
+
+					// check if operation has failed
+					if (getResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// get pointer to GetAcceptExSockaddrs function
+				LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
+				{
+					// get pointer
+					int getResult = GetExtension(socket, WSAID_GETACCEPTEXSOCKADDRS, &pGetAcceptExSockaddrs);
+
+					// check if operation has failed
+					if (getResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// get Registered I/O functions table
+				RIO_EXTENSION_FUNCTION_TABLE rioTable;
+				{
+					// get extension id
+					GUID id = WSAID_MULTIPLE_RIO;
+
+					// get table size
+					DWORD tableSize = sizeof(RIO_EXTENSION_FUNCTION_TABLE);
+
+					// will contain actual table size
+					DWORD actualTableSize;
+
+					// try get registered IO functions table
+					int getResult = ::WSAIoctl(socket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+
+					// check if operation was not successful
+					if (getResult == SOCKET_ERROR)
+					{
+						return NULL;
+					}
+				}
+
+				// compose and return result
+				return new WinsockEx(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
 			}
 
 			#pragma endregion

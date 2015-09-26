@@ -1,4 +1,5 @@
 ﻿using System;
+
 //using SXN.Net.Winsock;
 
 namespace SXN.Net
@@ -9,7 +10,6 @@ namespace SXN.Net
 
 		private static void Main()
 		{
-			
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
@@ -36,7 +36,6 @@ namespace SXN.Net
 
 				return;
 			}
-
 
 			Console.WriteLine($"server is activated");
 

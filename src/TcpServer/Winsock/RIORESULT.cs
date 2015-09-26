@@ -12,6 +12,8 @@ namespace SXN.Net.Winsock
 	/// </summary>
 	internal struct RIORESULT
 	{
+		#region Fields
+
 		/// <summary>
 		/// The completion status of the Winsock registered I/O request.
 		/// </summary>
@@ -23,13 +25,15 @@ namespace SXN.Net.Winsock
 		public ULONG BytesTransferred;
 
 		/// <summary>
-		/// An application-provided context specified in call to the <see cref="RIOHandle.CreateRequestQueue"/> function.
+		/// An application-provided context specified in call to the <see cref="RIOHandle.CreateRequestQueue" /> function.
 		/// </summary>
 		public SOCKET SocketContext;
 
 		/// <summary>
-		/// An application-provided context specified with the registered I/O request to the <see cref="RIOHandle.Receive"/>, <see cref="RIOHandle.ReceiveEx"/>, <see cref="RIOHandle.Send"/> and <see cref="RIOHandle.SendEx"/> functions.
+		/// An application-provided context specified with the registered I/O request to the <see cref="RIOHandle.Receive" />, <see cref="RIOHandle.ReceiveEx" />, <see cref="RIOHandle.Send" /> and <see cref="RIOHandle.SendEx" /> functions.
 		/// </summary>
 		public ULONGULONG RequestContext;
+
+		#endregion
 	}
 }

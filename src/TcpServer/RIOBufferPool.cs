@@ -165,6 +165,9 @@ namespace SXN.Net
 			return TryResult<RIOBufferPool>.CreateSuccess(result);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Boolean TryGetBufferSegmentId(out Int32 segmentId) => availableSegments.TryDequeue(out segmentId);
+
 		/// <summary>
 		/// Tries to release all allocated resources.
 		/// </summary>
@@ -195,9 +198,6 @@ namespace SXN.Net
 
 			return true;
 		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Boolean TryGetBufferSegmentId(out Int32 segmentId) => availableSegments.TryDequeue(out segmentId);
 
 		#endregion
 	}
