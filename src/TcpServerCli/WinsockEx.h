@@ -210,6 +210,17 @@ namespace SXN
 			/// <summary>
 			/// Closes a connection on a socket, and allows the socket handle to be reused.
 			/// </summary>
+			/// <param name="hSocket">A handle to a connected, connection-oriented socket.</param>
+			/// <param name="lpOverlapped">A pointer to an <see href="OVERLAPPED" /> structure. If the socket handle has been opened as overlapped, specifying this parameter results in an overlapped (asynchronous) I/O operation.</param>
+			/// <param name="dwFlags">A set of flags that customizes processing of the function call.</param>
+			/// <param name="reserved">Reserved. Must be zero.</param>
+			/// <returns>
+			/// On success, returns TRUE.
+			/// On failure, the function returns FALSE.
+			/// Use the <see cref="WSAGetLastError"/> function to get extended error information.
+			/// If a call to the <see cref="WSAGetLastError"/> function returns <see cref="ERROR_IO_PENDING"/>, the operation initiated successfully and is in progress.
+			/// Under such circumstances, the call may still fail when the operation completes.
+			/// </returns>
 			inline BOOL DisconnectEx(SOCKET hSocket, LPOVERLAPPED lpOverlapped, DWORD dwFlags, DWORD reserved)
 			{
 				return pDisconnectEx(hSocket, lpOverlapped, dwFlags, reserved);

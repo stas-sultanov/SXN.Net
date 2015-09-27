@@ -2,6 +2,7 @@
 
 #include "Stdafx.h"
 #include "WinsockEx.h"
+#include "Overlap.h"
 
 namespace SXN
 {
@@ -15,13 +16,17 @@ namespace SXN
 
 			WinsockEx* pWinsockEx;
 
+			initonly SOCKET listenSocket;
+
 			initonly SOCKET socket;
 
 			initonly RIO_RQ rioRequestQueue;
 
 			initonly PVOID addrBuf;
 
-			initonly LPOVERLAPPED acceptOverlapped;
+			initonly WSAOVERLAPPEDPLUS* acceptOverlapped;
+
+			initonly WSAOVERLAPPEDPLUS* disconnectOverlaped;
 
 			int id;
 
@@ -38,8 +43,10 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(WinsockEx* pWinsockEx, int id, SOCKET socket, PVOID addrBuf, RIO_RQ requestQueue, LPOVERLAPPED accceptk)
+			inline TcpConnection(SOCKET listenSocket, WinsockEx* pWinsockEx, int id, SOCKET socket, RIO_RQ requestQueue)
 			{
+				this->listenSocket = listenSocket;
+
 				this->pWinsockEx = pWinsockEx;
 
 				this->id = id;
@@ -48,14 +55,39 @@ namespace SXN
 
 				this->rioRequestQueue = requestQueue;
 
-				this->addrBuf = addrBuf;
+				this->addrBuf = new char[(sizeof(sockaddr_in) + 16) * 2];
 
-				this->acceptOverlapped = accceptk;
+				this->acceptOverlapped = new WSAOVERLAPPEDPLUS();
+
+				memset(acceptOverlapped, 0, sizeof(WSAOVERLAPPEDPLUS));
+
+				acceptOverlapped->action = SOCK_ACTION_ACCEPT;
+
+				acceptOverlapped->connectionId = id;
+
+				acceptOverlapped->connectionSocket = socket;
+
+				this->disconnectOverlaped = new WSAOVERLAPPEDPLUS();
+
+				memset(disconnectOverlaped, 0, sizeof(WSAOVERLAPPEDPLUS));
+
+				disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
+
+				disconnectOverlaped->connectionId = id;
+
+				acceptOverlapped->connectionSocket = socket;
 			}
 
 			!TcpConnection()
 			{
 				delete addrBuf;
+			}
+
+			BOOL StartAccept()
+			{
+				DWORD dwBytes;
+
+				return pWinsockEx->AcceptEx(listenSocket, socket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
 			}
 
 			BOOL StartRecieve()
@@ -89,6 +121,11 @@ namespace SXN
 				}
 
 				return result;
+			}
+
+			BOOL StartDisconnect()
+			{
+				return pWinsockEx->DisconnectEx(socket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 			}
 
 			#pragma endregion

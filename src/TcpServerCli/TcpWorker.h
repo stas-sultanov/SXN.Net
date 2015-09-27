@@ -260,8 +260,11 @@ namespace SXN
 					// check if operation has failed
 					if (dequeueResult == FALSE)
 					{
+						continue;
 						// TODO: ABORT
 					}
+
+					System::Console::WriteLine("MAIN Thread: something, completionPort: {0} numberOfBytesTransferred: {1} completionKey: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
 
 					if (overlapped->action == SOCK_ACTION_ACCEPT)
 					{
@@ -279,8 +282,15 @@ namespace SXN
 							System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
 						}
 
-						System::Console::WriteLine("AcceptOK:: iocp_port: {0} num_bytes: {1} key: {2} commmand : {3} connectionid : {4}", (Int32) completionPort, (Int32) numberOfBytesTransferred, (Int32)completionKey, (Int32)overlapped->action, (Int32)overlapped->connectionId);
+						//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, result.Status);
+						System::Console::WriteLine("MAIN Thread: X - Connection: {0} - ACCEPT", (Int32)overlapped->connectionId);
 					}
+					else
+					{
+						System::Console::WriteLine("MAIN Thread: something other, iocp_port: {0} num_bytes: {1} key: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
+
+					}
+
 				}
 			}
 

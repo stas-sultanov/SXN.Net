@@ -4,6 +4,12 @@
 
 #define SOCK_ACTION_ACCEPT 2
 
+#define SOCK_ACTION_RECEIVE 4
+
+#define SOCK_ACTION_SEND 8
+
+#define SOCK_ACTION_DISCONNECT 16
+
 namespace SXN
 {
 	namespace Net
