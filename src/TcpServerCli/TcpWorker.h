@@ -224,7 +224,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = ::listen(listenSocket, 200);
+					int startListen = ::listen(listenSocket, settings.ConnectinosBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
