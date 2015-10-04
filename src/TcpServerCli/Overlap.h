@@ -23,6 +23,8 @@ namespace SXN
 			int connectionId;
 
 			SOCKET connectionSocket;
+
+			HANDLE completionPort;
 		};
 	}
 }

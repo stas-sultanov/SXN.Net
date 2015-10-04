@@ -43,7 +43,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(SOCKET listenSocket, WinsockEx* pWinsockEx, int id, SOCKET socket, RIO_RQ requestQueue)
+			inline TcpConnection(SOCKET listenSocket, WinsockEx* pWinsockEx, int id, SOCKET socket, RIO_RQ requestQueue, HANDLE complitionPort)
 			{
 				this->listenSocket = listenSocket;
 
@@ -57,25 +57,33 @@ namespace SXN
 
 				this->addrBuf = new char[(sizeof(sockaddr_in) + 16) * 2];
 
-				this->acceptOverlapped = new WSAOVERLAPPEDPLUS();
+				{
+					this->acceptOverlapped = new WSAOVERLAPPEDPLUS();
 
-				memset(acceptOverlapped, 0, sizeof(WSAOVERLAPPEDPLUS));
+					memset(acceptOverlapped, 0, sizeof(WSAOVERLAPPEDPLUS));
 
-				acceptOverlapped->action = SOCK_ACTION_ACCEPT;
+					acceptOverlapped->action = SOCK_ACTION_ACCEPT;
 
-				acceptOverlapped->connectionId = id;
+					acceptOverlapped->connectionId = id;
 
-				acceptOverlapped->connectionSocket = socket;
+					acceptOverlapped->connectionSocket = socket;
 
-				this->disconnectOverlaped = new WSAOVERLAPPEDPLUS();
+					acceptOverlapped->completionPort = complitionPort;
+				}
 
-				memset(disconnectOverlaped, 0, sizeof(WSAOVERLAPPEDPLUS));
+				{
+					this->disconnectOverlaped = new WSAOVERLAPPEDPLUS();
 
-				disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
+					memset(disconnectOverlaped, 0, sizeof(WSAOVERLAPPEDPLUS));
 
-				disconnectOverlaped->connectionId = id;
+					disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
 
-				acceptOverlapped->connectionSocket = socket;
+					disconnectOverlaped->connectionId = id;
+
+					disconnectOverlaped->connectionSocket = socket;
+
+					disconnectOverlaped->completionPort = complitionPort;
+				}
 			}
 
 			!TcpConnection()

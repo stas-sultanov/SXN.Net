@@ -195,7 +195,7 @@ namespace SXN
 					// create connection
 					TcpConnection^ connection = CreateConnection(id, index);
 
-					connection->StartRecieve();
+					//connection->StartRecieve();
 
 					// add to collection
 					connections[index] = connection;
@@ -244,13 +244,6 @@ namespace SXN
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
 
-				
-
-				
-
-
-
-
 				/**/
 				// associate the connection socket with the completion port
 				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE) connectionSocket, completionPort, SOCK_ACTION_DISCONNECT, 0);
@@ -285,7 +278,7 @@ namespace SXN
 				/**/
 
 				// create connection handle
-				TcpConnection^ connection = gcnew TcpConnection(listenSocket, pWinsockEx, connectionId, connectionSocket, requestQueue);
+				TcpConnection^ connection = gcnew TcpConnection(listenSocket, pWinsockEx, connectionId, connectionSocket, requestQueue, completionPort);
 
 				BOOL acceptResult = connection->StartAccept();
 
@@ -351,6 +344,33 @@ namespace SXN
 
 					switch (completionKey)
 					{
+						case SOCK_ACTION_ACCEPT:
+						{
+							SOCKET tempListenSocket = listenSocket;
+
+							WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)over;
+
+							// set socket state to accepted
+							int setSocketOptionResult = ::setsockopt(overlapped->connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&tempListenSocket, sizeof(SOCKET));
+
+							// check if operation has failed
+							if (setSocketOptionResult == SOCKET_ERROR)
+							{
+								// get error code
+								WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+								System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
+							}
+
+							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
+
+							TcpConnection^ connection = connections[overlapped->connectionId];
+
+							connection->StartRecieve();
+
+							break;
+						}
+
 						case SOCK_ACTION_RECEIVE:
 						{
 							// dequeue Registered IO completion results
@@ -360,9 +380,24 @@ namespace SXN
 							{
 								RIORESULT result = results[resultIndex];
 
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, result.Status);
-
+								// get connection id
 								int connectionId = result.RequestContext;
+
+								// get connection
+								TcpConnection^ connection = connections[connectionId];
+
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+
+								// check if client has requested the disconnect by sending 0 bytes
+								if (result.BytesTransferred == 0)
+								{
+									// post disconnect operation
+									connection->StartDisconnect();
+
+									this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+									continue;
+								}
 
 								//char *data = receiveBufferPool->GetData(connectionId);
 
@@ -370,9 +405,7 @@ namespace SXN
 
 								//System::Console::WriteLine("Data :: {0}", s);
 
-								TcpConnection^ x = connections[connectionId];
-
-								x->StartSend(strlen(testMessage));
+								connection->StartSend(strlen(testMessage));
 							}
 
 							this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
@@ -389,7 +422,7 @@ namespace SXN
 							{
 								RIORESULT result = results[resultIndex];
 
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, result.Status);
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 
 								int connectionId = result.RequestContext;
 
@@ -407,7 +440,7 @@ namespace SXN
 						{
 							WSAOVERLAPPEDPLUS* over2 = (WSAOVERLAPPEDPLUS *) over;
 
-							System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
+							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 
 							TcpConnection^ connection = connections[over2->connectionId];
 
@@ -418,7 +451,7 @@ namespace SXN
 
 						default:
 						{
-							System::Console::WriteLine("IOCP Thread: {0} something other, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
+							//System::Console::WriteLine("IOCP Thread: {0} something other, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
 
 							break;
 						}
