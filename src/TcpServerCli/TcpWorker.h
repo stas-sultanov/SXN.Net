@@ -148,13 +148,13 @@ namespace SXN
 					workers = gcnew array<IocpWorker^>(processorsCount);
 
 					// initialize workers
-					for (int index = 0; index < TcpWorkerSettings::ProcessorsCount; index++)
+					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, index, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, processorIndex, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
-						workers[index] = worker;
+						workers[processorIndex] = worker;
 					}
 				}
 
@@ -254,8 +254,13 @@ namespace SXN
 					// the address of the OVERLAPPED structure that was specified when the completed I/O operation was started
 					WSAOVERLAPPEDPLUS* overlapped;
 
+					// define array of completion entries
+					OVERLAPPED_ENTRY completionPortEntries[128];
+
+					ULONG numEntriesRemoved;
+
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatus(completionPort, &numberOfBytesTransferred, &completionKey, (LPOVERLAPPED *)&overlapped, WSA_INFINITE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 128, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
@@ -264,35 +269,19 @@ namespace SXN
 						// TODO: ABORT
 					}
 
+					for (int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
+					{
+						// get entry
+						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];
+
+						// get structure that was specified when the completed I/O operation was started
+						WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS*) entry.lpOverlapped;
+
+						// repost completion status
+						::PostQueuedCompletionStatus(overlapped->completionPort, entry.dwNumberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);
+					}
+
 					//System::Console::WriteLine("MAIN Thread: something, completionPort: {0} numberOfBytesTransferred: {1} completionKey: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
-
-					if (overlapped->action == SOCK_ACTION_ACCEPT)
-					{
-						::PostQueuedCompletionStatus(overlapped->completionPort, numberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);
-
-						/*
-						SOCKET tempListenSocket = listenSocket;
-
-						// set socket state to accepted
-						int setSocketOptionResult = ::setsockopt(overlapped->connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&tempListenSocket, sizeof(SOCKET));
-
-						// check if operation has failed
-						if (setSocketOptionResult == SOCKET_ERROR)
-						{
-							// get error code
-							WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-							System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
-						}
-
-						System::Console::WriteLine("MAIN Thread: X - Connection: {0} - ACCEPT", (Int32)overlapped->connectionId);
-						*/
-					}
-					else
-					{
-						System::Console::WriteLine("MAIN Thread: something other, iocp_port: {0} num_bytes: {1} key: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
-					}
-
 				}
 			}
 
