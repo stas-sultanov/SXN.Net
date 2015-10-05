@@ -52,10 +52,9 @@ namespace SXN
 			initonly RIO_CQ rioSendCompletionQueue;
 
 			/// <summary>
-			/// The dictionary of the connections.
+			/// The collection of the connections.
 			/// </summary>
-			// ConcurrentDictionary<UInt64, TcpConnection> Connections;
-			initonly array<TcpConnection *>^ connections;
+			TcpConnection** connections;
 
 			/// <summary>
 			/// The Registered I/O buffer pool.
@@ -206,7 +205,7 @@ namespace SXN
 				}
 
 				// initialize connections array
-				connections = gcnew array<TcpConnection*>(segmentsCount);
+				connections = new TcpConnection*[segmentsCount];
 
 				// initialize connections
 				for (unsigned int index = 0; index < segmentsCount; index++)
@@ -326,7 +325,11 @@ namespace SXN
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void DoWork()
 			{
-				RIORESULT* results = new RIORESULT[128];
+				// define array of completion entries
+				OVERLAPPED_ENTRY completionPortEntries[128];
+
+				// define array of the Registered IO results
+				RIORESULT rioResults[128];
 
 				int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
 
@@ -344,9 +347,6 @@ namespace SXN
 				System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
 				}
 				/**/
-
-				// define array of completion entries
-				OVERLAPPED_ENTRY completionPortEntries[128];
 
 				// will contain number of entries removed from the completion queue
 				ULONG numEntriesRemoved;
@@ -375,10 +375,7 @@ namespace SXN
 								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
 
 								// get overlapped
-								WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)entry.lpOverlapped;
-
-								// get connection
-								TcpConnection* connection = connections[overlapped->connectionId];
+								Ovelapped* overlapped = (Ovelapped *)entry.lpOverlapped;
 
 								SOCKET tempListenSocket = listenSocket;
 
@@ -394,7 +391,8 @@ namespace SXN
 									System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
 								}
 
-								connection->StartRecieve();
+								// start asynchronous receive operation
+								overlapped->connection->StartRecieve();
 
 								break;
 							}
@@ -402,13 +400,10 @@ namespace SXN
 							case SOCK_ACTION_DISCONNECT:
 							{
 								// get overlapped
-								WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)entry.lpOverlapped;
+								Ovelapped* overlapped = (Ovelapped *)entry.lpOverlapped;
 
-								// get connection
-								TcpConnection* connection = connections[overlapped->connectionId];
-
-								// start accept
-								connection->StartAccept();
+								// start asynchronous accept operation
+								overlapped->connection->StartAccept();
 
 								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 
@@ -418,19 +413,15 @@ namespace SXN
 							case SOCK_ACTION_RECEIVE:
 							{
 								// dequeue Registered IO completion results
-								INT receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, results, 128);
+								INT receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, rioResults, 128);
 
 								for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
 								{
-									//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
-
-									RIORESULT result = results[resultIndex];
-
-									// get connection id
-									int connectionId = result.RequestContext;
+									// get result
+									RIORESULT result = rioResults[resultIndex];
 
 									// get connection
-									TcpConnection* connection = connections[connectionId];
+									TcpConnection* connection = (TcpConnection *)result.RequestContext;
 
 									// check if client has requested the disconnect by sending 0 bytes
 									if (result.BytesTransferred == 0)
@@ -441,7 +432,10 @@ namespace SXN
 										continue;
 									}
 
+									// start asynchronous send operation
 									connection->StartSend(strlen(testMessage));
+
+									//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 								}
 
 								this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
@@ -452,19 +446,20 @@ namespace SXN
 							case SOCK_ACTION_SEND:
 							{
 								// dequeue Registered IO completion results
-								int sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, results, 128);
+								int sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, rioResults, 128);
 
 								for (int resultIndex = 0; resultIndex < sendCompletionsCount; resultIndex++)
 								{
-									RIORESULT result = results[resultIndex];
+									// get result
+									RIORESULT result = rioResults[resultIndex];
+
+									// get connection
+									TcpConnection* connection = (TcpConnection *)result.RequestContext;
+
+									// start asynchronous disconnect operation
+									connection->StartDisconnect();
 
 									//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
-
-									int connectionId = result.RequestContext;
-
-									TcpConnection* connection = connections[connectionId];
-
-									connection->StartDisconnect();
 								}
 
 								this->pWinsockEx->RIONotify(rioSendCompletionQueue);

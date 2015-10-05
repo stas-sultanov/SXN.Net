@@ -14,13 +14,17 @@ namespace SXN
 {
 	namespace Net
 	{
-		private struct WSAOVERLAPPEDPLUS final : OVERLAPPED
+		extern class TcpConnection;
+
+		private struct Ovelapped final : OVERLAPPED
 		{
 			public:
 
 			int action;
 
-			int connectionId;
+			TcpConnection* connection;
+
+			int status;
 
 			SOCKET connectionSocket;
 

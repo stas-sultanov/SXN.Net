@@ -266,7 +266,7 @@ namespace SXN
 						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];
 
 						// get structure that was specified when the completed I/O operation was started
-						WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS*) entry.lpOverlapped;
+						Ovelapped* overlapped = (Ovelapped*) entry.lpOverlapped;
 
 						// repost completion status
 						::PostQueuedCompletionStatus(overlapped->completionPort, entry.dwNumberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);

@@ -24,9 +24,9 @@ namespace SXN
 
 			PVOID addrBuf;
 
-			WSAOVERLAPPEDPLUS* acceptOverlapped;
+			Ovelapped* acceptOverlapped;
 
-			WSAOVERLAPPEDPLUS* disconnectOverlaped;
+			Ovelapped* disconnectOverlaped;
 
 			ULONG id;
 
@@ -58,13 +58,13 @@ namespace SXN
 				this->addrBuf = new char[(sizeof(sockaddr_in) + 16) * 2];
 
 				{
-					this->acceptOverlapped = new WSAOVERLAPPEDPLUS();
+					this->acceptOverlapped = new Ovelapped();
 
-					memset(acceptOverlapped, 0, sizeof(WSAOVERLAPPEDPLUS));
+					memset(acceptOverlapped, 0, sizeof(Ovelapped));
 
 					acceptOverlapped->action = SOCK_ACTION_ACCEPT;
 
-					acceptOverlapped->connectionId = id;
+					acceptOverlapped->connection = this;
 
 					acceptOverlapped->connectionSocket = socket;
 
@@ -72,13 +72,13 @@ namespace SXN
 				}
 
 				{
-					this->disconnectOverlaped = new WSAOVERLAPPEDPLUS();
+					this->disconnectOverlaped = new Ovelapped();
 
-					memset(disconnectOverlaped, 0, sizeof(WSAOVERLAPPEDPLUS));
+					memset(disconnectOverlaped, 0, sizeof(Ovelapped));
 
 					disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
 
-					disconnectOverlaped->connectionId = id;
+					disconnectOverlaped->connection = this;
 
 					disconnectOverlaped->connectionSocket = socket;
 
@@ -104,14 +104,14 @@ namespace SXN
 
 			inline BOOL StartRecieve()
 			{
-				return pWinsockEx->RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (LPVOID)id);
+				return pWinsockEx->RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, this);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
 			{
 				sendBuffer->Length = dataLength;
 
-				return pWinsockEx->RIOSend(rioRequestQueue, sendBuffer, 1, 0, (LPVOID)id);
+				return pWinsockEx->RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
 			}
 
 			inline BOOL StartDisconnect()
