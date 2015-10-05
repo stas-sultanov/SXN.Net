@@ -55,17 +55,17 @@ namespace SXN
 			/// The dictionary of the connections.
 			/// </summary>
 			// ConcurrentDictionary<UInt64, TcpConnection> Connections;
-			initonly array<TcpConnection ^>^ connections;
+			initonly array<TcpConnection *>^ connections;
 
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			initonly RioBufferPool^ receiveBufferPool;
+			RioBufferPool* receiveBufferPool;
 
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			initonly RioBufferPool^ sendBufferPool;
+			RioBufferPool* sendBufferPool;
 
 			initonly Thread^ mainThread;
 
@@ -100,10 +100,10 @@ namespace SXN
 				this->pWinsockEx = pWinsockEx;
 
 				// create I/O completion port
-				this->completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+				this->completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
 
 				// check if operation has failed
-				if (completionPort == NULL)
+				if (completionPort == nullptr)
 				{
 					// get error code
 					DWORD kernelErrorCode = ::GetLastError();
@@ -115,35 +115,35 @@ namespace SXN
 				#pragma region create Registered I/O completion queue
 
 				{
-				// compose completion method structure
-				RIO_NOTIFICATION_COMPLETION completionSettings;
+					// compose completion method structure
+					RIO_NOTIFICATION_COMPLETION completionSettings;
 
-				// set type to IOCP
-				completionSettings.Type = RIO_IOCP_COMPLETION;
+					// set type to IOCP
+					completionSettings.Type = RIO_IOCP_COMPLETION;
 
-				// set IOCP handle to completion port
-				completionSettings.Iocp.IocpHandle = completionPort;
+					// set IOCP handle to completion port
+					completionSettings.Iocp.IocpHandle = completionPort;
 
-				// set IOCP completion key to id of current worker
-				completionSettings.Iocp.CompletionKey = (PVOID)SOCK_ACTION_RECEIVE;
+					// set IOCP completion key to id of current worker
+					completionSettings.Iocp.CompletionKey = (PVOID)SOCK_ACTION_RECEIVE;
 
-				// TODO: fix this
-				// set IOCP overlapped to invalid
-				completionSettings.Iocp.Overlapped = new OVERLAPPED();
+					// TODO: fix this
+					// set IOCP overlapped to invalid
+					completionSettings.Iocp.Overlapped = new OVERLAPPED();
 
-				// create the completion queue for the Registered I/O receive operations
-				rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
+					// create the completion queue for the Registered I/O receive operations
+					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount, &completionSettings);
 
-				// check if operation has failed
-				if (rioReciveCompletionQueue == RIO_INVALID_CQ)
-				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					// check if operation has failed
+					if (rioReciveCompletionQueue == RIO_INVALID_CQ)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
 				}
-			}
 				{
 					// compose completion method structure
 					RIO_NOTIFICATION_COMPLETION completionSettings;
@@ -181,21 +181,38 @@ namespace SXN
 				#pragma endregion
 
 				// create buffer pool
+				{
+					DWORD kernelErrorCode;
 
-				receiveBufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount);
+					int winsockErrorCode;
 
-				sendBufferPool = gcnew RioBufferPool(pWinsockEx, segmentLength, segmentsCount);
+					receiveBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, segmentsCount, kernelErrorCode, winsockErrorCode);
+
+					// check if operation has failed
+					if (receiveBufferPool == nullptr)
+					{
+						// throw exception
+						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
+					}
+
+					sendBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, segmentsCount, kernelErrorCode, winsockErrorCode);
+
+					// check if operation has failed
+					if (sendBufferPool == nullptr)
+					{
+						// throw exception
+						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
+					}
+				}
 
 				// initialize connections array
-				connections = gcnew array<TcpConnection^>(segmentsCount);
+				connections = gcnew array<TcpConnection*>(segmentsCount);
 
 				// initialize connections
-				for (int index = 0; index < segmentsCount; index++)
+				for (unsigned int index = 0; index < segmentsCount; index++)
 				{
 					// create connection
-					TcpConnection^ connection = CreateConnection(id, index);
-
-					//connection->StartRecieve();
+					TcpConnection* connection = CreateConnection(id, index);
 
 					// add to collection
 					connections[index] = connection;
@@ -229,10 +246,10 @@ namespace SXN
 			#pragma region Methods
 
 
-			TcpConnection^ CreateConnection(int workerId, int connectionId)
+			TcpConnection* CreateConnection(int workerId, int connectionId)
 			{
 				// create connection socket
-				SOCKET connectionSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+				SOCKET connectionSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
 
 				// check if operation has failed
 				if (connectionSocket == INVALID_SOCKET)
@@ -246,10 +263,10 @@ namespace SXN
 
 				/**/
 				// associate the connection socket with the completion port
-				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE) connectionSocket, completionPort, SOCK_ACTION_DISCONNECT, 0);
+				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE)connectionSocket, completionPort, SOCK_ACTION_DISCONNECT, 0);
 
 				// check if operation has succeed
-				if ((resultPort == NULL) || (resultPort != completionPort))
+				if ((resultPort == nullptr) || (resultPort != completionPort))
 				{
 					// get error code
 					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -278,7 +295,7 @@ namespace SXN
 				/**/
 
 				// create connection handle
-				TcpConnection^ connection = gcnew TcpConnection(listenSocket, pWinsockEx, connectionId, connectionSocket, requestQueue, completionPort);
+				TcpConnection* connection = new TcpConnection(listenSocket, pWinsockEx, connectionId, connectionSocket, requestQueue, completionPort);
 
 				BOOL acceptResult = connection->StartAccept();
 
@@ -306,154 +323,161 @@ namespace SXN
 
 			#pragma endregion
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			void DoWork()
 			{
 				RIORESULT* results = new RIORESULT[128];
 
+				int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+				/*
+				if (rioRecieveNotify != ERROR_SUCCESS)
+				{
+				System::Console::WriteLine("RIONotify:recive:{0}", (WinsockErrorCode) rioRecieveNotify);
+				}*/
+
+				int rioSendNotify = this->pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+				/**
+				if (rioSendNotify != ERROR_SUCCESS)
+				{
+				System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
+				}
+				/**/
+
+				// define array of completion entries
+				OVERLAPPED_ENTRY completionPortEntries[128];
+
+				// will contain number of entries removed from the completion queue
+				ULONG numEntriesRemoved;
+
 				while (true)
 				{
-					int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+					// dequeue completion status
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 128, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
-					/*
-					if (rioRecieveNotify != ERROR_SUCCESS)
-					{
-						System::Console::WriteLine("RIONotify:recive:{0}", (WinsockErrorCode) rioRecieveNotify);
-					}*/
-
-					int rioSendNotify = this->pWinsockEx->RIONotify(rioSendCompletionQueue);
-
-					/**
-					if (rioSendNotify != ERROR_SUCCESS)
-					{
-						System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
-					}
-					/**/
-
-					DWORD numberOfBytes;
-
-					ULONG_PTR completionKey;
-
-					LPOVERLAPPED over;
-
-					BOOL res = ::GetQueuedCompletionStatus(completionPort, &numberOfBytes, &completionKey, &over, INFINITE);
-
-					if (!res)
+					// check if operation has failed
+					if (dequeueResult == FALSE)
 					{
 						continue;
+						// TODO: ABORT
 					}
 
-					switch (completionKey)
+					for (unsigned int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
 					{
-						case SOCK_ACTION_ACCEPT:
+						// get entry
+						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];
+
+						switch (entry.lpCompletionKey)
 						{
-							SOCKET tempListenSocket = listenSocket;
-
-							WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)over;
-
-							// set socket state to accepted
-							int setSocketOptionResult = ::setsockopt(overlapped->connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&tempListenSocket, sizeof(SOCKET));
-
-							// check if operation has failed
-							if (setSocketOptionResult == SOCKET_ERROR)
+							case SOCK_ACTION_ACCEPT:
 							{
-								// get error code
-								WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
 
-								System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
-							}
-
-							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
-
-							TcpConnection^ connection = connections[overlapped->connectionId];
-
-							connection->StartRecieve();
-
-							break;
-						}
-
-						case SOCK_ACTION_RECEIVE:
-						{
-							// dequeue Registered IO completion results
-							INT receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, results, 128);
-
-							for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
-							{
-								RIORESULT result = results[resultIndex];
-
-								// get connection id
-								int connectionId = result.RequestContext;
+								// get overlapped
+								WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)entry.lpOverlapped;
 
 								// get connection
-								TcpConnection^ connection = connections[connectionId];
+								TcpConnection* connection = connections[overlapped->connectionId];
 
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+								SOCKET tempListenSocket = listenSocket;
 
-								// check if client has requested the disconnect by sending 0 bytes
-								if (result.BytesTransferred == 0)
+								// set socket state to accepted
+								int setSocketOptionResult = ::setsockopt(overlapped->connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&tempListenSocket, sizeof(SOCKET));
+
+								// check if operation has failed
+								if (setSocketOptionResult == SOCKET_ERROR)
 								{
-									// post disconnect operation
-									connection->StartDisconnect();
+									// get error code
+									WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
-									this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
-
-									continue;
+									System::Console::WriteLine("set accept status error: {0}", winsockErrorCode);
 								}
 
-								//char *data = receiveBufferPool->GetData(connectionId);
+								connection->StartRecieve();
 
-								//String^ s = System::Runtime::InteropServices::Marshal::PtrToStringAnsi(IntPtr(data));
-
-								//System::Console::WriteLine("Data :: {0}", s);
-
-								connection->StartSend(strlen(testMessage));
+								break;
 							}
 
-							this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
-
-							break;
-						}
-
-						case SOCK_ACTION_SEND:
-						{
-							// dequeue Registered IO completion results
-							int sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, results, 128);
-	
-							for (int resultIndex = 0; resultIndex < sendCompletionsCount; resultIndex++)
+							case SOCK_ACTION_DISCONNECT:
 							{
-								RIORESULT result = results[resultIndex];
+								// get overlapped
+								WSAOVERLAPPEDPLUS* overlapped = (WSAOVERLAPPEDPLUS *)entry.lpOverlapped;
 
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+								// get connection
+								TcpConnection* connection = connections[overlapped->connectionId];
 
-								int connectionId = result.RequestContext;
+								// start accept
+								connection->StartAccept();
 
-								TcpConnection^ connection = connections[connectionId];
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 
-								connection->StartDisconnect();
+								break;
+							}
+
+							case SOCK_ACTION_RECEIVE:
+							{
+								// dequeue Registered IO completion results
+								INT receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, results, 128);
+
+								for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
+								{
+									//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+
+									RIORESULT result = results[resultIndex];
+
+									// get connection id
+									int connectionId = result.RequestContext;
+
+									// get connection
+									TcpConnection* connection = connections[connectionId];
+
+									// check if client has requested the disconnect by sending 0 bytes
+									if (result.BytesTransferred == 0)
+									{
+										// post disconnect operation
+										connection->StartDisconnect();
+
+										continue;
+									}
+
+									connection->StartSend(strlen(testMessage));
+								}
+
+								this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+								break;
+							}
+
+							case SOCK_ACTION_SEND:
+							{
+								// dequeue Registered IO completion results
+								int sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, results, 128);
+
+								for (int resultIndex = 0; resultIndex < sendCompletionsCount; resultIndex++)
+								{
+									RIORESULT result = results[resultIndex];
+
+									//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+
+									int connectionId = result.RequestContext;
+
+									TcpConnection* connection = connections[connectionId];
+
+									connection->StartDisconnect();
+								}
 
 								this->pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+								break;
 							}
 
-							break;
-						}
+							default:
+							{
+								//System::Console::WriteLine("IOCP Thread: {0} something other, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
 
-						case SOCK_ACTION_DISCONNECT:
-						{
-							WSAOVERLAPPEDPLUS* over2 = (WSAOVERLAPPEDPLUS *) over;
-
-							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
-
-							TcpConnection^ connection = connections[over2->connectionId];
-
-							connection->StartAccept();
-
-							break;
-						}
-
-						default:
-						{
-							//System::Console::WriteLine("IOCP Thread: {0} something other, iocp_port: {1} num_bytes: {2} key: {3}", Id, (Int32)completionPort, (Int32)numberOfBytes, (Int32)completionKey);
-
-							break;
+								break;
+							}
 						}
 					}
 				}

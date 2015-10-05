@@ -78,18 +78,18 @@ namespace SXN
 				}
 
 				// system socket
-				SOCKET socketHandle = NULL;
+				SOCKET socketHandle = nullptr;
 
 				// Registered I/O functions table
 				RIO_EXTENSION_FUNCTION_TABLE rioTable;
 
 				// pointer to AcceptEx function
-				LPFN_ACCEPTEX pAcceptEx = NULL;
+				LPFN_ACCEPTEX pAcceptEx = nullptr;
 
 				// socket handle
 				{
 					// create temporary socket
-					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
 
 					// check if socket is created
 					if (INVALID_SOCKET == socketHandle)
@@ -110,7 +110,7 @@ namespace SXN
 					DWORD actualTableSize;
 
 					// try get registered IO functions table
-					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, nullptr, nullptr);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
@@ -130,7 +130,7 @@ namespace SXN
 					DWORD actualPtrSize;
 
 					// get function pointer
-					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, nullptr, nullptr);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
@@ -213,18 +213,18 @@ namespace SXN
 			inline static WinSocket ^ Create(int% result)
 			{
 				// system socket
-				SOCKET socketHandle = NULL;
+				SOCKET socketHandle = 0;
 
 				// Registered I/O functions table
 				RIO_EXTENSION_FUNCTION_TABLE rioTable;
 
 				// pointer to AcceptEx function
-				LPFN_ACCEPTEX pAcceptEx = NULL;
+				LPFN_ACCEPTEX pAcceptEx = nullptr;
 
 				// socket handle
 				{
 					// create socket
-					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+					socketHandle = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
 
 					// check if socket is created
 					if (INVALID_SOCKET == socketHandle)
@@ -245,7 +245,7 @@ namespace SXN
 					DWORD actualTableSize;
 
 					// try get registered IO functions table
-					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, nullptr, nullptr);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
@@ -265,7 +265,7 @@ namespace SXN
 					DWORD actualPtrSize;
 
 					// get function pointer
-					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socketHandle, SIO_GET_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &pAcceptEx, ptrSize, &actualPtrSize, nullptr, nullptr);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)

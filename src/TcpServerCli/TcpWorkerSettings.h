@@ -67,7 +67,7 @@ namespace SXN
 			/// Must be less than maximum number of ports.
 			/// Value will be ceiled to the number of used processors.
 			/// </remarks>
-			property UInt16 ConnectinosBacklogLength;
+			property UInt32 ConnectionsBacklogLength;
 
 			/// <summary>
 			/// The length in bytes of the memory buffer for receive operations.
@@ -75,7 +75,7 @@ namespace SXN
 			/// <remarks>
 			/// Value will be ceiled.
 			/// </remarks>
-			property Int32 ReciveBufferLength;
+			property Int32 ReceiveBufferLength;
 
 			/// <summary>
 			/// The length in bytes of the memory buffer for receive operations.

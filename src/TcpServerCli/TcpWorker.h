@@ -67,7 +67,7 @@ namespace SXN
 
 				// initialize listen socket
 				{
-					listenSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_REGISTERED_IO);
+					listenSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
 
 					// check if operation has failed
 					if (listenSocket == INVALID_SOCKET)
@@ -83,10 +83,10 @@ namespace SXN
 				// initialize IOCP
 				{
 					// create I/O completion port
-					completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+					completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
 
 					// check if operation has failed
-					if (completionPort == NULL)
+					if (completionPort == nullptr)
 					{
 						// get error code
 						DWORD kernelErrorCode = ::GetLastError();
@@ -98,7 +98,7 @@ namespace SXN
 					// associate the listening socket with the completion port
 					HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)listenSocket, completionPort, 0, 0);
 
-					if ((associateResult == NULL) || (associateResult != completionPort))
+					if ((associateResult == nullptr) || (associateResult != completionPort))
 					{
 						// get error code
 						DWORD kernelErrorCode = ::GetLastError();
@@ -112,7 +112,7 @@ namespace SXN
 				{
 					pWinsockEx = WinsockEx::Initialize(listenSocket);
 
-					if (pWinsockEx == NULL)
+					if (pWinsockEx == nullptr)
 					{
 						// get error code
 						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -142,7 +142,7 @@ namespace SXN
 					int processorsCount = TcpWorkerSettings::ProcessorsCount;
 
 					// get the length of the connections backlog per processor
-					int perWorkerConnectionBacklogLength = settings.ConnectinosBacklogLength / processorsCount;
+					int perWorkerConnectionBacklogLength = settings.ConnectionsBacklogLength / processorsCount;
 
 					// 4 create collection of the IOCP workers
 					workers = gcnew array<IocpWorker^>(processorsCount);
@@ -151,7 +151,7 @@ namespace SXN
 					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, processorIndex, settings.ReciveBufferLength, perWorkerConnectionBacklogLength);
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[processorIndex] = worker;
@@ -190,7 +190,7 @@ namespace SXN
 
 					DWORD dwBytes;
 
-					int enableFastLoopbackResult = ::WSAIoctl(listenSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), NULL, 0, &dwBytes, NULL, NULL);
+					int enableFastLoopbackResult = ::WSAIoctl(listenSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), nullptr, 0, &dwBytes, nullptr, nullptr);
 
 					// check if attempt has succeed
 					if (enableFastLoopbackResult == SOCKET_ERROR)
@@ -224,7 +224,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = ::listen(listenSocket, settings.ConnectinosBacklogLength);
+					int startListen = ::listen(listenSocket, settings.ConnectionsBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -239,26 +239,17 @@ namespace SXN
 
 			#pragma region Static Constructor
 
-
-
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			void AcceptConnections()
 			{
+				// define array of completion entries
+				OVERLAPPED_ENTRY completionPortEntries[128];
+
+				// will contain number of entries removed from the completion queue
+				ULONG numEntriesRemoved;
+
 				while (true)
 				{
-					// the number of bytes transferred during an I/O operation that has completed
-					DWORD numberOfBytesTransferred;
-
-					// the completion key value associated with the socket whose I/O operation has completed
-					ULONG_PTR completionKey;
-
-					// the address of the OVERLAPPED structure that was specified when the completed I/O operation was started
-					WSAOVERLAPPEDPLUS* overlapped;
-
-					// define array of completion entries
-					OVERLAPPED_ENTRY completionPortEntries[128];
-
-					ULONG numEntriesRemoved;
-
 					// dequeue completion status
 					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 128, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
@@ -269,7 +260,7 @@ namespace SXN
 						// TODO: ABORT
 					}
 
-					for (int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
+					for (unsigned int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
 					{
 						// get entry
 						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];

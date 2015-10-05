@@ -8,7 +8,7 @@ namespace SXN
 {
 	namespace Net
 	{
-		public ref class TcpConnection
+		public class TcpConnection final
 		{
 			public:
 
@@ -16,19 +16,19 @@ namespace SXN
 
 			WinsockEx* pWinsockEx;
 
-			initonly SOCKET listenSocket;
+			SOCKET listenSocket;
 
-			initonly SOCKET socket;
+			SOCKET socket;
 
-			initonly RIO_RQ rioRequestQueue;
+			RIO_RQ rioRequestQueue;
 
-			initonly PVOID addrBuf;
+			PVOID addrBuf;
 
-			initonly WSAOVERLAPPEDPLUS* acceptOverlapped;
+			WSAOVERLAPPEDPLUS* acceptOverlapped;
 
-			initonly WSAOVERLAPPEDPLUS* disconnectOverlaped;
+			WSAOVERLAPPEDPLUS* disconnectOverlaped;
 
-			int id;
+			ULONG id;
 
 			PRIO_BUF receiveBuffer;
 
@@ -36,9 +36,9 @@ namespace SXN
 
 			#pragma endregion
 
-			internal:
+			public:
 
-			#pragma region Constructor
+			#pragma region Constructor & Destructor
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
@@ -86,52 +86,35 @@ namespace SXN
 				}
 			}
 
-			!TcpConnection()
+			inline ~TcpConnection()
 			{
 				delete addrBuf;
 			}
 
-			BOOL StartAccept()
+			#pragma endregion
+
+			#pragma region Methods
+
+			inline BOOL StartAccept()
 			{
 				DWORD dwBytes;
 
 				return pWinsockEx->AcceptEx(listenSocket, socket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
 			}
 
-			BOOL StartRecieve()
+			inline BOOL StartRecieve()
 			{
 				return pWinsockEx->RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (LPVOID)id);
-
-				/*{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
-				}*/
 			}
 
-			BOOL StartSend(DWORD dataLength)
+			inline BOOL StartSend(DWORD dataLength)
 			{
 				sendBuffer->Length = dataLength;
 
-				BOOL result = pWinsockEx->RIOSend(rioRequestQueue, sendBuffer, 1, 0, (LPVOID)id);
-
-				if (!result)
-				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					Console::WriteLine("buffer id: {0}, length: {1}, offset: {2}", (Int32)sendBuffer->BufferId, (Int32)sendBuffer->Length, (Int32)sendBuffer->Offset);
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
-				}
-
-				return result;
+				return pWinsockEx->RIOSend(rioRequestQueue, sendBuffer, 1, 0, (LPVOID)id);
 			}
 
-			BOOL StartDisconnect()
+			inline BOOL StartDisconnect()
 			{
 				return pWinsockEx->DisconnectEx(socket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 			}

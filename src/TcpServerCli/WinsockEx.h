@@ -101,7 +101,7 @@ namespace SXN
 				DWORD actualPtrSize;
 
 				// get function pointer
-				return ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), ptr, sizeof(LPFN_ACCEPTEX), &actualPtrSize, NULL, NULL);
+				return ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), ptr, sizeof(LPFN_ACCEPTEX), &actualPtrSize, nullptr, nullptr);
 			}
 
 			#pragma endregion
@@ -130,7 +130,7 @@ namespace SXN
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
 					{
-						return NULL;
+						return nullptr;
 					}
 				}
 
@@ -143,7 +143,7 @@ namespace SXN
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
 					{
-						return NULL;
+						return nullptr;
 					}
 				}
 
@@ -156,7 +156,7 @@ namespace SXN
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
 					{
-						return NULL;
+						return nullptr;
 					}
 				}
 
@@ -173,12 +173,12 @@ namespace SXN
 					DWORD actualTableSize;
 
 					// try get registered IO functions table
-					int getResult = ::WSAIoctl(socket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, NULL, NULL);
+					int getResult = ::WSAIoctl(socket, SIO_GET_MULTIPLE_EXTENSION_FUNCTION_POINTER, &id, sizeof(GUID), &rioTable, tableSize, &actualTableSize, nullptr, nullptr);
 
 					// check if operation was not successful
 					if (getResult == SOCKET_ERROR)
 					{
-						return NULL;
+						return nullptr;
 					}
 				}
 

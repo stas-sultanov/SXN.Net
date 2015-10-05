@@ -2,9 +2,8 @@
 
 #include "Stdafx.h"
 #include "WinsockEx.h"
-#include "TcpServerException.h"
 
-using namespace System;
+#pragma unmanaged
 
 namespace SXN
 {
@@ -13,127 +12,145 @@ namespace SXN
 		/// <summary>
 		/// Provides management of the memory buffers within the Winsock Registered I/O extensions.
 		/// </summary>
-		private ref class RioBufferPool sealed
+		private class RioBufferPool final
 		{
 			private:
 
 			#pragma region Fields
 
 			/// <summary>
-			/// A pointer to the object that provides work with Winsock extensions.
+			/// A reference to the object that provides work with Winsock extensions.
 			/// </summary>
-			initonly WinsockEx* pWinsockEx;
+			WinsockEx& winsockEx;
+
+			/// <summary>
+			/// The length of the buffer.
+			/// </summary>
+			ULONG bufferLength;
 
 			/// <summary>
 			/// A pointer to the aligned memory block.
 			/// </summary>
-			initonly LPVOID memoryBlock;
-
-			/// <summary>
-			/// The length of the <see cref="memoryBlock" />.
-			/// </summary>
-			initonly UInt32 memoryBlockLength;
+			LPVOID memoryBlock;
 
 			/// <summary>
 			/// The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.
 			/// </summary>
-			initonly RIO_BUFFERID rioBufferId;
-
-			/// <summary>
-			/// The collection of the identifiers of the available segments.
-			/// </summary>
-			//ConcurrentQueue<Int32> availableSegments;
+			RIO_BUFFERID rioBufferId;
 
 			/// <summary>
 			/// The collection of the items of the <see cref="RIO_BUF" /> type.
 			/// </summary>
-			initonly RIO_BUF* buffers;
-
-			INT bufferLength;
+			RIO_BUF* buffers;
 
 			#pragma endregion
 
-			internal:
-
-			#pragma region Constructor & Destructor
+			#pragma region Constructor
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="BufferPool" /> class.
 			/// </summary>
-			/// <param name="pWinsockEx">A pointer to the object that provides work with Winsock extensions.</param>
-			/// <param name="bufferLength">The length of the single buffer to manage.</param>
-			/// <param name="segmentsCount">The count of the buffers to manage.</param>
+			/// <param name="winsockEx">A reference to the object that provides work with Winsock extensions.</param>
+			/// <param name="bufferLength">The length of the buffer.</param>
+			/// <param name="buffersCount">The count of the buffers.</param>
+			/// <param name="memoryBlock">A pointer to the aligned memory block.</param>
+			/// <param name="rioBufferId"> The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.</param>
+			RioBufferPool(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
+				: winsockEx(winsockEx)
+			{
+				// set buffer length
+				this->bufferLength = bufferLength;
+
+				// set memory block pointer
+				this->memoryBlock = memoryBlock;
+
+				// set the identifier of the memory block within the Winsock Registered I/O extensions.
+				this->rioBufferId = rioBufferId;
+
+				// initialize collection of the buffer segments
+				buffers = new RIO_BUF[buffersCount];
+
+				// initialize items of the collection
+				for (ULONG segmentIndex = 0, offset = 0; segmentIndex < buffersCount; segmentIndex++, offset += bufferLength)
+				{
+					// initialize item
+					RIO_BUF rioBuf;
+
+					// set buffer identifier
+					rioBuf.BufferId = rioBufferId;
+
+					// set offset
+					rioBuf.Offset = offset;
+
+					// set length
+					rioBuf.Length = bufferLength;
+
+					// put structure into the collection
+					buffers[segmentIndex] = rioBuf;
+				}
+			}
+
+			#pragma endregion
+
+			public:
+
+			#pragma region Create and Destroy
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="BufferPool" /> class.
+			/// </summary>
+			/// <param name="pWinsockEx">A reference to the object that provides work with Winsock extensions.</param>
+			/// <param name="bufferLength">The length of the buffer.</param>
+			/// <param name="segmentsCount">The count of the buffers.</param>
 			/// <remarks>
 			/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
 			/// </remarks>
-			/// <exception cref="TcpServerException">If error occurs.</exception>
-			RioBufferPool(WinsockEx* pWinsockEx, unsigned int bufferLength, unsigned int buffersCount)
+			static RioBufferPool* Create(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
 			{
-				// set winsock handle
-				this->pWinsockEx = pWinsockEx;
-
-				this->bufferLength = bufferLength;
-
-				// calculate and set the length of the memory buffer
-				memoryBlockLength = bufferLength * buffersCount;
+				// calculate and set the length of the memory block
+				ULONG memoryBlockLength = bufferLength * buffersCount;
 
 				// reserve and commit aligned memory block
-				memoryBlock = ::VirtualAlloc(NULL, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// check if operation has failed
-				if (memoryBlock == NULL)
+				if (memoryBlock == nullptr)
 				{
 					// get kernel error code
-					int kernelErrorCode = ::GetLastError();
+					kernelErrorCode = ::GetLastError();
 
-					// throw exception
-					throw gcnew TcpServerException(kernelErrorCode);
+					// set winsock error code
+					winsockErrorCode = 0;
+
+					return nullptr;
 				}
 
 				// register and set the identifier of the buffer
-				rioBufferId = pWinsockEx->RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
+				RIO_BUFFERID rioBufferId = winsockEx.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
 				{
 					// get winsock error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					winsockErrorCode = ::WSAGetLastError();
 
 					// try free allocated memory and ignore result
-					::VirtualFree(memoryBlock, 0, MEM_RELEASE);
+					if (::VirtualFree(memoryBlock, 0, MEM_RELEASE))
+					{
+						// set kernel error code
+						kernelErrorCode = 0;
+					}
+					else
+					{
+						// get kernel error code
+						kernelErrorCode = ::GetLastError();
+					}
 
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+					return nullptr;
 				}
 
-				// initialize available segments collection
-				//availableSegments = new ConcurrentQueue<Int32>();
-
-				// initialize collection of the buffer segments
-				buffers = new RIO_BUF[buffersCount];
-
-				int offset = 0u;
-
-				// initialize items of the collection
-				for (int segmentIndex = 0; segmentIndex < buffersCount; segmentIndex++)
-				{
-					// initialize item
-					RIO_BUF rioBuf;
-
-					rioBuf.BufferId = rioBufferId;
-
-					rioBuf.Offset = offset;
-
-					rioBuf.Length = bufferLength;
-
-					buffers[segmentIndex] = rioBuf;
-
-					// add id of the segment into the collection of the available segments
-					//availableSegments.Enqueue(segmentIndex);
-
-					// increment offset
-					offset += bufferLength;
-				}
+				// initialize and return result
+				return new RioBufferPool(winsockEx, bufferLength, buffersCount, memoryBlock, rioBufferId);
 			}
 
 			/// <summary>
@@ -146,7 +163,7 @@ namespace SXN
 
 				// deregister buffer within the Registered I/O extensions
 				// ignore result
-				//winsockHandle->RIODeregisterBuffer(rioBufferId);
+				winsockEx.RIODeregisterBuffer(rioBufferId);
 
 				// free allocated memory
 				// ignore result
@@ -157,17 +174,6 @@ namespace SXN
 
 			#pragma region Methods
 
-			void ReleaseBuffer(Int32 segmentId)
-			{
-				// availableSegments.Enqueue(segmentId);
-			}
-
-			/*
-			public Boolean TryGetBufferSegmentId(out Int32 segmentId) = > availableSegments.TryDequeue(out segmentId);
-			*/
-
-			#pragma endregion
-
 			PRIO_BUF GetBuffer(int id)
 			{
 				return this->buffers + id;
@@ -177,6 +183,10 @@ namespace SXN
 			{
 				return ((PCHAR) this->memoryBlock) + id * bufferLength;
 			}
+
+			#pragma endregion
 		};
 	}
 }
+
+#pragma managed
