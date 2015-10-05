@@ -10,6 +10,8 @@
 
 #define SOCK_ACTION_DISCONNECT 16
 
+#pragma unmanaged
+
 namespace SXN
 {
 	namespace Net
@@ -32,3 +34,5 @@ namespace SXN
 		};
 	}
 }
+
+#pragma managed

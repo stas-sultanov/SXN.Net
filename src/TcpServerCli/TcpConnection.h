@@ -2,7 +2,9 @@
 
 #include "Stdafx.h"
 #include "WinsockEx.h"
-#include "Overlap.h"
+#include "Ovelapped.h"
+
+#pragma unmanaged
 
 namespace SXN
 {
@@ -14,12 +16,24 @@ namespace SXN
 
 			#pragma region Fields
 
-			WinsockEx* pWinsockEx;
+			/// <summary>
+			/// A reference to the object that provides work with Winsock extensions.
+			/// </summary>
+			WinsockEx& winsockEx;
 
+			/// <summary>
+			/// The descriptor of the listening socket.
+			/// <summary/>
 			SOCKET listenSocket;
 
-			SOCKET socket;
+			/// <summary>
+			/// The descriptor of the connection socket.
+			/// <summary/>
+			SOCKET connectionSocket;
 
+			/// <summary>
+			/// The descriptor of the request queue of the Registered IO of the socket.
+			/// <summary/>
 			RIO_RQ rioRequestQueue;
 
 			PVOID addrBuf;
@@ -27,8 +41,6 @@ namespace SXN
 			Ovelapped* acceptOverlapped;
 
 			Ovelapped* disconnectOverlaped;
-
-			ULONG id;
 
 			PRIO_BUF receiveBuffer;
 
@@ -43,17 +55,14 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(SOCKET listenSocket, WinsockEx* pWinsockEx, int id, SOCKET socket, RIO_RQ requestQueue, HANDLE complitionPort)
+			inline TcpConnection(WinsockEx& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort)
+				: winsockEx(winsockEx)
 			{
 				this->listenSocket = listenSocket;
 
-				this->pWinsockEx = pWinsockEx;
+				this->connectionSocket = connectionSocket;
 
-				this->id = id;
-
-				this->socket = socket;
-
-				this->rioRequestQueue = requestQueue;
+				this->rioRequestQueue = rioRequestQueue;
 
 				this->addrBuf = new char[(sizeof(sockaddr_in) + 16) * 2];
 
@@ -66,7 +75,7 @@ namespace SXN
 
 					acceptOverlapped->connection = this;
 
-					acceptOverlapped->connectionSocket = socket;
+					acceptOverlapped->connectionSocket = connectionSocket;
 
 					acceptOverlapped->completionPort = complitionPort;
 				}
@@ -80,7 +89,7 @@ namespace SXN
 
 					disconnectOverlaped->connection = this;
 
-					disconnectOverlaped->connectionSocket = socket;
+					disconnectOverlaped->connectionSocket = connectionSocket;
 
 					disconnectOverlaped->completionPort = complitionPort;
 				}
@@ -99,27 +108,37 @@ namespace SXN
 			{
 				DWORD dwBytes;
 
-				return pWinsockEx->AcceptEx(listenSocket, socket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
+				return winsockEx.AcceptEx(listenSocket, connectionSocket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
+			}
+
+			inline int EndAccepet()
+			{
+				// set socket state to accepted
+				int setSocketOptionResult = ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
+			
+				return setSocketOptionResult;
 			}
 
 			inline BOOL StartRecieve()
 			{
-				return pWinsockEx->RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, this);
+				return winsockEx.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, this);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
 			{
 				sendBuffer->Length = dataLength;
 
-				return pWinsockEx->RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
+				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
 			}
 
 			inline BOOL StartDisconnect()
 			{
-				return pWinsockEx->DisconnectEx(socket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+				return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 			}
 
 			#pragma endregion
 		};
 	}
 }
+
+#pragma managed

@@ -2,7 +2,7 @@
 
 #include "Stdafx.h"
 
-using namespace System;
+#pragma unmanaged
 
 namespace SXN
 {
@@ -397,3 +397,5 @@ namespace SXN
 		};
 	}
 }
+
+#pragma managed

@@ -243,7 +243,7 @@ namespace SXN
 			void AcceptConnections()
 			{
 				// define array of completion entries
-				OVERLAPPED_ENTRY completionPortEntries[128];
+				OVERLAPPED_ENTRY completionPortEntries[1024];
 
 				// will contain number of entries removed from the completion queue
 				ULONG numEntriesRemoved;
@@ -251,7 +251,7 @@ namespace SXN
 				while (true)
 				{
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 128, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)

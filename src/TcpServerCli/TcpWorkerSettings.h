@@ -124,6 +124,10 @@ namespace SXN
 				}
 			}
 
+			property UInt32 RIOMaxOutstandingReceive;
+
+			property UInt32 RIOMaxOutstandingSend;
+
 			#pragma endregion
 
 
