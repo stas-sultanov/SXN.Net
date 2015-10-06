@@ -172,12 +172,22 @@ namespace SXN
 				// try disable use of the Nagle algorithm if requested
 				if (settings.UseNagleAlgorithm == false)
 				{
-					DWORD optionValue = -1;
+					BOOL boolValue = TRUE;
 
-					int disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&optionValue, sizeof(Int32));
+					int disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&boolValue, sizeof(BOOL));
 
 					// check if operation has failed
 					if (disableNagleResult == SOCKET_ERROR)
+					{
+						return false;
+					}
+
+					int intValue = 0;
+
+					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
+
+					// check if operation has failed
+					if (setBufferResult == SOCKET_ERROR)
 					{
 						return false;
 					}
@@ -268,8 +278,11 @@ namespace SXN
 						// get structure that was specified when the completed I/O operation was started
 						Ovelapped* overlapped = (Ovelapped*) entry.lpOverlapped;
 
+						// set connection state to accepted
+						overlapped->connection->state = SXN::Net::ConnectionState::Accepted;
+
 						// repost completion status
-						::PostQueuedCompletionStatus(overlapped->completionPort, entry.dwNumberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);
+						//::PostQueuedCompletionStatus(overlapped->completionPort, entry.dwNumberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);
 					}
 
 					//System::Console::WriteLine("MAIN Thread: something, completionPort: {0} numberOfBytesTransferred: {1} completionKey: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
