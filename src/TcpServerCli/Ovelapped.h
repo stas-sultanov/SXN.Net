@@ -12,10 +12,34 @@
 
 #pragma unmanaged
 
+
+
+
 namespace SXN
 {
 	namespace Net
 	{
+		enum ConnectionState : USHORT
+		{
+			None = 0,
+
+			Accepting,
+
+			Accepted,
+
+			Receiving,
+
+			Received,
+
+			Sending,
+
+			Sent,
+
+			Disconnecting,
+
+			Disconnected
+		};
+
 		extern class TcpConnection;
 
 		private struct Ovelapped final : OVERLAPPED

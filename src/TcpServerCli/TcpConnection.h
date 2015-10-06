@@ -50,6 +50,8 @@ namespace SXN
 
 			public:
 
+			ConnectionState state;
+
 			#pragma region Constructor & Destructor
 
 			/// <summary>
@@ -93,6 +95,8 @@ namespace SXN
 
 					disconnectOverlaped->completionPort = complitionPort;
 				}
+
+				state = ConnectionState::None;
 			}
 
 			inline ~TcpConnection()
@@ -106,6 +110,8 @@ namespace SXN
 
 			inline BOOL StartAccept()
 			{
+				state = ConnectionState::Accepting;
+
 				DWORD dwBytes;
 
 				return winsockEx.AcceptEx(listenSocket, connectionSocket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
@@ -121,11 +127,15 @@ namespace SXN
 
 			inline BOOL StartRecieve()
 			{
+				state = ConnectionState::Receiving;
+
 				return winsockEx.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, this);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
 			{
+				state = ConnectionState::Sending;
+
 				sendBuffer->Length = dataLength;
 
 				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
@@ -133,6 +143,8 @@ namespace SXN
 
 			inline BOOL StartDisconnect()
 			{
+				state = ConnectionState::Disconnecting;
+
 				return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 			}
 

@@ -60,20 +60,8 @@ void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioRec
 					// get overlapped
 					SXN::Net::Ovelapped* overlapped = (SXN::Net::Ovelapped *)entry.lpOverlapped;
 
-					// end accept
-					int endAcceptResult = overlapped->connection->EndAccepet();
-
-					// check if operation has failed
-					if (endAcceptResult == SOCKET_ERROR)
-					{
-						// get error code
-						int winsockErrorCode = ::WSAGetLastError();
-
-						return;
-					}
-
-					// start asynchronous receive operation
-					overlapped->connection->StartRecieve();
+					// set connection state to accepted
+					overlapped->connection->state = SXN::Net::ConnectionState::Accepted;
 
 					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
 
@@ -85,8 +73,8 @@ void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioRec
 					// get overlapped
 					SXN::Net::Ovelapped* overlapped = (SXN::Net::Ovelapped *)entry.lpOverlapped;
 
-					// start asynchronous accept operation
-					overlapped->connection->StartAccept();
+					// set connection state to disconnected
+					overlapped->connection->state = SXN::Net::ConnectionState::Disconnected;
 
 					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 
@@ -108,17 +96,8 @@ void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioRec
 							// get connection
 							SXN::Net::TcpConnection* connection = (SXN::Net::TcpConnection *)result.RequestContext;
 
-							// check if client has requested the disconnect by sending 0 bytes
-							if (result.BytesTransferred == 0)
-							{
-								// post disconnect operation
-								connection->StartDisconnect();
-
-								continue;
-							}
-
-							// start asynchronous send operation
-							connection->StartSend(msgLen);
+							// set connection state to received
+							connection->state = SXN::Net::ConnectionState::Received;
 
 							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 						}
@@ -144,8 +123,8 @@ void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioRec
 							// get connection
 							SXN::Net::TcpConnection* connection = (SXN::Net::TcpConnection *) result.RequestContext;
 
-							// start asynchronous disconnect operation
-							connection->StartDisconnect();
+							// set connection state to sent
+							connection->state = SXN::Net::ConnectionState::Sent;
 
 							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 						}
@@ -166,5 +145,73 @@ void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioRec
 		}
 	}
 }
+
+void DoOtherWork(SXN::Net::TcpConnection** connections, int connectionsCount, int msgLen)
+{
+	while (true)
+	{
+		for (int connectionIndex = 0; connectionIndex < connectionsCount; connectionIndex++)
+		{
+			// get connection
+			SXN::Net::TcpConnection* connection = connections[connectionIndex];
+
+			switch (connection->state)
+			{
+				case SXN::Net::ConnectionState::Accepted:
+				{
+					// s accept
+					int endAcceptResult = connection->EndAccepet();
+
+					// check if operation has failed
+					if (endAcceptResult == SOCKET_ERROR)
+					{
+						// get error code
+						int winsockErrorCode = ::WSAGetLastError();
+
+						return;
+					}
+
+					// start asynchronous receive operation
+					connection->StartRecieve();
+
+					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
+
+					break;
+				}
+
+				case SXN::Net::ConnectionState::Received:
+				{
+					// start asynchronous send operation
+					connection->StartSend(msgLen);
+
+					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+
+					break;
+				}
+
+				case SXN::Net::ConnectionState::Sent:
+				{
+					// start asynchronous disconnect operation
+					connection->StartDisconnect();
+
+					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+
+					break;
+				}
+
+				case SXN::Net::ConnectionState::Disconnected:
+				{
+					// start asynchronous accept operation
+					connection->StartAccept();
+
+					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
+
+					break;
+				}
+			}
+		}
+	}
+}
+
 
 #pragma managed

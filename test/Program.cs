@@ -14,9 +14,9 @@ namespace SXN.Net
 			var serverSettings = new TcpWorkerSettings
 			{
 				Port = 5001,
-				ReceiveBufferLength = 1024,
-				SendBufferLength = 1024,
-				ConnectionsBacklogLength = 16384,
+				ReceiveBufferLength = 512,
+				SendBufferLength = 512,
+				ConnectionsBacklogLength = 4096,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};
