@@ -158,7 +158,7 @@ namespace SXN
 					}
 				}
 
-				ThreadStart^ threadDelegate = gcnew ThreadStart(this, &TcpWorker::AcceptConnections);
+				ThreadStart^ threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
 				mainThread = gcnew Thread(threadDelegate);
 
@@ -182,6 +182,12 @@ namespace SXN
 						return false;
 					}
 
+					int resultLength = sizeof(BOOL);
+
+					int getNagleStatus = getsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&boolValue, &resultLength);
+
+					Console::WriteLine("socket {0} TCP_NODELAY state {1}", listenSocket, boolValue);
+
 					int intValue = 0;
 
 					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
@@ -193,7 +199,7 @@ namespace SXN
 					}
 				}
 
-				// try enable faster operations on the loopback if requested
+				// try enable faster operations on the loop-back if requested
 				if (settings.UseFastLoopback)
 				{
 					UInt32 optionValue = 1;
@@ -250,7 +256,7 @@ namespace SXN
 			#pragma region Static Constructor
 
 			[System::Security::SuppressUnmanagedCodeSecurity]
-			void AcceptConnections()
+			void ProcessAcceptRequests()
 			{
 				// define array of completion entries
 				OVERLAPPED_ENTRY completionPortEntries[1024];
@@ -266,11 +272,10 @@ namespace SXN
 					// check if operation has failed
 					if (dequeueResult == FALSE)
 					{
-						continue;
-						// TODO: ABORT
+						break;
 					}
 
-					for (unsigned int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
+					for (ULONG entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
 					{
 						// get entry
 						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];
@@ -279,13 +284,11 @@ namespace SXN
 						Ovelapped* overlapped = (Ovelapped*) entry.lpOverlapped;
 
 						// set connection state to accepted
-						overlapped->connection->state = SXN::Net::ConnectionState::Accepted;
-
-						// repost completion status
-						//::PostQueuedCompletionStatus(overlapped->completionPort, entry.dwNumberOfBytesTransferred, SOCK_ACTION_ACCEPT, overlapped);
+						// overlapped->connection->state = SXN::Net::ConnectionState::Accepted;
+						overlapped->connection->EndAccepet();
+						
+						overlapped->connection->StartRecieve();
 					}
-
-					//System::Console::WriteLine("MAIN Thread: something, completionPort: {0} numberOfBytesTransferred: {1} completionKey: {2}", (Int32)completionPort, (Int32)numberOfBytesTransferred, (Int32)completionKey);
 				}
 			}
 

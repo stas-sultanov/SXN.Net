@@ -21,7 +21,7 @@ namespace SXN
 	{
 		enum ConnectionState : USHORT
 		{
-			None = 0,
+			Disconnected,
 
 			Accepting,
 
@@ -36,8 +36,6 @@ namespace SXN
 			Sent,
 
 			Disconnecting,
-
-			Disconnected
 		};
 
 		extern class TcpConnection;
