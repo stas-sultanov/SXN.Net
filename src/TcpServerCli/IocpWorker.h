@@ -398,6 +398,8 @@ namespace SXN
 				// set initial state
 				connection->state = ConnectionState::Disconnected;
 
+				connection->StartAccept();
+
 				connection->receiveBuffer = receiveBufferPool->GetBuffer(connectionId);
 
 				connection->sendBuffer = sendBufferPool->GetBuffer(connectionId);
@@ -427,12 +429,12 @@ namespace SXN
 					pWinsockEx->RIONotify(rioReciveCompletionQueue);
 
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatus(receiveCompletionPort, &numberOfBytes, &completionKey, &overlapped, WSA_INFINITE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatus(receiveCompletionPort, &numberOfBytes, &completionKey, &overlapped, 1 /* WSA_INFINITE */);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
 					{
-						break;
+						continue;
 					}
 
 					// dequeue Registered IO completion results
@@ -479,12 +481,12 @@ namespace SXN
 					pWinsockEx->RIONotify(rioSendCompletionQueue);
 
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatus(sendCompletionPort, &numberOfBytes, &completionKey, &overlapped, WSA_INFINITE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatus(sendCompletionPort, &numberOfBytes, &completionKey, &overlapped, 1 /*WSA_INFINITE*/);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
 					{
-						break;
+						continue;
 					}
 
 					// dequeue Registered IO completion results
@@ -522,7 +524,7 @@ namespace SXN
 				while (true)
 				{
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(disconnectCompletionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(disconnectCompletionPort, completionPortEntries, 1024, &numEntriesRemoved, 1 /* WSA_INFINITE*/, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
@@ -543,7 +545,7 @@ namespace SXN
 						//overlapped->connection->state = SXN::Net::ConnectionState::Disconnected;
 						overlapped->connection->StartAccept();
 
-						System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
+						//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 					}
 				}
 			}

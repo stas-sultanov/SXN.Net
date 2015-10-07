@@ -267,12 +267,12 @@ namespace SXN
 				while (true)
 				{
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, 1 /* WSA_INFINITE*/, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
 					{
-						break;
+						continue;
 					}
 
 					for (ULONG entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
@@ -288,6 +288,8 @@ namespace SXN
 						overlapped->connection->EndAccepet();
 						
 						overlapped->connection->StartRecieve();
+
+						//System::Console::WriteLine("ACCEPT Thread: Connection: {0}", overlapped->connectionSocket);
 					}
 				}
 			}
