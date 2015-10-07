@@ -273,28 +273,6 @@ namespace SXN
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
 
-				{
-					BOOL boolValue = FALSE;
-
-					int disableNagleResult = ::setsockopt(connectionSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&boolValue, sizeof(BOOL));
-
-					// check if operation has failed
-					if (disableNagleResult == SOCKET_ERROR)
-					{
-						return false;
-					}
-
-					int intValue = 0;
-
-					int setBufferResult = ::setsockopt(connectionSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
-
-					// check if operation has failed
-					if (setBufferResult == SOCKET_ERROR)
-					{
-						return false;
-					}
-				}
-
 				// associate the connection socket with the completion port
 				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE)connectionSocket, completionPort, SOCK_ACTION_DISCONNECT, 0);
 

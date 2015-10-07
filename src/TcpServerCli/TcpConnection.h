@@ -122,6 +122,14 @@ namespace SXN
 				// set socket state to accepted
 				int setSocketOptionResult = ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
 			
+				int intValue = 0;
+
+				int setBufferResult = ::setsockopt(connectionSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
+
+				BOOL boolValue = TRUE;
+
+				int disableNagleResult = ::setsockopt(connectionSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&boolValue, sizeof(BOOL));
+
 				return setSocketOptionResult;
 			}
 
