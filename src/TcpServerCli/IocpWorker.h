@@ -58,12 +58,7 @@ namespace SXN
 			/// <summary>
 			/// The completion queue of the Registered I/O receive operations.
 			/// </summary>
-			initonly RIO_CQ rioReciveCompletionQueue;
-
-			/// <summary>
-			/// The completion queue of the Registered I/O send operations.
-			/// </summary>
-			initonly RIO_CQ rioSendCompletionQueue;
+			initonly RIO_CQ rioCompletionQueue;
 
 			/// <summary>
 			/// The collection of the connections.
@@ -73,12 +68,8 @@ namespace SXN
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			RioBufferPool* receiveBufferPool;
+			RioBufferPool* rioBufferPool;
 
-			/// <summary>
-			/// The Registered I/O buffer pool.
-			/// </summary>
-			RioBufferPool* sendBufferPool;
 
 			int connectionsCount;
 
@@ -153,10 +144,10 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED)-1;
 
 					// create the completion queue for the Registered I/O receive operations
-					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount, &completionSettings);
+					rioCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount, &completionSettings);
 
 					// check if operation has failed
-					if (rioReciveCompletionQueue == RIO_INVALID_CQ)
+					if (rioCompletionQueue == RIO_INVALID_CQ)
 					{
 						// get error code
 						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -230,10 +221,10 @@ namespace SXN
 
 					int winsockErrorCode;
 
-					receiveBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					rioBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
-					if (receiveBufferPool == nullptr)
+					if (rioBufferPool == nullptr)
 					{
 						// throw exception
 						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
@@ -302,10 +293,10 @@ namespace SXN
 			~IocpWorker()
 			{
 				// release buffer pool
-				delete receiveBufferPool;
+				delete rioBufferPool;
 
 				// close completion queue
-				pWinsockEx->RIOCloseCompletionQueue(rioReciveCompletionQueue);
+				pWinsockEx->RIOCloseCompletionQueue(rioCompletionQueue);
 
 				// close completion port
 				// ignore result
@@ -346,7 +337,7 @@ namespace SXN
 				}
 
 				// create request queue
-				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, 1, maxOutstandingSend, 1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
+				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, 1, maxOutstandingSend, 1, rioCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
 
 				// check if operation has failed
 				if (requestQueue == RIO_INVALID_RQ)
@@ -400,7 +391,7 @@ namespace SXN
 
 				connection->StartAccept();
 
-				connection->receiveBuffer = receiveBufferPool->GetBuffer(connectionId);
+				connection->receiveBuffer = rioBufferPool->GetBuffer(connectionId);
 
 				connection->sendBuffer = sendBufferPool->GetBuffer(connectionId);
 
@@ -426,7 +417,7 @@ namespace SXN
 				while (true)
 				{
 					// register the method to use for notification behavior with an I/O completion queue for use with the Winsock registered I/O extensions
-					pWinsockEx->RIONotify(rioReciveCompletionQueue);
+					pWinsockEx->RIONotify(rioCompletionQueue);
 
 					// dequeue completion status
 					BOOL dequeueResult = ::GetQueuedCompletionStatus(receiveCompletionPort, &numberOfBytes, &completionKey, &overlapped, 1 /* WSA_INFINITE */);
@@ -443,7 +434,7 @@ namespace SXN
 					// array of the Registered IO results
 					RIORESULT rioResults[1024];
 
-					while ((receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, rioResults, 1024)) > 0)
+					while ((receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioCompletionQueue, rioResults, 1024)) > 0)
 					{
 						for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
 						{

@@ -43,6 +43,8 @@ namespace SXN
 			/// </summary>
 			RIO_BUF* buffers;
 
+			int connectionsCount;
+
 			#pragma endregion
 
 			#pragma region Constructor
@@ -58,6 +60,8 @@ namespace SXN
 			RioBufferPool(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
 				: winsockEx(winsockEx)
 			{
+				this->connectionsCount = buffersCount / 2;
+
 				// set buffer length
 				this->bufferLength = bufferLength;
 
@@ -108,7 +112,7 @@ namespace SXN
 			static RioBufferPool* Create(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
 			{
 				// calculate and set the length of the memory block
-				ULONG memoryBlockLength = bufferLength * buffersCount;
+				ULONG memoryBlockLength = bufferLength * buffersCount * 2;
 
 				// reserve and commit aligned memory block
 				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -150,7 +154,7 @@ namespace SXN
 				}
 
 				// initialize and return result
-				return new RioBufferPool(winsockEx, bufferLength, buffersCount, memoryBlock, rioBufferId);
+				return new RioBufferPool(winsockEx, bufferLength, buffersCount * 2, memoryBlock, rioBufferId);
 			}
 
 			/// <summary>
@@ -174,16 +178,25 @@ namespace SXN
 
 			#pragma region Methods
 
-			PRIO_BUF GetBuffer(int id)
+			PRIO_BUF GetReceiveBuffer(int id)
 			{
 				return this->buffers + id;
 			}
 
-			char* GetData(int id)
+			PRIO_BUF GetSendBuffer(int id)
+			{
+				return this->buffers + connectionsCount + id;
+			}
+
+			char* GetReceiveData(int id)
 			{
 				return ((PCHAR) this->memoryBlock) + id * bufferLength;
 			}
 
+			char* GetSendData(int id)
+			{
+				return ((PCHAR) this->memoryBlock) + (id + connectionsCount)* bufferLength;
+			}
 			#pragma endregion
 		};
 	}
