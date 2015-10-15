@@ -401,44 +401,7 @@ namespace SXN
 				}
 			}
 
-			void ProcessDisconnectOperations()
-			{
-				// define array of completion entries
-				OVERLAPPED_ENTRY completionPortEntries[1024];
-
-				// will contain number of entries removed from the completion queue
-				ULONG numEntriesRemoved;
-
-				while (true)
-				{
-					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(disconnectCompletionPort, completionPortEntries, 1024, &numEntriesRemoved, 1 /* WSA_INFINITE*/, FALSE);
-
-					// check if operation has failed
-					if (dequeueResult == FALSE)
-					{
-						continue;
-						// TODO: ABORT
-					}
-
-					for (unsigned int entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
-					{
-						// get entry
-						OVERLAPPED_ENTRY entry = completionPortEntries[entryIndex];
-
-						// get overlapped
-						SXN::Net::Ovelapped* overlapped = (SXN::Net::Ovelapped *)entry.lpOverlapped;
-
-						// set connection state to disconnected
-						//overlapped->connection->state = SXN::Net::ConnectionState::Disconnected;
-						overlapped->connection->StartAccept();
-
-						//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
-					}
-				}
-			}
-
-			[System::Security::SuppressUnmanagedCodeSecurity]
+			//[System::Security::SuppressUnmanagedCodeSecurity]
 			inline void DoOtherWork()
 			{
 				DWORD msgLen = strlen(testMessage);
@@ -454,6 +417,7 @@ namespace SXN
 
 						switch (connection->state)
 						{
+							/**
 							case SXN::Net::ConnectionState::Accepted:
 							{
 								// s accept
@@ -475,25 +439,32 @@ namespace SXN
 
 								break;
 							}
+							/**/
 
 							case SXN::Net::ConnectionState::Received:
 							{
+								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENDING", Id, connection->connectionSocket);
+
 								// start asynchronous send operation
 								connection->StartSend(msgLen);
 
 								connection->state = SXN::Net::ConnectionState::Sent;
 
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
+								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENT", Id, connection->connectionSocket);
 
 								break;
 							}
 
 							case SXN::Net::ConnectionState::Sent:
 							{
+								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTING", Id, connection->connectionSocket);
+
 								// start asynchronous disconnect operation
 								connection->StartDisconnect();
 
 								connection->state = SXN::Net::ConnectionState::Disconnected;
+
+								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTED", Id, connection->connectionSocket);
 
 								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 
@@ -502,10 +473,10 @@ namespace SXN
 
 							case SXN::Net::ConnectionState::Disconnected:
 							{
+								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPTING", Id, connection->connectionSocket);
+
 								// start asynchronous accept operation
 								connection->StartAccept();
-
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - DISCONNECT", Id, over2->connectionId);
 
 								break;
 							}
