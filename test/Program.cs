@@ -19,7 +19,7 @@ namespace SXN.Net
 				Port = 5001,
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
-				ConnectionsBacklogLength = 4096,
+				ConnectionsBacklogLength = 8192,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};
@@ -35,7 +35,7 @@ namespace SXN.Net
 			{
 				//Console.WriteLine($"Error activating server. Kernel error code: {tryInitalizeServerResult.KernelErrorCode}. Winsock error code: {tryInitalizeServerResult.WinsockErrorCode}.");
 
-				Console.WriteLine($"Error activating server.");
+				Console.WriteLine($"Error activating server. Kernel error code: {0}, Winsock error code: {1}", e.KErrorCode, e.WErrorCode);
 
 				return;
 			}

@@ -153,7 +153,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED)-1;
 
 					// create the completion queue for the Registered I/O receive operations
-					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount, &completionSettings);
+					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount * 24, &completionSettings);
 
 					// check if operation has failed
 					if (rioReciveCompletionQueue == RIO_INVALID_CQ)
@@ -196,7 +196,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED) -1;
 
 					// create the completion queue for the Registered I/O send operations
-					rioSendCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount, &completionSettings);
+					rioSendCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(connectionsCount * 40, &completionSettings);
 
 					// check if operation has failed
 					if (rioSendCompletionQueue == RIO_INVALID_CQ)
@@ -230,7 +230,7 @@ namespace SXN
 
 					int winsockErrorCode;
 
-					receiveBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					receiveBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount * 24, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
 					if (receiveBufferPool == nullptr)
@@ -239,7 +239,7 @@ namespace SXN
 						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
 					}
 
-					sendBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					sendBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount * 40, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
 					if (sendBufferPool == nullptr)
@@ -256,7 +256,7 @@ namespace SXN
 				for (unsigned int index = 0; index < connectionsCount; index++)
 				{
 					// create connection
-					TcpConnection* connection = CreateConnection(index, 1, 1);
+					TcpConnection* connection = CreateConnection(index, 1, 2);
 
 					// add to collection
 					connections[index] = connection;
@@ -352,7 +352,7 @@ namespace SXN
 				}
 
 				// create request queue
-				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, 1, maxOutstandingSend, 1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
+				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, 24, 1, 40, 1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
 
 				// check if operation has failed
 				if (requestQueue == RIO_INVALID_RQ)
