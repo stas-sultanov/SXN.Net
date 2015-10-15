@@ -135,11 +135,12 @@ namespace SXN
 
 				//sendBuffer->Length = dataLength;
 
-				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
+				//return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
 
-				sendBuffer->Length = 0;
+				//sendBuffer->Length = 0;
 
-				//return winsockEx.RIOSend(rioRequestQueue, nullptr, 0, RIO_MSG_COMMIT_ONLY, this);
+				// TODO: bug here
+				return winsockEx.RIOSend(rioRequestQueue, nullptr, 0, RIO_MSG_COMMIT_ONLY, this);
 			}
 
 			inline BOOL StartDisconnect()
