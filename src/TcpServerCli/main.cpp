@@ -150,6 +150,8 @@ void DoOtherWork(SXN::Net::TcpConnection** connections, int connectionsCount, in
 {
 	while (true)
 	{
+		Sleep(1);
+
 		for (int connectionIndex = 0; connectionIndex < connectionsCount; connectionIndex++)
 		{
 			// get connection
@@ -184,6 +186,8 @@ void DoOtherWork(SXN::Net::TcpConnection** connections, int connectionsCount, in
 					// start asynchronous send operation
 					connection->StartSend(msgLen);
 
+					connection->state = SXN::Net::ConnectionState::Sent;
+
 					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO RECEIVE, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 
 					break;
@@ -193,6 +197,8 @@ void DoOtherWork(SXN::Net::TcpConnection** connections, int connectionsCount, in
 				{
 					// start asynchronous disconnect operation
 					connection->StartDisconnect();
+
+					connection->state = SXN::Net::ConnectionState::Disconnected;
 
 					//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 
