@@ -116,45 +116,47 @@ namespace SXN
 
 				// reserve and commit aligned memory block
 				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-				// check if operation has failed
-				if (memoryBlock == nullptr)
 				{
-					// get kernel error code
-					kernelErrorCode = ::GetLastError();
+					// check if operation has failed
+					if (memoryBlock == nullptr)
+					{
+						// get kernel error code
+						kernelErrorCode = ::GetLastError();
 
-					// set winsock error code
-					winsockErrorCode = 0;
+						// set winsock error code
+						winsockErrorCode = 0;
 
-					return nullptr;
+						return nullptr;
+					}
 				}
 
 				// register and set the identifier of the buffer
 				RIO_BUFFERID rioBufferId = winsockEx.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
-
-				// check if operation has failed
-				if (rioBufferId == RIO_INVALID_BUFFERID)
 				{
-					// get winsock error code
-					winsockErrorCode = ::WSAGetLastError();
-
-					// try free allocated memory and ignore result
-					if (::VirtualFree(memoryBlock, 0, MEM_RELEASE))
+					// check if operation has failed
+					if (rioBufferId == RIO_INVALID_BUFFERID)
 					{
-						// set kernel error code
-						kernelErrorCode = 0;
-					}
-					else
-					{
-						// get kernel error code
-						kernelErrorCode = ::GetLastError();
-					}
+						// get winsock error code
+						winsockErrorCode = ::WSAGetLastError();
 
-					return nullptr;
+						// try free allocated memory and ignore result
+						if (::VirtualFree(memoryBlock, 0, MEM_RELEASE))
+						{
+							// set kernel error code
+							kernelErrorCode = 0;
+						}
+						else
+						{
+							// get kernel error code
+							kernelErrorCode = ::GetLastError();
+						}
+
+						return nullptr;
+					}
 				}
 
 				// initialize and return result
-				return new RioBufferPool(winsockEx, bufferLength, buffersCount * 2, memoryBlock, rioBufferId);
+				return new RioBufferPool(winsockEx, bufferLength, buffersCount, memoryBlock, rioBufferId);
 			}
 
 			/// <summary>
