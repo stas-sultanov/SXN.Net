@@ -268,6 +268,8 @@ namespace SXN
 
 					processReceiveOperationsThread = gcnew Thread(threadDelegate);
 
+					processReceiveOperationsThread->IsBackground = true;
+
 					processReceiveOperationsThread->Start();
 				}
 
@@ -276,6 +278,8 @@ namespace SXN
 
 					processSendOperationsThread = gcnew Thread(threadDelegate);
 
+					processReceiveOperationsThread->IsBackground = true;
+
 					processSendOperationsThread->Start();
 				}
 
@@ -283,6 +287,8 @@ namespace SXN
 					ThreadStart^ threadDelegate = gcnew ThreadStart(this, &IocpWorker::ProcessDisconnectOperations);
 
 					processDisconnectOperationsThread = gcnew Thread(threadDelegate);
+
+					processReceiveOperationsThread->IsBackground = true;
 
 					processDisconnectOperationsThread->Start();
 				}

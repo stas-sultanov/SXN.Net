@@ -162,6 +162,8 @@ namespace SXN
 
 				mainThread = gcnew Thread(threadDelegate);
 
+				mainThread->IsBackground = true;
+
 				mainThread->Start();
 			}
 
