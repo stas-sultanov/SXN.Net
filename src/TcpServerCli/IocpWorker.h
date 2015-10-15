@@ -429,7 +429,7 @@ namespace SXN
 					pWinsockEx->RIONotify(rioReciveCompletionQueue);
 
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatus(receiveCompletionPort, &numberOfBytes, &completionKey, &overlapped, 1 /* WSA_INFINITE */);
+					BOOL dequeueResult = ::GetQueuedCompletionStatus(receiveCompletionPort, &numberOfBytes, &completionKey, &overlapped, WSA_INFINITE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
@@ -443,6 +443,8 @@ namespace SXN
 					// array of the Registered IO results
 					RIORESULT rioResults[1024];
 
+					BOOL activatedCompletionPort = FALSE;
+
 					while ((receiveCompletionsCount = pWinsockEx->RIODequeueCompletion(rioReciveCompletionQueue, rioResults, 1024)) > 0)
 					{
 						for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
@@ -455,9 +457,15 @@ namespace SXN
 
 							// set connection state to received
 							//connection->state = SXN::Net::ConnectionState::Received;
-							
-							
+
 							connection->StartSend(strlen(testMessage));
+						}
+
+						if (!activatedCompletionPort)
+						{
+							pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+							activatedCompletionPort = true;
 						}
 					}
 				}
@@ -481,7 +489,7 @@ namespace SXN
 					pWinsockEx->RIONotify(rioSendCompletionQueue);
 
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatus(sendCompletionPort, &numberOfBytes, &completionKey, &overlapped, 1 /*WSA_INFINITE*/);
+					BOOL dequeueResult = ::GetQueuedCompletionStatus(sendCompletionPort, &numberOfBytes, &completionKey, &overlapped, WSA_INFINITE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
@@ -494,6 +502,8 @@ namespace SXN
 
 					// array of the Registered IO results
 					RIORESULT rioResults[1024];
+
+					BOOL activatedCompletionPort = FALSE;
 
 					while ((sendCompletionsCount = pWinsockEx->RIODequeueCompletion(rioSendCompletionQueue, rioResults, 1024)) > 0)
 					{
@@ -509,10 +519,18 @@ namespace SXN
 							//connection->state = SXN::Net::ConnectionState::Sent;
 							connection->StartDisconnect();
 						}
+
+						if (!activatedCompletionPort)
+						{
+							pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+							activatedCompletionPort = true;
+						}
 					}
 				}
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessDisconnectOperations()
 			{
 				// define array of completion entries
@@ -524,7 +542,7 @@ namespace SXN
 				while (true)
 				{
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(disconnectCompletionPort, completionPortEntries, 1024, &numEntriesRemoved, 1 /* WSA_INFINITE*/, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(disconnectCompletionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
