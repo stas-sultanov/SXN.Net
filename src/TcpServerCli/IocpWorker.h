@@ -132,7 +132,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED)-1;
 
 					// create the completion queue for the Registered I/O receive operations
-					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount * 4, &completionSettings);
+					rioReciveCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount * 24, &completionSettings);
 
 					// check if operation has failed
 					if (rioReciveCompletionQueue == RIO_INVALID_CQ)
@@ -162,7 +162,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED) -1;
 
 					// create the completion queue for the Registered I/O send operations
-					rioSendCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount * 4, &completionSettings);
+					rioSendCompletionQueue = pWinsockEx->RIOCreateCompletionQueue(segmentsCount * 32, &completionSettings);
 
 					// check if operation has failed
 					if (rioSendCompletionQueue == RIO_INVALID_CQ)
@@ -273,7 +273,7 @@ namespace SXN
 				}
 
 				// create request queue
-				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, 1, maxOutstandingSend, 1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
+				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, 24, 1, 32, 1, rioReciveCompletionQueue, rioSendCompletionQueue, (PVOID)&connectionId);
 
 				// check if operation has failed
 				if (requestQueue == RIO_INVALID_RQ)

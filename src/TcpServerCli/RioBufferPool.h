@@ -111,7 +111,11 @@ namespace SXN
 				ULONG memoryBlockLength = bufferLength * buffersCount;
 
 				// reserve and commit aligned memory block
-				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				//LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+				LPVOID memoryBlock = new char [memoryBlockLength];
+
+				memset(memoryBlock, 0, memoryBlockLength);
 
 				// check if operation has failed
 				if (memoryBlock == nullptr)
@@ -167,7 +171,9 @@ namespace SXN
 
 				// free allocated memory
 				// ignore result
-				::VirtualFree(memoryBlock, 0, MEM_RELEASE);
+				//::VirtualFree(memoryBlock, 0, MEM_RELEASE);
+
+				delete[] memoryBlock;
 			}
 
 			#pragma endregion
