@@ -48,7 +48,12 @@ namespace SXN
 			/// <summary>
 			/// The Registered I/O buffer pool.
 			/// </summary>
-			RioBufferPool* rioBufferPool;
+			RioBufferPool* rioReceiveBufferPool;
+
+			/// <summary>
+			/// The Registered I/O buffer pool.
+			/// </summary>
+			RioBufferPool* rioSendBufferPool;
 
 			/// <summary>
 			/// The completion port of the disconnect operations.
@@ -164,16 +169,32 @@ namespace SXN
 					}
 				}
 
-				// create buffer pool
+				// create receive buffer pool
 				{
 					DWORD kernelErrorCode;
 
 					int winsockErrorCode;
 
-					rioBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					rioReceiveBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
-					if (rioBufferPool == nullptr)
+					if (rioReceiveBufferPool == nullptr)
+					{
+						// throw exception
+						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
+					}
+				}
+
+				// create send buffer pool
+				{
+					DWORD kernelErrorCode;
+
+					int winsockErrorCode;
+
+					rioSendBufferPool = RioBufferPool::Create(*pWinsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+
+					// check if operation has failed
+					if (rioSendBufferPool == nullptr)
 					{
 						// throw exception
 						throw gcnew TcpServerException((WinsockErrorCode)winsockErrorCode, (int)kernelErrorCode);
@@ -224,7 +245,7 @@ namespace SXN
 			~IocpWorker()
 			{
 				// release buffer pool
-				delete rioBufferPool;
+				delete rioReceiveBufferPool;
 
 				// close completion queue
 				pWinsockEx->RIOCloseCompletionQueue(rioCompletionQueue);
@@ -255,6 +276,7 @@ namespace SXN
 				}
 
 				// associate the connection socket with the completion port
+				/**
 				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE)connectionSocket, disconnectCompletionPort, 0, 0);
 
 				// check if operation has succeed
@@ -266,6 +288,7 @@ namespace SXN
 					// throw exception
 					throw gcnew TcpServerException(winsockErrorCode);
 				}
+				/**/
 
 				// create request queue
 				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, 24, 1, 40, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)&connectionId);
@@ -322,11 +345,11 @@ namespace SXN
 
 				connection->StartAccept();
 
-				connection->receiveBuffer = rioBufferPool->GetReceiveBuffer(connectionId);
+				connection->receiveBuffer = rioReceiveBufferPool->GetBuffer(connectionId);
 
-				connection->sendBuffer = rioBufferPool->GetSendBuffer(connectionId);
+				connection->sendBuffer = rioSendBufferPool->GetBuffer(connectionId);
 
-				memcpy(rioBufferPool->GetSendData(connectionId), testMessage, strlen(testMessage));
+				memcpy(rioSendBufferPool->GetData(connectionId), testMessage, strlen(testMessage));
 
 				return connection;
 			}
@@ -387,7 +410,7 @@ namespace SXN
 
 							//connection->StartSend(strlen(testMessage));
 
-							System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RECEIVED", Id, connection->connectionSocket);
+							//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RECEIVED", Id, connection->connectionSocket);
 						}
 
 						if (!activatedCompletionPort)
@@ -443,28 +466,32 @@ namespace SXN
 
 							case SXN::Net::ConnectionState::Received:
 							{
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENDING", Id, connection->connectionSocket);
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENDING", Id, connection->connectionSocket);
 
 								// start asynchronous send operation
 								connection->StartSend(msgLen);
 
-								connection->state = SXN::Net::ConnectionState::Sent;
+								connection->StartDisconnect();
 
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENT", Id, connection->connectionSocket);
+								connection->StartAccept();
+
+								//connection->state = SXN::Net::ConnectionState::Sent;
+
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENT", Id, connection->connectionSocket);
 
 								break;
 							}
 
 							case SXN::Net::ConnectionState::Sent:
 							{
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTING", Id, connection->connectionSocket);
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTING", Id, connection->connectionSocket);
 
 								// start asynchronous disconnect operation
 								connection->StartDisconnect();
 
 								connection->state = SXN::Net::ConnectionState::Disconnected;
 
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTED", Id, connection->connectionSocket);
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTED", Id, connection->connectionSocket);
 
 								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
 
@@ -473,7 +500,7 @@ namespace SXN
 
 							case SXN::Net::ConnectionState::Disconnected:
 							{
-								System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPTING", Id, connection->connectionSocket);
+								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPTING", Id, connection->connectionSocket);
 
 								// start asynchronous accept operation
 								connection->StartAccept();

@@ -133,21 +133,24 @@ namespace SXN
 			{
 				state = ConnectionState::Sending;
 
-				//sendBuffer->Length = dataLength;
+				sendBuffer->Length = dataLength;
 
-				//return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
+				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, RIO_MSG_DONT_NOTIFY, this);
 
 				//sendBuffer->Length = 0;
 
 				// TODO: bug here
-				return winsockEx.RIOSend(rioRequestQueue, nullptr, 0, RIO_MSG_COMMIT_ONLY, this);
+				//return winsockEx.RIOSend(rioRequestQueue, nullptr, 0, RIO_MSG_COMMIT_ONLY, this);
 			}
 
 			inline BOOL StartDisconnect()
 			{
 				state = ConnectionState::Disconnecting;
 
-				return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+				//return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+
+				return winsockEx.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
+
 			}
 
 			#pragma endregion

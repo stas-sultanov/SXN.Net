@@ -43,8 +43,6 @@ namespace SXN
 			/// </summary>
 			RIO_BUF* buffers;
 
-			int connectionsCount;
-
 			#pragma endregion
 
 			#pragma region Constructor
@@ -60,8 +58,6 @@ namespace SXN
 			RioBufferPool(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
 				: winsockEx(winsockEx)
 			{
-				this->connectionsCount = buffersCount / 2;
-
 				// set buffer length
 				this->bufferLength = bufferLength;
 
@@ -112,47 +108,45 @@ namespace SXN
 			static RioBufferPool* Create(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
 			{
 				// calculate and set the length of the memory block
-				ULONG memoryBlockLength = bufferLength * buffersCount * 2;
+				ULONG memoryBlockLength = bufferLength * buffersCount;
 
 				// reserve and commit aligned memory block
 				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+				// check if operation has failed
+				if (memoryBlock == nullptr)
 				{
-					// check if operation has failed
-					if (memoryBlock == nullptr)
-					{
-						// get kernel error code
-						kernelErrorCode = ::GetLastError();
+					// get kernel error code
+					kernelErrorCode = ::GetLastError();
 
-						// set winsock error code
-						winsockErrorCode = 0;
+					// set winsock error code
+					winsockErrorCode = 0;
 
-						return nullptr;
-					}
+					return nullptr;
 				}
 
 				// register and set the identifier of the buffer
 				RIO_BUFFERID rioBufferId = winsockEx.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
+
+				// check if operation has failed
+				if (rioBufferId == RIO_INVALID_BUFFERID)
 				{
-					// check if operation has failed
-					if (rioBufferId == RIO_INVALID_BUFFERID)
+					// get winsock error code
+					winsockErrorCode = ::WSAGetLastError();
+
+					// try free allocated memory and ignore result
+					if (::VirtualFree(memoryBlock, 0, MEM_RELEASE))
 					{
-						// get winsock error code
-						winsockErrorCode = ::WSAGetLastError();
-
-						// try free allocated memory and ignore result
-						if (::VirtualFree(memoryBlock, 0, MEM_RELEASE))
-						{
-							// set kernel error code
-							kernelErrorCode = 0;
-						}
-						else
-						{
-							// get kernel error code
-							kernelErrorCode = ::GetLastError();
-						}
-
-						return nullptr;
+						// set kernel error code
+						kernelErrorCode = 0;
 					}
+					else
+					{
+						// get kernel error code
+						kernelErrorCode = ::GetLastError();
+					}
+
+					return nullptr;
 				}
 
 				// initialize and return result
@@ -180,25 +174,16 @@ namespace SXN
 
 			#pragma region Methods
 
-			PRIO_BUF GetReceiveBuffer(int id)
+			PRIO_BUF GetBuffer(int id)
 			{
 				return this->buffers + id;
 			}
 
-			PRIO_BUF GetSendBuffer(int id)
-			{
-				return this->buffers + connectionsCount + id;
-			}
-
-			char* GetReceiveData(int id)
+			char* GetData(int id)
 			{
 				return ((PCHAR) this->memoryBlock) + id * bufferLength;
 			}
 
-			char* GetSendData(int id)
-			{
-				return ((PCHAR) this->memoryBlock) + (id + connectionsCount)* bufferLength;
-			}
 			#pragma endregion
 		};
 	}

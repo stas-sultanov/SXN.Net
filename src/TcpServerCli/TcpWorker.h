@@ -289,7 +289,7 @@ namespace SXN
 						
 						overlapped->connection->StartRecieve();
 
-						System::Console::WriteLine("ACCEPT Thread: Connection: {0}", overlapped->connectionSocket);
+						//System::Console::WriteLine("ACCEPT Thread: Connection: {0}", overlapped->connectionSocket);
 					}
 				}
 			}
