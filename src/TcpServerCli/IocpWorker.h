@@ -329,30 +329,32 @@ namespace SXN
 				// define array of the Registered IO results
 				RIORESULT rioResults[1024];
 
-				int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
 
-				/*
-				if (rioRecieveNotify != ERROR_SUCCESS)
-				{
-				System::Console::WriteLine("RIONotify:recive:{0}", (WinsockErrorCode) rioRecieveNotify);
-				}*/
-
-				int rioSendNotify = this->pWinsockEx->RIONotify(rioSendCompletionQueue);
-
-				/**
-				if (rioSendNotify != ERROR_SUCCESS)
-				{
-				System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
-				}
-				/**/
 
 				// will contain number of entries removed from the completion queue
 				ULONG numEntriesRemoved;
 
 				while (true)
 				{
+					int rioRecieveNotify = this->pWinsockEx->RIONotify(rioReciveCompletionQueue);
+
+					/*
+					if (rioRecieveNotify != ERROR_SUCCESS)
+					{
+					System::Console::WriteLine("RIONotify:recive:{0}", (WinsockErrorCode) rioRecieveNotify);
+					}*/
+
+					int rioSendNotify = this->pWinsockEx->RIONotify(rioSendCompletionQueue);
+
+					/**
+					if (rioSendNotify != ERROR_SUCCESS)
+					{
+					System::Console::WriteLine("RIONotify:send:{0}", (WinsockErrorCode)rioSendNotify);
+					}
+					/**/
+
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, 0 /* WSA_INFINITE */, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
