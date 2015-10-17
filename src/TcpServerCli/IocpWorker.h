@@ -226,6 +226,7 @@ namespace SXN
 					processRioOperationsThread->Start();
 				}
 
+				/**
 				{
 					ThreadStart^ threadDelegate = gcnew ThreadStart(this, &IocpWorker::DoOtherWork);
 
@@ -233,10 +234,11 @@ namespace SXN
 
 					processDisconnectOperationsThread->Name = String::Format("disconnect processing thread # {0}", id);
 
-					//processDisconnectOperationsThread->IsBackground = false;
+					processDisconnectOperationsThread->IsBackground = false;
 
 					processDisconnectOperationsThread->Start();
 				}
+				/**/
 			}
 
 			/// <summary>
@@ -405,8 +407,22 @@ namespace SXN
 							// get connection
 							SXN::Net::TcpConnection* connection = (SXN::Net::TcpConnection *)result.RequestContext;
 
-							// set connection state to received
-							connection->state = SXN::Net::ConnectionState::Received;
+							if (connection->state == Receiving)
+							{
+								// set connection state to received
+								connection->state = SXN::Net::ConnectionState::Received;
+
+								connection->StartSend(strlen(testMessage));
+							}
+							else if (connection->state == Sending)
+							{
+								// set connection state to sent
+								connection->state = SXN::Net::ConnectionState::Sent;
+
+								connection->StartDisconnect();
+
+								connection->StartAccept();
+							}
 
 							//connection->StartSend(strlen(testMessage));
 
@@ -419,94 +435,6 @@ namespace SXN
 							pWinsockEx->RIONotify(rioCompletionQueue);
 
 							activatedCompletionPort = TRUE;
-						}
-					}
-				}
-			}
-
-			//[System::Security::SuppressUnmanagedCodeSecurity]
-			inline void DoOtherWork()
-			{
-				DWORD msgLen = strlen(testMessage);
-
-				while (true)
-				{
-					Sleep(1);
-
-					for (unsigned int connectionIndex = 0; connectionIndex < connectionsCount; connectionIndex++)
-					{
-						// get connection
-						SXN::Net::TcpConnection* connection = connections[connectionIndex];
-
-						switch (connection->state)
-						{
-							/**
-							case SXN::Net::ConnectionState::Accepted:
-							{
-								// s accept
-								int endAcceptResult = connection->EndAccepet();
-
-								// check if operation has failed
-								if (endAcceptResult == SOCKET_ERROR)
-								{
-									// get error code
-									int winsockErrorCode = ::WSAGetLastError();
-
-									return;
-								}
-
-								// start asynchronous receive operation
-								connection->StartRecieve();
-
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPT", Id, (Int32)overlapped->connectionId);
-
-								break;
-							}
-							/**/
-
-							case SXN::Net::ConnectionState::Received:
-							{
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENDING", Id, connection->connectionSocket);
-
-								// start asynchronous send operation
-								connection->StartSend(msgLen);
-
-								connection->StartDisconnect();
-
-								connection->StartAccept();
-
-								//connection->state = SXN::Net::ConnectionState::Sent;
-
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SENT", Id, connection->connectionSocket);
-
-								break;
-							}
-
-							case SXN::Net::ConnectionState::Sent:
-							{
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTING", Id, connection->connectionSocket);
-
-								// start asynchronous disconnect operation
-								connection->StartDisconnect();
-
-								connection->state = SXN::Net::ConnectionState::Disconnected;
-
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO DISCONNECTED", Id, connection->connectionSocket);
-
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - RIO SEND, BytesTransferred {2}, SocketContext {3}, Status {4}", Id, result.RequestContext, result.BytesTransferred, result.SocketContext, (WinsockErrorCode) result.Status);
-
-								break;
-							}
-
-							case SXN::Net::ConnectionState::Disconnected:
-							{
-								//System::Console::WriteLine("IOCP Thread: {0} - Connection: {1} - ACCEPTING", Id, connection->connectionSocket);
-
-								// start asynchronous accept operation
-								connection->StartAccept();
-
-								break;
-							}
 						}
 					}
 				}

@@ -48,7 +48,7 @@ namespace SXN
 			/// </summary>
 			TcpWorker(TcpWorkerSettings settings)
 			{
-				// 0 initialize Winsock
+				// initialize Winsock
 				{
 					WSADATA data;
 
@@ -71,6 +71,34 @@ namespace SXN
 
 					// check if operation has failed
 					if (listenSocket == INVALID_SOCKET)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
+				// configure listen socket
+				{
+					Boolean configResult = Configure(listenSocket, settings);
+
+					if (!configResult)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
+				// initialize winsock extensions
+				{
+					pWinsockEx = WinsockEx::Initialize(listenSocket);
+
+					if (pWinsockEx == nullptr)
 					{
 						// get error code
 						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -108,34 +136,6 @@ namespace SXN
 					}
 				}
 
-				// initialize winsock extensions
-				{
-					pWinsockEx = WinsockEx::Initialize(listenSocket);
-
-					if (pWinsockEx == nullptr)
-					{
-						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
-					}
-				}
-
-				// try configure server socket and start listen
-				{
-					Boolean configResult = ConfigureBindAndStartListen(listenSocket, settings);
-
-					if (!configResult)
-					{
-						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
-					}
-				}
-
 				// create and configure sub workers
 				{
 					// 3 get count of processors
@@ -158,6 +158,20 @@ namespace SXN
 					}
 				}
 
+				//  start listen
+				{
+					Boolean configResult = StartListen(listenSocket, settings);
+
+					if (!configResult)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
 				ThreadStart^ threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
 				mainThread = gcnew Thread(threadDelegate);
@@ -167,7 +181,7 @@ namespace SXN
 
 			private:
 
-			static Boolean ConfigureBindAndStartListen(SOCKET listenSocket, TcpWorkerSettings settings)
+			static Boolean Configure(SOCKET listenSocket, TcpWorkerSettings settings)
 			{
 				// try disable use of the Nagle algorithm if requested
 				if (settings.UseNagleAlgorithm == false)
@@ -188,6 +202,7 @@ namespace SXN
 
 					Console::WriteLine("socket {0} TCP_NODELAY state {1}", listenSocket, boolValue);
 
+					/* EXPEREMENTAL *
 					int intValue = 0;
 
 					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
@@ -196,11 +211,11 @@ namespace SXN
 					if (setBufferResult == SOCKET_ERROR)
 					{
 						return false;
-					}
+					}/**/
 				}
 
 				// try enable faster operations on the loop-back if requested
-				if (settings.UseFastLoopback)
+				if (settings.UseFastLoopback == true)
 				{
 					UInt32 optionValue = 1;
 
@@ -214,6 +229,12 @@ namespace SXN
 						return false;
 					}
 				}
+
+				return true;
+			}
+
+			static Boolean StartListen(SOCKET listenSocket, TcpWorkerSettings settings)
+			{
 
 				// try bind
 				{
@@ -240,7 +261,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = ::listen(listenSocket, settings.ConnectionsBacklogLength);
+					int startListen = ::listen(listenSocket, (int) settings.ConnectionsBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -267,7 +288,7 @@ namespace SXN
 				while (true)
 				{
 					// dequeue completion status
-					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, 1 /* WSA_INFINITE*/, FALSE);
+					BOOL dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)

@@ -122,6 +122,12 @@ namespace SXN
 				return ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
 			}
 
+
+			inline void GetSourceAddress()
+			{
+				//winsockEx.GetAcceptExSockaddrs();
+			}
+
 			inline BOOL StartRecieve()
 			{
 				state = ConnectionState::Receiving;

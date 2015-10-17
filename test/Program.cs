@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 //using SXN.Net.Winsock;
 
@@ -10,10 +11,12 @@ namespace SXN.Net
 
 		private static void Main()
 		{
+			ThreadPool.SetMinThreads(256, 256);
+
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				Port = 5001,
+				Port = 5005,
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
 				ConnectionsBacklogLength = 2048,
