@@ -158,7 +158,7 @@ namespace SXN
 					}
 				}
 
-				//  start listen
+				// start listen
 				{
 					Boolean configResult = StartListen(listenSocket, settings);
 

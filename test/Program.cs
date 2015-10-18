@@ -33,9 +33,9 @@ namespace SXN.Net
 			}
 			catch (TcpServerException e)
 			{
-				//Console.WriteLine($"Error activating server. Kernel error code: {tryInitalizeServerResult.KernelErrorCode}. Winsock error code: {tryInitalizeServerResult.WinsockErrorCode}.");
+				Console.WriteLine($"Error activating server. Kernel error code: {e.KErrorCode}. Winsock error code: {e.WErrorCode}.");
 
-				Console.WriteLine($"Error activating server.");
+				//Console.WriteLine($"Error activating server.");
 
 				return;
 			}

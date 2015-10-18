@@ -141,7 +141,7 @@ namespace SXN
 
 				sendBuffer->Length = dataLength;
 
-				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, RIO_MSG_DONT_NOTIFY, this);
+				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
 
 				//sendBuffer->Length = 0;
 
