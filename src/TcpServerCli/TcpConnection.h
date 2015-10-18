@@ -122,7 +122,6 @@ namespace SXN
 				return ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
 			}
 
-
 			inline void GetSourceAddress()
 			{
 				//winsockEx.GetAcceptExSockaddrs();
@@ -142,11 +141,6 @@ namespace SXN
 				sendBuffer->Length = dataLength;
 
 				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
-
-				//sendBuffer->Length = 0;
-
-				// TODO: bug here
-				//return winsockEx.RIOSend(rioRequestQueue, nullptr, 0, RIO_MSG_COMMIT_ONLY, this);
 			}
 
 			inline BOOL StartDisconnect()
@@ -156,7 +150,6 @@ namespace SXN
 				//return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 
 				return winsockEx.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
-
 			}
 
 			#pragma endregion

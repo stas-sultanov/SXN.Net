@@ -294,15 +294,16 @@ namespace SXN
 
 				// create request queue
 				RIO_RQ requestQueue = pWinsockEx->RIOCreateRequestQueue(connectionSocket, 24, 1, 40, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)&connectionId);
-
-				// check if operation has failed
-				if (requestQueue == RIO_INVALID_RQ)
 				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					// check if operation has failed
+					if (requestQueue == RIO_INVALID_RQ)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
 
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
 				}
 
 				// set output buffer to 0

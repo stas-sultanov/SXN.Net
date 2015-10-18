@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="IocpWorker.h" />
     <ClInclude Include="Ovelapped.h" />
+    <ClInclude Include="ReceiveTask.h" />
     <ClInclude Include="RioBufferPool.h" />
     <ClInclude Include="Stdafx.h" />
     <ClInclude Include="TcpConnection.h" />

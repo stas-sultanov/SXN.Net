@@ -16,7 +16,7 @@ namespace SXN.Net
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				Port = 5005,
+				Port = 5001,
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
 				ConnectionsBacklogLength = 2048,

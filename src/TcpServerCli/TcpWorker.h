@@ -136,6 +136,20 @@ namespace SXN
 					}
 				}
 
+				// start listen
+				{
+					Boolean configResult = StartListen(listenSocket, settings);
+
+					if (!configResult)
+					{
+						// get error code
+						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
+
 				// create and configure sub workers
 				{
 					// 3 get count of processors
@@ -158,32 +172,21 @@ namespace SXN
 					}
 				}
 
-				// start listen
+				// initialize and run main thread
 				{
-					Boolean configResult = StartListen(listenSocket, settings);
+					ThreadStart^ threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
-					if (!configResult)
-					{
-						// get error code
-						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					mainThread = gcnew Thread(threadDelegate);
 
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
-					}
+					mainThread->Start();
 				}
-
-				ThreadStart^ threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
-
-				mainThread = gcnew Thread(threadDelegate);
-
-				mainThread->Start();
 			}
 
 			private:
 
 			static Boolean Configure(SOCKET listenSocket, TcpWorkerSettings settings)
 			{
-				// try disable use of the Nagle algorithm if requested
+				// disable use of the Nagle algorithm if requested
 				if (settings.UseNagleAlgorithm == false)
 				{
 					BOOL boolValue = TRUE;
@@ -202,7 +205,7 @@ namespace SXN
 
 					Console::WriteLine("socket {0} TCP_NODELAY state {1}", listenSocket, boolValue);
 
-					/* EXPEREMENTAL *
+					/* EXPEREMENTAL */
 					int intValue = 0;
 
 					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
@@ -214,7 +217,7 @@ namespace SXN
 					}/**/
 				}
 
-				// try enable faster operations on the loop-back if requested
+				// enable faster operations on the loop-back if requested
 				if (settings.UseFastLoopback == true)
 				{
 					UInt32 optionValue = 1;
@@ -261,7 +264,7 @@ namespace SXN
 
 				// try start listen
 				{
-					int startListen = ::listen(listenSocket, (int) settings.ConnectionsBacklogLength);
+					int startListen = ::listen(listenSocket, settings.ConnectionsBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
