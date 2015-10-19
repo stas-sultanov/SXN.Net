@@ -11,39 +11,47 @@ namespace SXN
 {
 	namespace NET
 	{
-		public ref class ReceiveTask sealed
-			: INotifyCompletion, ICriticalNotifyCompletion
+		public ref class ReceiveTask sealed : INotifyCompletion, ICriticalNotifyCompletion
 		{
 			private:
 
 			// readonly static Action CALLBACK_RAN = () = > { };
 
-			bool _isCompleted;
+			/// <summary>
+			/// Indicates whether task is completed.
+			/// <summary/>
+			Boolean isCompleted;
 
-			Action _continuation;
+			Action^ continuation;
 
-			uint _bytesTransferred;
+			/// <summary>
+			/// The amount of bytes transferred.
+			/// <summary/>
+			UInt32 bytesTransferred;
 
-			uint _requestCorrelation;
+			UInt32 requestCorrelation;
 
 			ArraySegment<byte> _buffer;
 
-			TcpConnection _connection;
+			TcpConnection* connection;
 
 			public:
 
-			ReceiveTask(TcpConnection connection)
+			ReceiveTask(TcpConnection* connection)
 			{
 				this->connection = connection;
 			}
 
 			void Reset()
 			{
-				_bytesTransferred = 0;
+				// reset amount of data transferred
+				bytesTransferred = 0;
 
-				_isCompleted = false;
+				// reset completion flag
+				isCompleted = false;
 
-				_continuation = null;
+				// reset continuation delegate
+				continuation = nullptr;
 			}
 
 			void SetBuffer(ArraySegment<byte> buffer)
@@ -51,61 +59,68 @@ namespace SXN
 				_buffer = buffer;
 			}
 
-			void Complete(uint bytesTransferred, uint requestCorrelation)
+			void Complete(UInt32 bytesTransferred, UInt32 requestCorrelation)
 			{
-				_bytesTransferred = bytesTransferred;
-				_requestCorrelation = requestCorrelation;
-				_isCompleted = true;
+				bytesTransferred = bytesTransferred;
 
-				Action continuation = _continuation ? ? Interlocked.CompareExchange(ref _continuation, CALLBACK_RAN, null);
+				requestCorrelation = requestCorrelation;
+
+				isCompleted = true;
+
+				/*
+				Action continuation = continuation ? ? Interlocked.CompareExchange(ref _continuation, CALLBACK_RAN, null);
+
 				if (continuation != null)
 				{
 					CompleteCallback(continuation);
+				}*/
+			}
+
+			void CompleteCallback(Action^ continuation)
+			{
+				ThreadPool::UnsafeQueueUserWorkItem(UnsafeCallback, continuation);
+			}
+
+			ReceiveTask^ GetAwaiter() { return this; }
+
+			property Boolean IsCompleted
+			{
+				Boolean get()
+				{
+					return isCompleted;
 				}
 			}
 
-			internal void CompleteCallback(Action continuation)
+			void UnsafeCallback(Object^ state)
 			{
-				ThreadPool.UnsafeQueueUserWorkItem(UnsafeCallback, continuation);
+				((Action^)state)();
 			}
 
-			public ReceiveTask GetAwaiter() { return this; }
-
-			bool IsCompleted{ get{ return _isCompleted; } }
-
-			private void UnsafeCallback(object state)
+			virtual void OnCompleted(Action^ continuation)
 			{
-				((Action)state)();
+				throw gcnew NotImplementedException();
 			}
 
-			public void OnCompleted(Action continuation)
+			[System::Security::SecurityCritical]
+			virtual void UnsafeOnCompleted(Action^ continuation)
 			{
-				throw new NotImplementedException();
-			}
-
-			[System.Security.SecurityCritical]
-			public void UnsafeOnCompleted(Action continuation)
-			{
-				if (_continuation == CALLBACK_RAN ||
-					Interlocked.CompareExchange(
-						ref _continuation, continuation, null) == CALLBACK_RAN)
+				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, continuation, nullptr) == CALLBACK_RAN)
 				{
 					CompleteCallback(continuation);
 				}
 			}
-			public uint GetResult()
+
+			UInt32 GetResult()
 			{
-				var bytesTransferred = _bytesTransferred;
-				
-				Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred);
-				
+				auto bytesTransferred = this->bytesTransferred;
+
+				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
 				Reset();
 
-				connection.PostReceive(_requestCorrelation);
-				
+				connection->PostReceive(requestCorrelation);
+
 				return bytesTransferred;
 			}
-
 		}
-	}
+	};
 }
