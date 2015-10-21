@@ -6,6 +6,8 @@
 
 #include "TcpWorker.h"
 
+#include "ReceiveTask.h"
+
 #pragma unmanaged
 
 void DoWork(SXN::Net::WinsockEx& winsockEx, HANDLE completionPort, RIO_CQ rioReciveCompletionQueue, RIO_CQ rioSendCompletionQueue, INT msgLen)

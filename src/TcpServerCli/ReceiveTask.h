@@ -9,24 +9,24 @@ using namespace System::Threading;
 
 namespace SXN
 {
-	namespace NET
+	namespace Net
 	{
-		public ref class ReceiveTask sealed : INotifyCompletion, ICriticalNotifyCompletion
+		public ref class ReceiveTask sealed : ICriticalNotifyCompletion
 		{
 			private:
 
-			// readonly static Action CALLBACK_RAN = () = > { };
+			//readonly static Action CALLBACK_RAN = () = > { };
 
 			/// <summary>
 			/// Indicates whether task is completed.
-			/// <summary/>
+			/// </summary>
 			Boolean isCompleted;
 
 			Action^ continuation;
 
 			/// <summary>
 			/// The amount of bytes transferred.
-			/// <summary/>
+			/// </summary>
 			UInt32 bytesTransferred;
 
 			UInt32 requestCorrelation;
@@ -35,12 +35,78 @@ namespace SXN
 
 			TcpConnection* connection;
 
-			public:
+			internal:
 
+			#pragma region Constructors
+
+			/// <summary>
+			/// Initialize a new instance of the <see cref="ReceiveTask" /> class.
+			/// </summary>
 			ReceiveTask(TcpConnection* connection)
 			{
 				this->connection = connection;
 			}
+
+			#pragma endregion
+
+			public:
+
+			#pragma region Methods implementation of ICriticalNotifyCompletion
+
+			/// <summary>
+			/// Schedules the continuation action that's invoked when the instance completes.
+			/// </summary>
+			/// <param name="continuation">The action to invoke when the operation completes.</param>
+			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
+			virtual void OnCompleted(Action^ continuation)
+			{
+				// check argument
+				if (continuation == nullptr)
+				{
+					throw gcnew ArgumentNullException("continuation");
+				}
+
+				throw gcnew NotImplementedException();
+			}
+
+			/// <summary>
+			/// Schedules the continuation action that's invoked when the instance completes.
+			/// </summary>
+			/// <param name="continuation">The action to invoke when the operation completes.</param>
+			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
+			[System::Security::SecurityCritical]
+			virtual void UnsafeOnCompleted(Action^ continuation)
+			{
+				// check argument
+				if (continuation == nullptr)
+				{
+					throw gcnew ArgumentNullException("continuation");
+				}
+
+				/**
+				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, continuation, nullptr) == CALLBACK_RAN)
+				{
+					CompleteCallback(continuation);
+				}/**/
+
+				throw gcnew NotImplementedException();
+			}
+
+			#pragma endregion
+
+			#pragma region Methods
+
+			/// <summary>
+			/// Gets an awaiter used to await this task.
+			/// </summary>
+			/// <returs>An awaiter instance.</returns>
+			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
+			ReceiveTask^ GetAwaiter()
+			{
+				return this;
+			}
+
+			#pragma endregion
 
 			void Reset()
 			{
@@ -78,10 +144,8 @@ namespace SXN
 
 			void CompleteCallback(Action^ continuation)
 			{
-				ThreadPool::UnsafeQueueUserWorkItem(UnsafeCallback, continuation);
+				//ThreadPool::UnsafeQueueUserWorkItem(UnsafeCallback, continuation);
 			}
-
-			ReceiveTask^ GetAwaiter() { return this; }
 
 			property Boolean IsCompleted
 			{
@@ -96,20 +160,6 @@ namespace SXN
 				((Action^)state)();
 			}
 
-			virtual void OnCompleted(Action^ continuation)
-			{
-				throw gcnew NotImplementedException();
-			}
-
-			[System::Security::SecurityCritical]
-			virtual void UnsafeOnCompleted(Action^ continuation)
-			{
-				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, continuation, nullptr) == CALLBACK_RAN)
-				{
-					CompleteCallback(continuation);
-				}
-			}
-
 			UInt32 GetResult()
 			{
 				auto bytesTransferred = this->bytesTransferred;
@@ -117,10 +167,10 @@ namespace SXN
 				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
 				Reset();
 
-				connection->PostReceive(requestCorrelation);
+				//connection->PostReceive(requestCorrelation);
 
 				return bytesTransferred;
 			}
-		}
-	};
+		};
+	}
 }
