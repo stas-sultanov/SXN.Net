@@ -11,6 +11,8 @@ namespace SXN
 {
 	namespace Net
 	{
+		extern ref class Connection;
+
 		public ref class ReceiveTask sealed : ICriticalNotifyCompletion
 		{
 			private:
@@ -36,7 +38,7 @@ namespace SXN
 
 			UInt32 requestCorrelation;
 
-			TcpConnection* connection;
+			Connection^ connection;
 
 			internal:
 
@@ -45,7 +47,7 @@ namespace SXN
 			/// <summary>
 			/// Initialize a new instance of the <see cref="ReceiveTask" /> class.
 			/// </summary>
-			ReceiveTask(TcpConnection* connection)
+			ReceiveTask(Connection^ connection)
 			{
 				this->connection = connection;
 
@@ -86,6 +88,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
+			[System::Security::SecuritySafeCritical]
 			virtual void OnCompleted(Action^ continuation)
 			{
 				// check argument
@@ -106,11 +109,11 @@ namespace SXN
 			[System::Security::SecurityCritical]
 			virtual void UnsafeOnCompleted(Action^ continuation)
 			{
-				_continuation = continuation;
+				if (isCompleted)
+				{
+					CompleteCallback(continuation);
+				}
 
-				CompleteCallback(continuation);
-
-				/**
 				if (_continuation == CALLBACK_RAN2)
 				{
 					CompleteCallback(_continuation);
@@ -124,7 +127,6 @@ namespace SXN
 
 					return;
 				}
-				/**/
 			}
 
 			/// <summary>
@@ -132,12 +134,12 @@ namespace SXN
 			/// </summary>
 			UInt32 GetResult()
 			{
-				Console::WriteLine("ReceiveTask::GetResult Connection[{0}]", this->connection->id);
+				//Console::WriteLine("ReceiveTask::GetResult Connection[{0}]", this->connection->Id);
 
 				auto result = this->bytesTransferred;
 
 				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
-				Reset();
+				//Reset();
 
 				//connection->PostReceive(requestCorrelation);
 
@@ -158,18 +160,20 @@ namespace SXN
 				_continuation = nullptr;
 			}
 
-			void Complete(UInt32 bytesTransferred, UInt32 requestCorrelation)
+			void Complete(UInt32 bytesTransferred)
 			{
 				// set completed
 				isCompleted = true;
 
 				this->bytesTransferred = bytesTransferred;
 
-				requestCorrelation = requestCorrelation;
-
 				//Action ^continuation = _continuation != nullptr ? _continuation : Interlocked::CompareExchange(_continuation, CALLBACK_RAN2, (Action ^) nullptr);
 
-				if (_continuation != nullptr)
+				if (_continuation == nullptr)
+				{
+
+				}
+				else
 				{
 					CompleteCallback(_continuation);
 				}

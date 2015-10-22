@@ -38,7 +38,7 @@ namespace SXN
 			{
 				this->connection = connection;
 
-				receiveTask = gcnew ReceiveTask(connection);
+				receiveTask = gcnew ReceiveTask(this);
 			}
 
 			inline Boolean BeginReceive()
@@ -54,7 +54,7 @@ namespace SXN
 
 				Console::WriteLine("Connection[{0:D4}]::EndReceive {1} bytes", connection->id, bytesTransferred);
 
-				receiveTask->Complete(bytesTransferred, 0);
+				receiveTask->Complete(bytesTransferred);
 			}
 
 			public:
