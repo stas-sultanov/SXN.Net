@@ -12,7 +12,7 @@ namespace SXN
 	{
 		public class TcpConnection final
 		{
-			public:
+			public :
 
 			#pragma region Fields
 
@@ -59,7 +59,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(Winsock& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id)
+			inline TcpConnection(Winsock& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
 				: winsockEx(winsockEx)
 			{
 				this->id = id;
@@ -76,6 +76,10 @@ namespace SXN
 					this->acceptOverlapped = new Ovelapped();
 
 					memset(acceptOverlapped, 0, sizeof(Ovelapped));
+
+					acceptOverlapped->connectionId = id;
+
+					acceptOverlapped->workerId = workerId;
 
 					acceptOverlapped->action = SOCK_ACTION_ACCEPT;
 
@@ -162,3 +166,4 @@ namespace SXN
 }
 
 #pragma managed
+

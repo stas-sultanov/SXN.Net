@@ -20,7 +20,7 @@ namespace SXN.Net
 				Port = 5001,
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
-				ConnectionsBacklogLength = 2048,
+				ConnectionsBacklogLength = 4096,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};
@@ -65,12 +65,14 @@ namespace SXN.Net
 
 		private static async Task ServeSocket(Connection connection)
 		{
-			Console.WriteLine("starting receive data");
+			Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
 
 			// receive data async
 			var x = await connection.ReceiveAsync();
 
-			Console.WriteLine("data received");
+			// await Task.WaitAny(receiveTask, Task.Delay(2000));
+
+			Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, x);
 		}
 
 		#endregion

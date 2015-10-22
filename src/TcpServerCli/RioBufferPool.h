@@ -76,7 +76,9 @@ namespace SXN
 				this->rioBufferId = rioBufferId;
 
 				// initialize collection of the buffer segments
-				buffers = new RIO_BUF[buffersCount];
+				//buffers = new RIO_BUF[buffersCount];
+
+				buffers = (PRIO_BUF) ::VirtualAlloc(nullptr, sizeof(RIO_BUF) * buffersCount, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// initialize items of the collection
 				for (ULONG segmentIndex = 0, offset = 0; segmentIndex < buffersCount; segmentIndex++, offset += bufferLength)
@@ -164,7 +166,11 @@ namespace SXN
 			inline ~RioBufferPool()
 			{
 				// delete buffers array
-				delete buffers;
+				//delete buffers;
+
+				// free allocated memory
+				// ignore result
+				::VirtualFree(buffers, 0, MEM_RELEASE);
 
 				// deregister buffer within the Registered I/O extensions
 				// ignore result

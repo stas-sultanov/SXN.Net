@@ -44,6 +44,10 @@ namespace SXN
 		{
 			public:
 
+			ULONG workerId;
+
+			ULONG connectionId;
+
 			int action;
 
 			TcpConnection* connection;

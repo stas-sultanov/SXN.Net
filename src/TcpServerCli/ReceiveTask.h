@@ -15,10 +15,11 @@ namespace SXN
 		{
 			private:
 
-			static initonly Action^ CALLBACK_RAN = gcnew Action(&ReceiveTask::DoNothing);
+			static initonly Action^ CALLBACK_RAN2 = gcnew Action(&ReceiveTask::DoNothing);
 
 			static void DoNothing()
 			{
+				Console::WriteLine("ReceiveTask::DoNothing WTF??");
 			}
 
 			/// <summary>
@@ -26,7 +27,7 @@ namespace SXN
 			/// </summary>
 			Boolean isCompleted;
 
-			Action^ continuation;
+			Action^ _continuation;
 
 			/// <summary>
 			/// The amount of bytes transferred.
@@ -50,7 +51,7 @@ namespace SXN
 
 				isCompleted = false;
 
-				continuation = nullptr;
+				_continuation = nullptr;
 			}
 
 			#pragma endregion
@@ -76,11 +77,6 @@ namespace SXN
 			{
 				Boolean get()
 				{
-					if (connection->state == ConnectionState::Received)
-					{
-						isCompleted = true;
-					}
-
 					return isCompleted;
 				}
 			}
@@ -108,12 +104,27 @@ namespace SXN
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
 			[System::Security::SecurityCritical]
-			virtual void UnsafeOnCompleted(Action^ newContinuation)
+			virtual void UnsafeOnCompleted(Action^ continuation)
 			{
-				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, newContinuation, (Action ^) nullptr) == CALLBACK_RAN)
+				_continuation = continuation;
+
+				CompleteCallback(continuation);
+
+				/**
+				if (_continuation == CALLBACK_RAN2)
 				{
-					CompleteCallback(continuation);
+					CompleteCallback(_continuation);
+
+					return;
 				}
+
+				if (Interlocked::CompareExchange(_continuation, continuation, (Action ^) nullptr) == CALLBACK_RAN2)
+				{
+					CompleteCallback(_continuation);
+
+					return;
+				}
+				/**/
 			}
 
 			/// <summary>
@@ -121,14 +132,14 @@ namespace SXN
 			/// </summary>
 			UInt32 GetResult()
 			{
-				auto bytesTransferred = this->bytesTransferred;
+				auto result = this->bytesTransferred;
 
 				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
 				Reset();
 
 				//connection->PostReceive(requestCorrelation);
 
-				return bytesTransferred;
+				return result;
 			}
 
 			#pragma endregion
@@ -142,31 +153,31 @@ namespace SXN
 				isCompleted = false;
 
 				// reset continuation delegate
-				continuation = nullptr;
+				_continuation = nullptr;
 			}
 
 			void Complete(UInt32 bytesTransferred, UInt32 requestCorrelation)
 			{
-				bytesTransferred = bytesTransferred;
-
-				requestCorrelation = requestCorrelation;
-
 				// set completed
 				isCompleted = true;
 
-				Action ^continueCall = continuation == nullptr ? Interlocked::CompareExchange(continuation, CALLBACK_RAN, (Action ^) nullptr) : continuation;
+				this->bytesTransferred = bytesTransferred;
 
-				if (continuation != nullptr)
+				requestCorrelation = requestCorrelation;
+
+				//Action ^continuation = _continuation != nullptr ? _continuation : Interlocked::CompareExchange(_continuation, CALLBACK_RAN2, (Action ^) nullptr);
+
+				if (_continuation != nullptr)
 				{
-					CompleteCallback(continueCall);
+					CompleteCallback(_continuation);
 				}
 			}
 
-			void CompleteCallback(Action^ continuation)
+			void CompleteCallback(Action^ continuation1)
 			{
 				auto waitCallBack = gcnew WaitCallback(this, &ReceiveTask::UnsafeCallback);
 
-				ThreadPool::UnsafeQueueUserWorkItem(waitCallBack, continuation);
+				ThreadPool::UnsafeQueueUserWorkItem(waitCallBack, continuation1);
 			}
 
 			void UnsafeCallback(Object^ state)
