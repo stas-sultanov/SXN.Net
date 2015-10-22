@@ -43,16 +43,18 @@ namespace SXN
 
 			inline Boolean BeginReceive()
 			{
-				Console::WriteLine("Connection[{0:D4}]::BeginReceive", connection->id);
+				auto res = connection->StartRecieve();
 
-				return connection->StartRecieve();
+				Console::WriteLine("Connection[{0}]::BeginReceive {1}", connection->connectionSocket, res);
+
+				return res;
 			}
 
 			inline void EndReceive(unsigned int bytesTransferred)
 			{
 				connection->state = ConnectionState::Received;
 
-				Console::WriteLine("Connection[{0:D4}]::EndReceive {1} bytes", connection->id, bytesTransferred);
+				Console::WriteLine("Connection[{0}]::EndReceive {1} bytes", connection->connectionSocket, bytesTransferred);
 
 				receiveTask->Complete(bytesTransferred);
 			}
@@ -61,9 +63,9 @@ namespace SXN
 
 			inline ReceiveTask^ ReceiveAsync()
 			{
-				Console::WriteLine("Connection[{0:D4}]::ReceiveAsync", connection->id);
+				Console::WriteLine("Connection[{0}]::ReceiveAsync", connection->connectionSocket);
 
-				//BeginReceive();
+				BeginReceive();
 
 				return receiveTask;
 			}
@@ -172,6 +174,8 @@ namespace SXN
 			IocpWorker(SOCKET listenSocket, Winsock& winsockEx, Int32 id, UInt32 segmentLength, UInt32 connectionsCount)
 				: winsock(winsockEx)
 			{
+				this->Id = id;
+
 				// set listen socket
 				this->listenSocket = listenSocket;
 
@@ -289,7 +293,7 @@ namespace SXN
 
 					connection->StartAccept();
 
-					managedConnections[index]->BeginReceive();
+					//managedConnections[index]->BeginReceive();
 				}
 
 				{
