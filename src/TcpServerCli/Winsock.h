@@ -11,7 +11,7 @@ namespace SXN
 		/// <summary>
 		/// Provides work with Winsock extensions.
 		/// </summary>
-		private class WinsockEx final
+		private class Winsock final
 		{
 			private:
 
@@ -54,9 +54,9 @@ namespace SXN
 			#pragma region Constructor
 
 			/// <summary>
-			/// Initializes a new instance of the <see cref="WinSocket" /> class.
+			/// Initializes a new instance of the <see cref="Winsock" /> class.
 			/// </summary>
-			inline WinsockEx(LPFN_ACCEPTEX pAcceptEx, LPFN_DISCONNECTEX pDisconnectEx, LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs, RIO_EXTENSION_FUNCTION_TABLE& rioTable)
+			inline Winsock(LPFN_ACCEPTEX pAcceptEx, LPFN_DISCONNECTEX pDisconnectEx, LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs, RIO_EXTENSION_FUNCTION_TABLE& rioTable)
 			{
 				this->pAcceptEx = pAcceptEx;
 
@@ -111,7 +111,7 @@ namespace SXN
 			#pragma region Methods
 
 			/// <summary>
-			/// Initializes a new instance of the <see cref="WinsockEx" /> class.
+			/// Initializes a new instance of the <see cref="Winsock" /> class.
 			/// </summary>
 			/// <param name="socket">A descriptor that identifies the socket.</param>
 			/// <returns>
@@ -119,7 +119,7 @@ namespace SXN
 			/// If the function fails, the return value is <c>null</c>.
 			/// To get extended error information, call <see cref="WSAGetLastError" />.
 			/// </returns>
-			static WinsockEx* Initialize(SOCKET socket)
+			static Winsock* Initialize(SOCKET socket)
 			{
 				// get pointer to AcceptEx function
 				LPFN_ACCEPTEX pAcceptEx;
@@ -183,7 +183,7 @@ namespace SXN
 				}
 
 				// compose and return result
-				return new WinsockEx(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
+				return new Winsock(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
 			}
 
 			#pragma endregion
@@ -196,11 +196,11 @@ namespace SXN
 			/// <param name="sListenSocket">A descriptor identifying a socket that has already been called with the listen function.</param>
 			/// <param name="sAcceptSocket">A descriptor identifying a socket on which to accept an incoming connection.</param>
 			/// <returns>
-			/// If no error occurs, the function completed successfully and a value of <see cref="TRUE"/> is returned.
-			/// If the function fails, returns <see cref="FALSE"/>.
+			/// If no error occurs, the function completed successfully and a value of <c>TRUE</c> is returned.
+			/// If the function fails, returns <c>FALSE</c>.
 			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
-			/// If <see cref ="WSAGetLastError"/> returns <see cref ="ERROR_IO_PENDING"/>, then the operation was successfully initiated and is still in progress.
-			/// If the error is <see cref ="WSAECONNRESET"/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
+			/// If <see cref ="WSAGetLastError"/> returns <c>ERROR_IO_PENDING</c>, then the operation was successfully initiated and is still in progress.
+			/// If the error is <c>WSAECONNRESET<c/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
 			/// </returns>
 			inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
 			{
@@ -218,7 +218,7 @@ namespace SXN
 			/// On success, returns TRUE.
 			/// On failure, the function returns FALSE.
 			/// Use the <see cref="WSAGetLastError"/> function to get extended error information.
-			/// If a call to the <see cref="WSAGetLastError"/> function returns <see cref="ERROR_IO_PENDING"/>, the operation initiated successfully and is in progress.
+			/// If a call to the <see cref="WSAGetLastError"/> function returns <c>ERROR_IO_PENDING</c>, the operation initiated successfully and is in progress.
 			/// Under such circumstances, the call may still fail when the operation completes.
 			/// </returns>
 			inline BOOL DisconnectEx(SOCKET hSocket, LPOVERLAPPED lpOverlapped, DWORD dwFlags, DWORD reserved)
@@ -254,7 +254,7 @@ namespace SXN
 			/// <param name="NotificationCompletion">The type of notification completion to use based on the Type member of the <see cref="RIO_NOTIFICATION_COMPLETION" /> structure (I/O completion or event notification).</param>
 			/// <returns>
 			/// If no error occurs, returns a descriptor referencing a new completion queue.
-			/// Otherwise, a value of <see cref="WinsockInterop.RIO_CORRUPT_CQ" /> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// Otherwise, a value of <c>RIO_CORRUPT_CQ</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline RIO_CQ RIOCreateCompletionQueue(DWORD QueueSize, PRIO_NOTIFICATION_COMPLETION NotificationCompletion)
 			{
@@ -274,7 +274,7 @@ namespace SXN
 			/// <param name="SocketContext">The socket context to associate with this request queue.</param>
 			/// <returns>
 			/// If no error occurs, returns a descriptor referencing a new request queue.
-			/// Otherwise, a value of <see cref="WinsockInterop.RIO_INVALID_RQ" /> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// Otherwise, a value of <c>RIO_INVALID_RQ</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline RIO_RQ RIOCreateRequestQueue(SOCKET Socket, ULONG MaxOutstandingReceive, ULONG MaxReceiveDataBuffers, ULONG MaxOutstandingSend, ULONG MaxSendDataBuffers, RIO_CQ ReceiveCQ, RIO_CQ SendCQ, PVOID SocketContext)
 			{
@@ -289,7 +289,7 @@ namespace SXN
 			/// <param name="ArraySize">The maximum number of entries in the <paramref name="Array" /> to write.</param>
 			/// <returns>
 			/// If no error occurs, returns the number of completion entries removed from the specified completion queue.
-			/// Otherwise, a value of <see cref="WinsockInterop.RIO_CORRUPT_CQ" /> is returned to indicate that the state of the <see cref="RIO_CQ" /> passed in the <paramref name="CQ" /> parameter has become corrupt due to memory corruption or misuse of the RIO functions.
+			/// Otherwise, a value of <c>RIO_CORRUPT_CQ</c> is returned to indicate that the state of the <see cref="RIO_CQ" /> passed in the <paramref name="CQ" /> parameter has become corrupt due to memory corruption or misuse of the RIO functions.
 			/// </returns>
 			inline ULONG RIODequeueCompletion(RIO_CQ CQ, PRIORESULT Array, ULONG ArraySize)
 			{
@@ -310,7 +310,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="CQ">A descriptor that identifies an I/O completion queue.</param>
 			/// <returns>
-			/// If no error occurs, returns <see cref="WinsockErrorCode.None" />.
+			/// If no error occurs, returns <c>0</c>.
 			/// Otherwise, the function failed and a specific error code is returned.
 			/// </returns>
 			inline INT RIONotify(RIO_CQ CQ)
@@ -328,7 +328,7 @@ namespace SXN
 			/// <param name="RequestContext">The request context to associate with this receive operation.</param>
 			/// <returns>
 			/// If no error occurs, returns <c>true</c>. In this case, the receive operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
-			/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline BOOL RIOReceive(RIO_RQ SocketQueue, PRIO_BUF pData, ULONG DataBufferCount, DWORD Flags, PVOID RequestContext)
 			{
@@ -336,11 +336,11 @@ namespace SXN
 			}
 
 			/// <summary>
-			/// Registers a RIO_BUFFERID, a registered buffer descriptor, with a specified buffer for use with the Winsock registered I/O extensions.
+			/// Registers a <see cref="RIO_BUFFERID" />, a registered buffer descriptor, with a specified buffer for use with the Winsock registered I/O extensions.
 			/// </summary>
 			/// <param name="DataBuffer">A pointer to the beginning of the memory buffer to register.</param>
 			/// <param name="DataLength">The length, in bytes, in the buffer to register.</param>
-			/// <returns>If no error occurs, returns a registered buffer descriptor. Otherwise, a value of <see cref="WinsockInterop.RIO_INVALID_BUFFERID" /> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.</returns>
+			/// <returns>If no error occurs, returns a registered buffer descriptor. Otherwise, a value of <c>RIO_INVALID_BUFFERID"</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.</returns>
 			inline RIO_BUFFERID RIORegisterBuffer(PCHAR DataBuffer, DWORD DataLength)
 			{
 				return pRIORegisterBuffer(DataBuffer, DataLength);
@@ -353,7 +353,7 @@ namespace SXN
 			/// <param name="QueueSize">The new size, in number of entries, of the completion queue.</param>
 			/// <returns>
 			/// If no error occurs, returns <c>true</c>.
-			/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline BOOL RIOResizeCompletionQueue(RIO_CQ CQ, DWORD QueueSize)
 			{
@@ -368,7 +368,7 @@ namespace SXN
 			/// <param name="MaxOutstandingSend">The maximum number of outstanding receives allowed on the socket. This value can be larger or smaller than the original number.</param>
 			/// <returns>
 			/// If no error occurs, returns <c>true</c>.
-			/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline BOOL RIOResizeRequestQueue(RIO_RQ RQ, DWORD MaxOutstandingReceive, DWORD MaxOutstandingSend)
 			{
@@ -380,7 +380,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="SocketQueue">A descriptor that identifies a connected registered I/O TCP socket or a bound registered I/O UDP socket.</param>
 			/// <param name="pData">A description of the portion of the registered buffer from which to send data. This parameter may be <c>null</c> for a bound registered I/O UDP socket if the application does not need to send a data payload in the UDP datagram.</param>
-			/// <param name="DataBufferCount">A data buffer count parameter that indicates if data is to be sent in the buffer pointed to by the <see cref="pData" /> parameter.</param>
+			/// <param name="DataBufferCount">A data buffer count parameter that indicates if data is to be sent in the buffer pointed to by the <paramref="pData" /> parameter.</param>
 			/// <param name="Flags">A set of flags that modify the behavior of the function.</param>
 			/// <param name="RequestContext">The request context to associate with this send operation.</param>
 			/// <returns>

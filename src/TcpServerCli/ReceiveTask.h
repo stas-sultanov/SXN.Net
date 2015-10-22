@@ -15,7 +15,11 @@ namespace SXN
 		{
 			private:
 
-			//readonly static Action CALLBACK_RAN = () = > { };
+			static initonly Action^ CALLBACK_RAN = gcnew Action(&ReceiveTask::DoNothing);
+
+			static void DoNothing()
+			{
+			}
 
 			/// <summary>
 			/// Indicates whether task is completed.
@@ -31,8 +35,6 @@ namespace SXN
 
 			UInt32 requestCorrelation;
 
-			ArraySegment<byte> _buffer;
-
 			TcpConnection* connection;
 
 			internal:
@@ -45,13 +47,43 @@ namespace SXN
 			ReceiveTask(TcpConnection* connection)
 			{
 				this->connection = connection;
+
+				isCompleted = false;
+
+				continuation = nullptr;
 			}
 
 			#pragma endregion
 
 			public:
 
-			#pragma region Methods implementation of ICriticalNotifyCompletion
+			#pragma region Implementation of the awaiter routine
+
+			/// <summary>
+			/// Gets an awaiter used to await this task.
+			/// </summary>
+			/// <returs>An awaiter instance.</returns>
+			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
+			ReceiveTask^ GetAwaiter()
+			{
+				return this;
+			}
+
+			/// <summary>
+			/// Gets a value that indicates whether the asynchronous task has completed.
+			/// </summary>
+			property Boolean IsCompleted
+			{
+				Boolean get()
+				{
+					if (connection->state == ConnectionState::Received)
+					{
+						isCompleted = true;
+					}
+
+					return isCompleted;
+				}
+			}
 
 			/// <summary>
 			/// Schedules the continuation action that's invoked when the instance completes.
@@ -66,7 +98,8 @@ namespace SXN
 					throw gcnew ArgumentNullException("continuation");
 				}
 
-				throw gcnew NotImplementedException();
+				// TODO: must fix this
+				// throw gcnew NotImplementedException();
 			}
 
 			/// <summary>
@@ -75,35 +108,27 @@ namespace SXN
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
 			[System::Security::SecurityCritical]
-			virtual void UnsafeOnCompleted(Action^ continuation)
+			virtual void UnsafeOnCompleted(Action^ newContinuation)
 			{
-				// check argument
-				if (continuation == nullptr)
-				{
-					throw gcnew ArgumentNullException("continuation");
-				}
-
-				/**
-				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, continuation, nullptr) == CALLBACK_RAN)
+				if (continuation == CALLBACK_RAN || Interlocked::CompareExchange(continuation, newContinuation, (Action ^) nullptr) == CALLBACK_RAN)
 				{
 					CompleteCallback(continuation);
-				}/**/
-
-				throw gcnew NotImplementedException();
+				}
 			}
 
-			#pragma endregion
-
-			#pragma region Methods
-
 			/// <summary>
-			/// Gets an awaiter used to await this task.
+			/// Ends the wait for the completion of the asynchronous task.
 			/// </summary>
-			/// <returs>An awaiter instance.</returns>
-			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
-			ReceiveTask^ GetAwaiter()
+			UInt32 GetResult()
 			{
-				return this;
+				auto bytesTransferred = this->bytesTransferred;
+
+				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
+				Reset();
+
+				//connection->PostReceive(requestCorrelation);
+
+				return bytesTransferred;
 			}
 
 			#pragma endregion
@@ -120,56 +145,38 @@ namespace SXN
 				continuation = nullptr;
 			}
 
-			void SetBuffer(ArraySegment<byte> buffer)
-			{
-				_buffer = buffer;
-			}
-
 			void Complete(UInt32 bytesTransferred, UInt32 requestCorrelation)
 			{
 				bytesTransferred = bytesTransferred;
 
 				requestCorrelation = requestCorrelation;
 
+				// set completed
 				isCompleted = true;
 
-				/*
-				Action continuation = continuation ? ? Interlocked.CompareExchange(ref _continuation, CALLBACK_RAN, null);
+				Action ^continueCall = continuation == nullptr ? Interlocked::CompareExchange(continuation, CALLBACK_RAN, (Action ^) nullptr) : continuation;
 
-				if (continuation != null)
+				if (continuation != nullptr)
 				{
-					CompleteCallback(continuation);
-				}*/
+					CompleteCallback(continueCall);
+				}
 			}
 
 			void CompleteCallback(Action^ continuation)
 			{
-				//ThreadPool::UnsafeQueueUserWorkItem(UnsafeCallback, continuation);
-			}
+				auto waitCallBack = gcnew WaitCallback(this, &ReceiveTask::UnsafeCallback);
 
-			property Boolean IsCompleted
-			{
-				Boolean get()
-				{
-					return isCompleted;
-				}
+				ThreadPool::UnsafeQueueUserWorkItem(waitCallBack, continuation);
 			}
 
 			void UnsafeCallback(Object^ state)
 			{
-				((Action^)state)();
-			}
+				auto action = (Action ^)state;
 
-			UInt32 GetResult()
-			{
-				auto bytesTransferred = this->bytesTransferred;
-
-				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
-				Reset();
-
-				//connection->PostReceive(requestCorrelation);
-
-				return bytesTransferred;
+				if (action != nullptr)
+				{
+					action();
+				}
 			}
 		};
 	}

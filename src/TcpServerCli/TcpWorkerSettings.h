@@ -19,6 +19,8 @@ namespace SXN
 
 			static initonly Int32 processorsCount;
 
+			static initonly UInt32 allocationGranularity;
+
 			Int32 useProcessorsCount;
 
 			#pragma endregion
@@ -39,6 +41,8 @@ namespace SXN
 				::GetSystemInfo(&sysinfo);
 
 				processorsCount = sysinfo.dwNumberOfProcessors;
+
+				allocationGranularity = sysinfo.dwAllocationGranularity;
 			}
 
 

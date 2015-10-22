@@ -49,7 +49,7 @@ namespace SXN
 			/// Overlapped operation aborted.
 			/// </summary>
 			/// <remarks>
-			/// An overlapped operation was canceled due to the closure of the socket, or the execution of the SIO_FLUSH command in <see cref="WinsockInterop.WSAIoctl" />.
+			/// An overlapped operation was canceled due to the closure of the socket, or the execution of the <c>SIO_FLUSH</c> command in <see cref="WSAIoctl" />.
 			/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 			/// </remarks>
 			OperationAborted = WSA_OPERATION_ABORTED,
@@ -59,7 +59,7 @@ namespace SXN
 			/// </summary>
 			/// <remarks>
 			/// The application has tried to determine the status of an overlapped operation which is not yet completed.
-			/// Applications that use WSAGetOverlappedResult (with the fWait flag set to FALSE) in a polling mode to determine when an overlapped operation has completed, get this error code until the operation is complete.
+			/// Applications that use WSAGetOverlappedResult (with the fWait flag set to <c>FALSE</c>) in a polling mode to determine when an overlapped operation has completed, get this error code until the operation is complete.
 			/// Note that this error is returned by the operating system, so the error number may change in future releases of Windows.
 			/// </remarks>
 			IoComplete = WSA_IO_INCOMPLETE,

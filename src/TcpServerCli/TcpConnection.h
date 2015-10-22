@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "WinsockEx.h"
+#include "Winsock.h"
 #include "Ovelapped.h"
 
 #pragma unmanaged
@@ -17,23 +17,23 @@ namespace SXN
 			#pragma region Fields
 
 			/// <summary>
-			/// A reference to the object that provides work with Winsock extensions.
+			/// A reference to the object that provides work with the Winsock extensions.
 			/// </summary>
-			WinsockEx& winsockEx;
+			Winsock& winsockEx;
 
 			/// <summary>
 			/// The descriptor of the listening socket.
-			/// <summary/>
+			/// </summary>
 			SOCKET listenSocket;
 
 			/// <summary>
 			/// The descriptor of the connection socket.
-			/// <summary/>
+			/// </summary>
 			SOCKET connectionSocket;
 
 			/// <summary>
 			/// The descriptor of the request queue of the Registered IO of the socket.
-			/// <summary/>
+			/// </summary>
 			RIO_RQ rioRequestQueue;
 
 			PVOID addrBuf;
@@ -46,6 +46,8 @@ namespace SXN
 
 			PRIO_BUF sendBuffer;
 
+			ULONG id;
+
 			#pragma endregion
 
 			public:
@@ -57,9 +59,11 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(WinsockEx& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort)
+			inline TcpConnection(Winsock& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id)
 				: winsockEx(winsockEx)
 			{
+				this->id = id;
+
 				this->listenSocket = listenSocket;
 
 				this->connectionSocket = connectionSocket;
@@ -131,7 +135,7 @@ namespace SXN
 			{
 				state = ConnectionState::Receiving;
 
-				return winsockEx.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, this);
+				return winsockEx.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
@@ -140,7 +144,7 @@ namespace SXN
 
 				sendBuffer->Length = dataLength;
 
-				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, this);
+				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartDisconnect()

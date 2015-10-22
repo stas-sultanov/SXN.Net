@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "WinsockEx.h"
+#include "Winsock.h"
 
 #pragma unmanaged
 
@@ -21,15 +21,20 @@ namespace SXN
 			/// <summary>
 			/// A reference to the object that provides work with Winsock extensions.
 			/// </summary>
-			WinsockEx& winsockEx;
+			Winsock& winsockEx;
 
 			/// <summary>
-			/// The length of the buffer.
+			/// The length of the single buffer.
 			/// </summary>
 			ULONG bufferLength;
 
 			/// <summary>
-			/// A pointer to the aligned memory block.
+			/// The count of the buffers.
+			/// </summary>
+			ULONG buffersCount;
+
+			/// <summary>
+			/// A pointer to the memory block.
 			/// </summary>
 			LPVOID memoryBlock;
 
@@ -48,18 +53,21 @@ namespace SXN
 			#pragma region Constructor
 
 			/// <summary>
-			/// Initializes a new instance of the <see cref="BufferPool" /> class.
+			/// Initializes a new instance of the <see cref="RioBufferPool" /> class.
 			/// </summary>
 			/// <param name="winsockEx">A reference to the object that provides work with Winsock extensions.</param>
-			/// <param name="bufferLength">The length of the buffer.</param>
-			/// <param name="buffersCount">The count of the buffers.</param>
+			/// <param name="bufferLength">The length of the single buffer.</param>
+			/// <param name="buffersCount">The count of the buffers to manage.</param>
 			/// <param name="memoryBlock">A pointer to the aligned memory block.</param>
-			/// <param name="rioBufferId"> The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.</param>
-			RioBufferPool(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
+			/// <param name="rioBufferId">The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.</param>
+			inline RioBufferPool(Winsock& winsockEx, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
 				: winsockEx(winsockEx)
 			{
 				// set buffer length
 				this->bufferLength = bufferLength;
+
+				// set buffers count
+				this->buffersCount = buffersCount;
 
 				// set memory block pointer
 				this->memoryBlock = memoryBlock;
@@ -97,21 +105,18 @@ namespace SXN
 			#pragma region Create and Destroy
 
 			/// <summary>
-			/// Initializes a new instance of the <see cref="BufferPool" /> class.
+			/// Initializes a new instance of the <see cref="RioBufferPool" /> class.
 			/// </summary>
-			/// <param name="pWinsockEx">A reference to the object that provides work with Winsock extensions.</param>
-			/// <param name="bufferLength">The length of the buffer.</param>
-			/// <param name="segmentsCount">The count of the buffers.</param>
-			/// <remarks>
-			/// The multiplication of <paramref name="segmentLength" /> and <paramref name="segmentsCount" /> must produce value that is aligned to Memory Allocation Granularity.
-			/// </remarks>
-			static RioBufferPool* Create(WinsockEx& winsockEx, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
+			/// <param name="winsockEx">A reference to the object that provides work with Winsock extensions.</param>
+			/// <param name="bufferLength">The length of the single buffer.</param>
+			/// <param name="buffersCount">The count of the buffers to manage.</param>
+			inline static RioBufferPool* Create(Winsock& winsockEx, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
 			{
 				// calculate and set the length of the memory block
-				ULONG memoryBlockLength = bufferLength * buffersCount;
+				auto memoryBlockLength = bufferLength * buffersCount;
 
 				// reserve and commit aligned memory block
-				LPVOID memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				auto memoryBlock = ::VirtualAlloc(nullptr, memoryBlockLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// check if operation has failed
 				if (memoryBlock == nullptr)
@@ -126,7 +131,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				RIO_BUFFERID rioBufferId = winsockEx.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
+				auto rioBufferId = winsockEx.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
@@ -156,7 +161,7 @@ namespace SXN
 			/// <summary>
 			/// Releases all associated resources.
 			/// </summary>
-			~RioBufferPool()
+			inline ~RioBufferPool()
 			{
 				// delete buffers array
 				delete buffers;
@@ -174,14 +179,26 @@ namespace SXN
 
 			#pragma region Methods
 
-			PRIO_BUF GetBuffer(int id)
+			/// <summary>
+			/// Gets a pointer to the <see cref="RIO_BUF" /> structure that specifies a portion of the registered buffer.
+			/// </summary>
+			/// <param name="bufferIndex">The identifier of the buffer to retrieve.</param>
+			/// <returns>Structure that specifies a portion of the registered buffer.</returns>
+			/// <remarks><paramref name="bufferIndex" /> must be less then <see cref="buffersCount">.</remarks>
+			inline PRIO_BUF GetBuffer(ULONG bufferIndex)
 			{
-				return this->buffers + id;
+				return this->buffers + bufferIndex;
 			}
 
-			char* GetData(int id)
+			/// <summary>
+			/// Gets a pointer to the memory block that is associated with the specified buffer.
+			/// </summary>
+			/// <param name="bufferIndex">The identifier of the buffer to retrieve.</param>
+			/// <returns>A pointer to the memory block.</returns>
+			/// <remarks><paramref name="bufferIndex" /> must be less then <see cref="buffersCount">.</remarks>
+			inline char* GetBufferData(ULONG bufferIndex)
 			{
-				return ((PCHAR) this->memoryBlock) + id * bufferLength;
+				return ((PCHAR) this->memoryBlock) + bufferLength * bufferIndex;
 			}
 
 			#pragma endregion

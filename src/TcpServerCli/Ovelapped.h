@@ -38,7 +38,7 @@ namespace SXN
 			Disconnecting,
 		};
 
-		extern class TcpConnection;
+		class TcpConnection;
 
 		private struct Ovelapped final : OVERLAPPED
 		{

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 //using SXN.Net.Winsock;
 
@@ -29,7 +30,7 @@ namespace SXN.Net
 
 			try
 			{
-				server = new TcpWorker(serverSettings);
+				server = new TcpWorker(serverSettings, ServeSocket);
 			}
 			catch (TcpServerException e)
 			{
@@ -59,6 +60,17 @@ namespace SXN.Net
 			Console.ReadLine();
 
 			Console.ReadLine();
+		}
+
+
+		private static async Task ServeSocket(Connection connection)
+		{
+			Console.WriteLine("starting receive data");
+
+			// receive data async
+			var x = await connection.ReceiveAsync();
+
+			Console.WriteLine("data received");
 		}
 
 		#endregion

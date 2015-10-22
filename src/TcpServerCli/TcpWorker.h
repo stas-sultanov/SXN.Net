@@ -2,14 +2,15 @@
 
 #include "Stdafx.h"
 #include "TcpWorkerSettings.h"
-#include "WinsockEx.h"
+#include "Winsock.h"
 #include "IocpWorker.h"
+
 
 namespace SXN
 {
 	namespace Net
 	{
-		public ref class TcpWorker
+		public ref class TcpWorker sealed
 		{
 			private:
 
@@ -17,7 +18,7 @@ namespace SXN
 
 			/// <summary>
 			/// The descriptor of the listening socket.
-			/// <summary/>
+			/// </summary>
 			initonly SOCKET listenSocket;
 
 			/// <summary>
@@ -26,9 +27,9 @@ namespace SXN
 			initonly HANDLE completionPort;
 
 			/// <summary>
-			/// A pointer to the object that provides work with Winsock extensions.
-			/// <summary/>
-			initonly WinsockEx* pWinsockEx;
+			/// A reference to the object that provides work with the Winsock extensions.
+			/// </summary>
+			initonly Winsock* pWinsock;
 
 			/// <summary>
 			/// The collection of the workers.
@@ -36,6 +37,8 @@ namespace SXN
 			initonly array<IocpWorker^>^ workers;
 
 			initonly Thread^ mainThread;
+
+			initonly Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket;
 
 			#pragma endregion
 
@@ -46,8 +49,10 @@ namespace SXN
 			/// <summary>
 			/// Activates server.
 			/// </summary>
-			TcpWorker(TcpWorkerSettings settings)
+			TcpWorker(TcpWorkerSettings settings, Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket)
 			{
+				this->serveSocket = serveSocket;
+
 				// initialize Winsock
 				{
 					WSADATA data;
@@ -96,9 +101,9 @@ namespace SXN
 
 				// initialize winsock extensions
 				{
-					pWinsockEx = WinsockEx::Initialize(listenSocket);
+					pWinsock = Winsock::Initialize(listenSocket);
 
-					if (pWinsockEx == nullptr)
+					if (pWinsock == nullptr)
 					{
 						// get error code
 						WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
@@ -165,7 +170,7 @@ namespace SXN
 					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						IocpWorker^ worker = gcnew IocpWorker(listenSocket, pWinsockEx, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
+						IocpWorker^ worker = gcnew IocpWorker(listenSocket, *pWinsock, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[processorIndex] = worker;
@@ -311,11 +316,28 @@ namespace SXN
 						// overlapped->connection->state = SXN::Net::ConnectionState::Accepted;
 						overlapped->connection->EndAccepet();
 						
-						overlapped->connection->StartRecieve();
+						//overlapped->connection->StartRecieve();
 
 						//System::Console::WriteLine("ACCEPT Thread: Connection: {0}", overlapped->connectionSocket);
+
+						auto waitCallBack = gcnew WaitCallback(this, &TcpWorker::Serve);
+
+						auto connection = gcnew Connection(*overlapped->connection);
+
+						ThreadPool::UnsafeQueueUserWorkItem(waitCallBack, (Object ^)connection);
 					}
 				}
+			}
+
+			void Serve(Object^ state)
+			{
+				auto connection = (Connection ^) state;
+
+				// #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
+				serveSocket(connection);
+
+				//#pragma warning restore CS4014
 			}
 
 			#pragma endregion

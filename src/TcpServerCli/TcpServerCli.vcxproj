@@ -154,7 +154,7 @@
     <ClInclude Include="TcpWorker.h" />
     <ClInclude Include="TcpWorkerSettings.h" />
     <ClInclude Include="WinsockErrorCode.h" />
-    <ClInclude Include="WinsockEx.h" />
+    <ClInclude Include="Winsock.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
