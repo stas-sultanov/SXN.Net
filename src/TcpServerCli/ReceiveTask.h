@@ -132,6 +132,8 @@ namespace SXN
 			/// </summary>
 			UInt32 GetResult()
 			{
+				Console::WriteLine("ReceiveTask::GetResult Connection[{0}]", this->connection->id);
+
 				auto result = this->bytesTransferred;
 
 				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
