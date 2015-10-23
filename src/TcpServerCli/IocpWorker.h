@@ -1,126 +1,16 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "Winsock.h"
+#include "winsock.h"
 #include "TcpServerException.h"
 #include "RioBufferPool.h"
-#include "TcpConnection.h"
 #include "Ovelapped.h"
-#include "ReceiveTask.h"
+#include "RioTask.h"
+#include "ConnectionHandle.h"
 
 using namespace System;
 using namespace System::Threading;
 using namespace System::Collections::Generic;
-
-namespace SXN
-{
-	namespace Net
-	{
-		public ref class Connection sealed
-		{
-			private:
-
-			internal:
-
-			const char* testMessage = "HTTP/1.1 200 OK\r\nServer:SXN.Ion\r\nContent-Length:0\r\nDate:Sat, 26 Sep 2015 17:45:57 GMT\r\n\r\n";
-
-			TcpConnection* connection;
-
-			initonly ReceiveTask^ receiveTask;
-
-			initonly ReceiveTask^ sendTask;
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="Connection" /> class.
-			/// </summary>
-			/// <param name="listenSocket">The descriptor of the listening socket.</param>
-			/// <param name="pWinsock">A pointer to the object that provides work with Winsock extensions.</param>
-			/// <param name="id">The unique identifier of the worker.</param>
-			/// <param name="segmentLength">The length of the segment.</param>
-			/// <param name="connectionsCount">The count of the segments.</param>
-			inline Connection(TcpConnection* connection)
-			{
-				this->connection = connection;
-
-				receiveTask = gcnew ReceiveTask(this);
-
-				sendTask = gcnew ReceiveTask(this);
-			}
-
-			inline Boolean BeginReceive()
-			{
-				auto res = connection->StartRecieve();
-
-				//Console::WriteLine("Connection[{0}]::BeginReceive {1}", connection->connectionSocket, res);
-
-				return res;
-			}
-
-			inline void EndReceive(unsigned int bytesTransferred)
-			{
-				connection->state = ConnectionState::Received;
-
-				//Console::WriteLine("Connection[{0}]::EndReceive {1} bytes", connection->connectionSocket, bytesTransferred);
-
-				receiveTask->Complete(bytesTransferred);
-			}
-
-			public:
-
-			inline ReceiveTask^ ReceiveAsync()
-			{
-				//Console::WriteLine("Connection[{0}]::ReceiveAsync", connection->connectionSocket);
-
-				BeginReceive();
-
-				return receiveTask;
-			}
-
-			property UInt32 Id
-			{
-				UInt32 get()
-				{
-					return connection->id;
-				}
-			}
-
-			property ConnectionState State
-			{
-				ConnectionState get()
-				{
-					return connection->state;
-				}
-			}
-
-			inline ReceiveTask^ SendAsync()
-			{
-				//Console::WriteLine("Connection[{0}]::SendAsync", connection->connectionSocket);
-
-				connection->StartSend(strlen(testMessage));
-
-				return receiveTask;
-			}
-
-			inline void EndSend(unsigned int bytesTransferred)
-			{
-				connection->state = ConnectionState::Sent;
-
-				//Console::WriteLine("Connection[{0}]::EndSend {1} bytes", connection->connectionSocket, bytesTransferred);
-
-				sendTask->Complete(bytesTransferred);
-			}
-
-			inline void Disconnect()
-			{
-				connection->state = ConnectionState::Disconnected;
-
-				connection->StartDisconnect();
-
-				connection->StartAccept();
-			}
-		};
-	}
-}
 
 namespace SXN
 {
@@ -142,7 +32,7 @@ namespace SXN
 			/// <summary>
 			/// A reference to the object that provides work with the Winsock extensions.
 			/// </summary>
-			Winsock& winsock;
+			Winsock* winsock;
 
 			/// <summary>
 			/// The completion port of the Registered I/O operations.
@@ -174,18 +64,9 @@ namespace SXN
 			/// </summary>
 			initonly Int32 Id;
 
-			/// <summary>
-			/// The collection of the connections.
-			/// </summary>
-			TcpConnection** connections;
-
-
-
 			int connectionsCount;
 
 			initonly Thread^ processRioOperationsThread;
-
-			
 
 			#pragma endregion
 
@@ -194,7 +75,12 @@ namespace SXN
 			/// <summary>
 			/// The collection of the connections.
 			/// </summary>
-			array<Connection^>^ managedConnections;
+			System::Collections::Concurrent::ConcurrentQueue<ConnectionHandle^>^ connectionsPool;
+
+			/// <summary>
+			/// The collection of the connections.
+			/// </summary>
+			array<ConnectionHandle^>^ connections;
 
 			#pragma region Constructor & Destructor
 
@@ -202,14 +88,15 @@ namespace SXN
 			/// Initializes a new instance of the <see cref="IocpWorker" /> class.
 			/// </summary>
 			/// <param name="listenSocket">The descriptor of the listening socket.</param>
-			/// <param name="pWinsock">A pointer to the object that provides work with Winsock extensions.</param>
+			/// <param name="winsock">A reference to the object that provides work with Winsock extensions.</param>
 			/// <param name="id">The unique identifier of the worker.</param>
 			/// <param name="segmentLength">The length of the segment.</param>
 			/// <param name="connectionsCount">The count of the segments.</param>
-			IocpWorker(SOCKET listenSocket, Winsock& winsock, Int32 id, UInt32 segmentLength, UInt32 connectionsCount)
-				: winsock(winsock)
+			IocpWorker(SOCKET listenSocket, Winsock* winsock, Int32 id, UInt32 segmentLength, UInt32 connectionsCount)
 			{
 				this->Id = id;
+
+				this->winsock = winsock;
 
 				// set listen socket
 				this->listenSocket = listenSocket;
@@ -248,7 +135,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED)-1;
 
 					// create the completion queue for the Registered I/O receive operations
-					rioCompletionQueue = winsock.RIOCreateCompletionQueue(connectionsCount * 64, &completionSettings);
+					rioCompletionQueue = winsock->RIOCreateCompletionQueue(connectionsCount * 64, &completionSettings);
 
 					// check if operation has failed
 					if (rioCompletionQueue == RIO_INVALID_CQ)
@@ -260,23 +147,6 @@ namespace SXN
 						throw gcnew TcpServerException(winsockErrorCode);
 					}
 				}
-
-				/**
-				{
-					// create I/O completion port
-					this->disconnectCompletionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
-
-					// check if operation has failed
-					if (disconnectCompletionPort == nullptr)
-					{
-						// get error code
-						DWORD kernelErrorCode = ::GetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(kernelErrorCode);
-					}
-				}
-				/**/
 
 				// create receive buffer pool
 				{
@@ -310,26 +180,29 @@ namespace SXN
 					}
 				}
 
-				// initialize connections array
-				connections = new TcpConnection*[connectionsCount];
-
-				managedConnections = gcnew array<Connection ^>(connectionsCount);
+				connections = gcnew array<ConnectionHandle ^>(connectionsCount);
 
 				// initialize connections
-				for (unsigned int index = 0; index < connectionsCount; index++)
+				for (auto connectionIndex = 0; connectionIndex < connectionsCount; connectionIndex++)
 				{
-					// create connection
-					TcpConnection* connection = CreateConnection(index, 24, 40);
+					// get Registered IO receive buffer
+					auto rioReceiveBuffer = rioReceiveBufferPool->GetBuffer(connectionIndex);
+
+					// get Registered IO send buffer
+					auto rioSendBuffer = rioSendBufferPool->GetBuffer(connectionIndex);
+
+					// create connection handle
+					auto connection = gcnew ConnectionHandle(connectionIndex, winsock, rioReceiveBuffer, rioSendBuffer);
 
 					// add to collection
-					connections[index] = connection;
+					connections[connectionIndex] = connection;
 
-					managedConnections[index] = gcnew Connection(connection);
-
-					connection->StartAccept();
-
-					//managedConnections[index]->BeginReceive();
+					// TODO: test data
+					memcpy(rioSendBufferPool->GetBufferData(connectionIndex), testMessage, strlen(testMessage));
 				}
+
+				// initialize pool
+				connectionsPool = gcnew System::Collections::Concurrent::ConcurrentQueue<ConnectionHandle^>(connections);
 
 				{
 					ThreadStart^ threadDelegate = gcnew ThreadStart(this, &IocpWorker::ProcessRioOperations);
@@ -353,7 +226,7 @@ namespace SXN
 				delete rioReceiveBufferPool;
 
 				// close completion queue
-				winsock.RIOCloseCompletionQueue(rioCompletionQueue);
+				winsock->RIOCloseCompletionQueue(rioCompletionQueue);
 
 				// close completion port
 				// ignore result
@@ -364,24 +237,22 @@ namespace SXN
 
 			#pragma region Methods
 
+				public:
 
-			TcpConnection* CreateConnection(int connectionId, ULONG maxOutstandingReceive, ULONG maxOutstandingSend)
+			ConnectionHandle^ GetHandle(SOCKET connectionSocket)
 			{
-				// create connection socket
-				auto connectionSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
+				// get connection handle
+				ConnectionHandle^ connectionHandle;
 
-				// check if operation has failed
-				if (connectionSocket == INVALID_SOCKET)
+				if (!connectionsPool->TryDequeue(connectionHandle))
 				{
-					// get error code
-					auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+					::closesocket(connectionSocket);
 
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
+					return nullptr;
 				}
 
 				// create request queue
-				auto requestQueue = winsock.RIOCreateRequestQueue(connectionSocket, maxOutstandingReceive, 1, maxOutstandingSend, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)connectionId);
+				auto requestQueue = winsock->RIOCreateRequestQueue(connectionSocket, 32, 1, 32, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)connectionHandle->Id);
 				{
 					// check if operation has failed
 					if (requestQueue == RIO_INVALID_RQ)
@@ -394,19 +265,8 @@ namespace SXN
 					}
 				}
 
-				// associate the connection socket with the completion port
-				/**
-				HANDLE resultPort = ::CreateIoCompletionPort((HANDLE)connectionSocket, disconnectCompletionPort, 0, 0);
+				connectionHandle->Reuse(connectionSocket, requestQueue);
 
-				// check if operation has succeed
-				if ((resultPort == nullptr) || (resultPort != disconnectCompletionPort))
-				{
-					// get error code
-					WinsockErrorCode winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-					// throw exception
-					throw gcnew TcpServerException(winsockErrorCode);
-				}
 				/**
 
 				// set output buffer to 0
@@ -445,20 +305,11 @@ namespace SXN
 
 				/**/
 
-				// create connection handle
-				TcpConnection* connection = new TcpConnection(winsock, listenSocket, connectionSocket, requestQueue, rioCompletionPort, connectionId, this->Id);
 
-				// set initial state
-				connection->state = ConnectionState::Disconnected;
-
-				connection->receiveBuffer = rioReceiveBufferPool->GetBuffer(connectionId);
-
-				connection->sendBuffer = rioSendBufferPool->GetBuffer(connectionId);
-
-				memcpy(rioSendBufferPool->GetBufferData(connectionId), testMessage, strlen(testMessage));
-
-				return connection;
+				return connectionHandle;
 			}
+
+
 
 			#pragma endregion
 
@@ -480,7 +331,7 @@ namespace SXN
 				while (true)
 				{
 					// register the method to use for notification behavior with an I/O completion queue for use with the Winsock registered I/O extensions
-					winsock.RIONotify(rioCompletionQueue);
+					winsock->RIONotify(rioCompletionQueue);
 
 					// dequeue completion status
 					BOOL dequeueResult = ::GetQueuedCompletionStatus(rioCompletionPort, &numberOfBytes, &completionKey, &overlapped, WSA_INFINITE);
@@ -496,7 +347,7 @@ namespace SXN
 
 					BOOL activatedCompletionPort = FALSE;
 
-					while ((receiveCompletionsCount = winsock.RIODequeueCompletion(rioCompletionQueue, rioResults, 1024)) > 0)
+					while ((receiveCompletionsCount = winsock->RIODequeueCompletion(rioCompletionQueue, rioResults, 1024)) > 0)
 					{
 						for (int resultIndex = 0; resultIndex < receiveCompletionsCount; resultIndex++)
 						{
@@ -507,7 +358,7 @@ namespace SXN
 							auto connectionId = (ULONG) rioResult.RequestContext;
 
 							// get connection
-							auto connection = managedConnections[connectionId];
+							auto connection = connections[connectionId];
 
 							if (connection->State == Receiving)
 							{
@@ -525,7 +376,7 @@ namespace SXN
 						if (!activatedCompletionPort)
 						{
 							// register the method to use for notification behavior with an I/O completion queue for use with the Winsock registered I/O extensions
-							winsock.RIONotify(rioCompletionQueue);
+							winsock->RIONotify(rioCompletionQueue);
 
 							activatedCompletionPort = TRUE;
 						}

@@ -11,25 +11,27 @@ namespace SXN
 {
 	namespace Net
 	{
-		extern ref class Connection;
+		extern ref class ConnectionHandle;
 
-		public ref class SendTask sealed : ICriticalNotifyCompletion
+		public ref class RioTask sealed : ICriticalNotifyCompletion
 		{
 			private:
 
-			static initonly Action^ CALLBACK_RAN2 = gcnew Action(&SendTask::DoNothing);
+			static initonly Action^ EmptyContinuation = gcnew Action(&RioTask::DoNothing);
 
 			static void DoNothing()
 			{
 				Console::WriteLine("ReceiveTask::DoNothing WTF??");
 			}
 
+			static initonly WaitCallback^ continueWaitCallback = gcnew WaitCallback(&RioTask::UnsafeCallback);
+
 			/// <summary>
 			/// Indicates whether task is completed.
 			/// </summary>
 			Boolean isCompleted;
 
-			Action^ _continuation;
+			Action^ continuation;
 
 			/// <summary>
 			/// The amount of bytes transferred.
@@ -38,22 +40,22 @@ namespace SXN
 
 			UInt32 requestCorrelation;
 
-			Connection^ connection;
+			ConnectionHandle^ connection;
 
 			internal:
 
 			#pragma region Constructors
 
 			/// <summary>
-			/// Initialize a new instance of the <see cref="SendTask" /> class.
+			/// Initialize a new instance of the <see cref="ReceiveTask" /> class.
 			/// </summary>
-			SendTask(Connection^ connection)
+			RioTask(ConnectionHandle^ connection)
 			{
 				this->connection = connection;
 
 				isCompleted = false;
 
-				_continuation = nullptr;
+				continuation = nullptr;
 			}
 
 			#pragma endregion
@@ -67,7 +69,7 @@ namespace SXN
 			/// </summary>
 			/// <returs>An awaiter instance.</returns>
 			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
-			SendTask^ GetAwaiter()
+			RioTask^ GetAwaiter()
 			{
 				return this;
 			}
@@ -107,21 +109,12 @@ namespace SXN
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
 			[System::Security::SecurityCritical]
-			virtual void UnsafeOnCompleted(Action^ continuation)
+			virtual void UnsafeOnCompleted(Action^ newContinuation)
 			{
-				if (_continuation == CALLBACK_RAN2)
-				{
-					CompleteCallback(_continuation);
+				// replace reference
+				//Interlocked::Exchange(continuation, newContinuation);
 
-					return;
-				}
-
-				if (Interlocked::CompareExchange(_continuation, continuation, (Action ^) nullptr) == CALLBACK_RAN2)
-				{
-					CompleteCallback(_continuation);
-
-					return;
-				}
+				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
 			}
 
 			/// <summary>
@@ -134,7 +127,7 @@ namespace SXN
 				auto result = this->bytesTransferred;
 
 				//Buffer.BlockCopy(_segment.Buffer, _segment.Offset, _buffer.Array, _buffer.Offset, (int)bytesTransferred)
-				//Reset();
+				Reset();
 
 				//connection->PostReceive(requestCorrelation);
 
@@ -152,7 +145,7 @@ namespace SXN
 				isCompleted = false;
 
 				// reset continuation delegate
-				_continuation = nullptr;
+				continuation = nullptr;
 			}
 
 			void Complete(UInt32 bytesTransferred)
@@ -162,26 +155,13 @@ namespace SXN
 
 				this->bytesTransferred = bytesTransferred;
 
-				//Action ^continuation = _continuation != nullptr ? _continuation : Interlocked::CompareExchange(_continuation, CALLBACK_RAN2, (Action ^) nullptr);
-
-				if (_continuation == nullptr)
+				if (continuation != nullptr)
 				{
-
-				}
-				else
-				{
-					CompleteCallback(_continuation);
+					//ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, continuation);
 				}
 			}
 
-			void CompleteCallback(Action^ continuation1)
-			{
-				auto waitCallBack = gcnew WaitCallback(this, &SendTask::UnsafeCallback);
-
-				ThreadPool::UnsafeQueueUserWorkItem(waitCallBack, continuation1);
-			}
-
-			void UnsafeCallback(Object^ state)
+			static void UnsafeCallback(Object^ state)
 			{
 				auto action = (Action ^)state;
 

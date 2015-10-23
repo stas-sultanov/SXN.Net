@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "Winsock.h"
+#include "winsock.h"
 
 #pragma unmanaged
 
@@ -21,7 +21,7 @@ namespace SXN
 			/// <summary>
 			/// A reference to the object that provides work with Winsock extensions.
 			/// </summary>
-			Winsock& winsock;
+			Winsock* winsock;
 
 			/// <summary>
 			/// The length of the single buffer.
@@ -60,9 +60,10 @@ namespace SXN
 			/// <param name="buffersCount">The count of the buffers to manage.</param>
 			/// <param name="memoryBlock">A pointer to the aligned memory block.</param>
 			/// <param name="rioBufferId">The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.</param>
-			inline RioBufferPool(Winsock& winsock, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
-				: winsock(winsock)
+			inline RioBufferPool(Winsock* winsock, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
 			{
+				this->winsock = winsock;
+
 				// set buffer length
 				this->bufferLength = bufferLength;
 
@@ -112,7 +113,7 @@ namespace SXN
 			/// <param name="winsock">A reference to the object that provides work with Winsock extensions.</param>
 			/// <param name="bufferLength">The length of the single buffer.</param>
 			/// <param name="buffersCount">The count of the buffers to manage.</param>
-			inline static RioBufferPool* Create(Winsock& winsock, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
+			inline static RioBufferPool* Create(Winsock* winsock, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)
 			{
 				// calculate and set the length of the memory block
 				auto memoryBlockLength = bufferLength * buffersCount;
@@ -133,7 +134,7 @@ namespace SXN
 				}
 
 				// register and set the identifier of the buffer
-				auto rioBufferId = winsock.RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
+				auto rioBufferId = winsock->RIORegisterBuffer((PCHAR)memoryBlock, memoryBlockLength);
 
 				// check if operation has failed
 				if (rioBufferId == RIO_INVALID_BUFFERID)
@@ -174,7 +175,7 @@ namespace SXN
 
 				// deregister buffer within the Registered I/O extensions
 				// ignore result
-				winsock.RIODeregisterBuffer(rioBufferId);
+				winsock->RIODeregisterBuffer(rioBufferId);
 
 				// free allocated memory
 				// ignore result

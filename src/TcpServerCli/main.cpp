@@ -6,6 +6,6 @@
 
 #include "TcpWorker.h"
 
-#include "ReceiveTask.h"
+#include "ConnectionHandle.h"
 
 #pragma unmanaged

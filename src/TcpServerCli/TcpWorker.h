@@ -2,7 +2,7 @@
 
 #include "Stdafx.h"
 #include "TcpWorkerSettings.h"
-#include "Winsock.h"
+#include "winsock.h"
 #include "IocpWorker.h"
 
 
@@ -38,7 +38,10 @@ namespace SXN
 
 			initonly Thread^ mainThread;
 
-			initonly Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket;
+			initonly Func<ConnectionHandle^, System::Threading::Tasks::Task^>^ serveSocket;
+
+			// queue connection to processing chain
+			initonly WaitCallback^ serveWaitCallback = gcnew WaitCallback(this, &TcpWorker::Serve);
 
 			#pragma endregion
 
@@ -49,7 +52,7 @@ namespace SXN
 			/// <summary>
 			/// Activates server.
 			/// </summary>
-			TcpWorker(TcpWorkerSettings settings, Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket)
+			TcpWorker(TcpWorkerSettings settings, Func<ConnectionHandle^, System::Threading::Tasks::Task^>^ serveSocket)
 			{
 				this->serveSocket = serveSocket;
 
@@ -170,7 +173,7 @@ namespace SXN
 					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						auto worker = gcnew IocpWorker(listenSocket, *pWinsock, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
+						auto worker = gcnew IocpWorker(listenSocket, pWinsock, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[processorIndex] = worker;
@@ -287,58 +290,42 @@ namespace SXN
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessAcceptRequests()
 			{
-				// define array of completion entries
-				OVERLAPPED_ENTRY completionPortEntries[1024];
-
-				// will contain number of entries removed from the completion queue
-				ULONG numEntriesRemoved;
+				// the identifier of the worker that will serve connection
+				auto workerId = 0;
 
 				while (true)
 				{
-					// dequeue completion status
-					auto dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					// accept connection
+					auto acceptedSocket = ::accept(listenSocket, nullptr, nullptr);
 
 					// check if operation has failed
-					if (dequeueResult == FALSE)
+					if (acceptedSocket == INVALID_SOCKET)
+					{
+						break;
+					}
+
+					// get worker
+					auto worker = this->workers[workerId];
+
+					// get connection handle
+					auto connectionHandle = worker->GetHandle(acceptedSocket);
+
+					if (connectionHandle == nullptr)
 					{
 						continue;
 					}
 
-					for (auto entryIndex = 0; entryIndex < numEntriesRemoved; entryIndex++)
-					{
-						// get entry
-						auto entry = completionPortEntries[entryIndex];
+					Console::WriteLine("Accepted: {0} Worker: {1} Connection: {2}", acceptedSocket, workerId, connectionHandle->Id);
 
-						// get structure that was specified when the completed I/O operation was started
-						auto overlapped = (Ovelapped*) entry.lpOverlapped;
-
-						// get identifier of the worker
-						auto workerId = overlapped->workerId;
-
-						// get worker
-						auto worker = this->workers[workerId];
-
-						// get identifier of the connection
-						auto connectionId = overlapped->connectionId;
-
-						// get connection
-						auto connection = worker->managedConnections[connectionId];
-
-						//Console::WriteLine("Accepted {0}", overlapped->connectionSocket);
-
-						// queue connection to processing chain
-						auto waitCallback = gcnew WaitCallback(this, &TcpWorker::Serve);
-
-						ThreadPool::UnsafeQueueUserWorkItem(waitCallback, (Object ^)connection);
-					}
+					ThreadPool::UnsafeQueueUserWorkItem(serveWaitCallback, (Object ^)connectionHandle);
 				}
 			}
 
 			void Serve(Object^ state)
 			{
-				auto connection = (Connection ^) state;
+				auto connection = (ConnectionHandle ^) state;
 
-				connection->connection->EndAccepet();
+				// connection->connection->EndAccepet();
 
 				// #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 

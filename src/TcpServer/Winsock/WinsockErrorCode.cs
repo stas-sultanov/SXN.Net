@@ -424,7 +424,7 @@ namespace SXN.Net.Winsock
 		WSASYSNOTREADY = 10091,
 
 		/// <summary>
-		/// Winsock.dll version out of range.
+		/// winsock->dll version out of range.
 		/// </summary>
 		/// <remarks>
 		/// The current Windows Sockets implementation does not support the Windows Sockets specification version requested by the application.Check that no old Windows Sockets DLL files are being accessed.

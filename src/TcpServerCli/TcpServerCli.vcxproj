@@ -143,11 +143,11 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConnectionHandle.h" />
     <ClInclude Include="IocpWorker.h" />
     <ClInclude Include="Ovelapped.h" />
-    <ClInclude Include="ReceiveTask.h" />
+    <ClInclude Include="RioTask.h" />
     <ClInclude Include="RioBufferPool.h" />
-    <ClInclude Include="SendTask.h" />
     <ClInclude Include="Stdafx.h" />
     <ClInclude Include="TcpConnection.h" />
     <ClInclude Include="TcpServer.h" />
