@@ -324,7 +324,7 @@ namespace SXN
 						// get connection
 						auto connection = worker->managedConnections[connectionId];
 
-						Console::WriteLine("Accepted {0}", overlapped->connectionSocket);
+						//Console::WriteLine("Accepted {0}", overlapped->connectionSocket);
 
 						// queue connection to processing chain
 						auto waitCallback = gcnew WaitCallback(this, &TcpWorker::Serve);

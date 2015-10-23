@@ -22,9 +22,13 @@ namespace SXN
 
 			internal:
 
+			const char* testMessage = "HTTP/1.1 200 OK\r\nServer:SXN.Ion\r\nContent-Length:0\r\nDate:Sat, 26 Sep 2015 17:45:57 GMT\r\n\r\n";
+
 			TcpConnection* connection;
 
 			initonly ReceiveTask^ receiveTask;
+
+			initonly ReceiveTask^ sendTask;
 
 			/// <summary>
 			/// Initializes a new instance of the <see cref="Connection" /> class.
@@ -39,13 +43,15 @@ namespace SXN
 				this->connection = connection;
 
 				receiveTask = gcnew ReceiveTask(this);
+
+				sendTask = gcnew ReceiveTask(this);
 			}
 
 			inline Boolean BeginReceive()
 			{
 				auto res = connection->StartRecieve();
 
-				Console::WriteLine("Connection[{0}]::BeginReceive {1}", connection->connectionSocket, res);
+				//Console::WriteLine("Connection[{0}]::BeginReceive {1}", connection->connectionSocket, res);
 
 				return res;
 			}
@@ -54,7 +60,7 @@ namespace SXN
 			{
 				connection->state = ConnectionState::Received;
 
-				Console::WriteLine("Connection[{0}]::EndReceive {1} bytes", connection->connectionSocket, bytesTransferred);
+				//Console::WriteLine("Connection[{0}]::EndReceive {1} bytes", connection->connectionSocket, bytesTransferred);
 
 				receiveTask->Complete(bytesTransferred);
 			}
@@ -63,7 +69,7 @@ namespace SXN
 
 			inline ReceiveTask^ ReceiveAsync()
 			{
-				Console::WriteLine("Connection[{0}]::ReceiveAsync", connection->connectionSocket);
+				//Console::WriteLine("Connection[{0}]::ReceiveAsync", connection->connectionSocket);
 
 				BeginReceive();
 
@@ -85,6 +91,33 @@ namespace SXN
 					return connection->state;
 				}
 			}
+
+			inline ReceiveTask^ SendAsync()
+			{
+				//Console::WriteLine("Connection[{0}]::SendAsync", connection->connectionSocket);
+
+				connection->StartSend(strlen(testMessage));
+
+				return receiveTask;
+			}
+
+			inline void EndSend(unsigned int bytesTransferred)
+			{
+				connection->state = ConnectionState::Sent;
+
+				//Console::WriteLine("Connection[{0}]::EndSend {1} bytes", connection->connectionSocket, bytesTransferred);
+
+				sendTask->Complete(bytesTransferred);
+			}
+
+			inline void Disconnect()
+			{
+				connection->state = ConnectionState::Disconnected;
+
+				connection->StartDisconnect();
+
+				connection->StartAccept();
+			}
 		};
 	}
 }
@@ -96,6 +129,8 @@ namespace SXN
 		private ref class IocpWorker
 		{
 			private:
+
+			const char* testMessage = "HTTP/1.1 200 OK\r\nServer:SXN.Ion\r\nContent-Length:0\r\nDate:Sat, 26 Sep 2015 17:45:57 GMT\r\n\r\n";
 
 			#pragma region Fields
 
@@ -150,7 +185,7 @@ namespace SXN
 
 			initonly Thread^ processRioOperationsThread;
 
-			const char* testMessage = "HTTP/1.1 200 OK\r\nServer:SXN.Ion\r\nContent-Length:0\r\nDate:Sat, 26 Sep 2015 17:45:57 GMT\r\n\r\n";
+			
 
 			#pragma endregion
 
@@ -171,8 +206,8 @@ namespace SXN
 			/// <param name="id">The unique identifier of the worker.</param>
 			/// <param name="segmentLength">The length of the segment.</param>
 			/// <param name="connectionsCount">The count of the segments.</param>
-			IocpWorker(SOCKET listenSocket, Winsock& winsockEx, Int32 id, UInt32 segmentLength, UInt32 connectionsCount)
-				: winsock(winsockEx)
+			IocpWorker(SOCKET listenSocket, Winsock& winsock, Int32 id, UInt32 segmentLength, UInt32 connectionsCount)
+				: winsock(winsock)
 			{
 				this->Id = id;
 
@@ -213,7 +248,7 @@ namespace SXN
 					completionSettings.Iocp.Overlapped = (LPOVERLAPPED)-1;
 
 					// create the completion queue for the Registered I/O receive operations
-					rioCompletionQueue = winsockEx.RIOCreateCompletionQueue(connectionsCount * 64, &completionSettings);
+					rioCompletionQueue = winsock.RIOCreateCompletionQueue(connectionsCount * 64, &completionSettings);
 
 					// check if operation has failed
 					if (rioCompletionQueue == RIO_INVALID_CQ)
@@ -249,7 +284,7 @@ namespace SXN
 
 					int winsockErrorCode;
 
-					rioReceiveBufferPool = RioBufferPool::Create(winsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					rioReceiveBufferPool = RioBufferPool::Create(winsock, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
 					if (rioReceiveBufferPool == nullptr)
@@ -265,7 +300,7 @@ namespace SXN
 
 					int winsockErrorCode;
 
-					rioSendBufferPool = RioBufferPool::Create(winsockEx, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
+					rioSendBufferPool = RioBufferPool::Create(winsock, segmentLength, connectionsCount, kernelErrorCode, winsockErrorCode);
 
 					// check if operation has failed
 					if (rioSendBufferPool == nullptr)
@@ -439,6 +474,9 @@ namespace SXN
 				// the OVERLAPPED structure that was specified when the completed I/O operation was started.
 				LPOVERLAPPED overlapped = nullptr;
 
+				// array of the Registered IO results
+				RIORESULT rioResults[1024];
+
 				while (true)
 				{
 					// register the method to use for notification behavior with an I/O completion queue for use with the Winsock registered I/O extensions
@@ -455,9 +493,6 @@ namespace SXN
 
 					// dequeue Registered IO completion results
 					ULONG receiveCompletionsCount;
-
-					// array of the Registered IO results
-					RIORESULT rioResults[1024];
 
 					BOOL activatedCompletionPort = FALSE;
 
@@ -483,6 +518,7 @@ namespace SXN
 							{
 								// set connection state to sent
 								//connection->state = SXN::Net::ConnectionState::Sent;
+								connection->EndSend(rioResult.BytesTransferred);
 							}
 						}
 

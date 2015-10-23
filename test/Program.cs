@@ -65,14 +65,22 @@ namespace SXN.Net
 
 		private static async Task ServeSocket(Connection connection)
 		{
-			Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
+			//Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
 
-			// receive data async
-			var x = await connection.ReceiveAsync();
+			// asynchronously receive data
+			var receiveResult = await connection.ReceiveAsync();
 
 			// await Task.WaitAny(receiveTask, Task.Delay(2000));
 
-			Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, x);
+			//Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
+
+			// asynchronously receive data
+			var x = await connection.SendAsync();
+
+			//Console.WriteLine("Program::ServeSocket[{0:D5}] sent: {1} bytes", connection.Id, x);
+
+			// disconnect
+			connection.Disconnect();
 		}
 
 		#endregion

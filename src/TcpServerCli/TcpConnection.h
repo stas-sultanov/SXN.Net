@@ -19,7 +19,7 @@ namespace SXN
 			/// <summary>
 			/// A reference to the object that provides work with the Winsock extensions.
 			/// </summary>
-			Winsock& winsockEx;
+			Winsock& winsock;
 
 			/// <summary>
 			/// The descriptor of the listening socket.
@@ -59,8 +59,8 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
-			inline TcpConnection(Winsock& winsockEx, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
-				: winsockEx(winsockEx)
+			inline TcpConnection(Winsock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
+				: winsock(winsock)
 			{
 				this->id = id;
 
@@ -122,7 +122,7 @@ namespace SXN
 
 				DWORD dwBytes;
 
-				return winsockEx.AcceptEx(listenSocket, connectionSocket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
+				return winsock.AcceptEx(listenSocket, connectionSocket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
 			}
 
 			inline int EndAccepet()
@@ -132,14 +132,14 @@ namespace SXN
 
 			inline void GetSourceAddress()
 			{
-				//winsockEx.GetAcceptExSockaddrs();
+				//winsock.GetAcceptExSockaddrs();
 			}
 
 			inline BOOL StartRecieve()
 			{
 				state = ConnectionState::Receiving;
 
-				return winsockEx.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (PVOID) id);
+				return winsock.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
@@ -148,16 +148,16 @@ namespace SXN
 
 				sendBuffer->Length = dataLength;
 
-				return winsockEx.RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID) id);
+				return winsock.RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartDisconnect()
 			{
 				state = ConnectionState::Disconnecting;
 
-				//return winsockEx.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+				//return winsock.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
 
-				return winsockEx.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
+				return winsock.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
 			}
 
 			#pragma endregion
@@ -166,4 +166,3 @@ namespace SXN
 }
 
 #pragma managed
-
