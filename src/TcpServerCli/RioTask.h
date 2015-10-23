@@ -105,12 +105,14 @@ namespace SXN
 				// replace reference
 				//Interlocked::Exchange(continuation, newContinuation);
 
-				//ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
+				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
 
+				/**
 				if (continuation == EmptyContinuation || Interlocked::CompareExchange(continuation, continuation, (Action ^) nullptr) == EmptyContinuation)
 				{
 					CompleteCallback(continuation);
 				}
+				/**/
 			}
 
 			/// <summary>
@@ -155,6 +157,7 @@ namespace SXN
 				// set completed
 				isCompleted = true;
 
+				/*
 				Action^ continueAction;
 
 				if (continuation == nullptr)
@@ -165,11 +168,13 @@ namespace SXN
 				{
 					continueAction = continuation;
 				}
+				*/
 
-				if (continueAction != nullptr)
+				/**
+				if (continuation != nullptr)
 				{
 					CompleteCallback(continuation);
-				}
+				}/**/
 			}
 
 			static inline void CompleteCallback(Action^ continuation)

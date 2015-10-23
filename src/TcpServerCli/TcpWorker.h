@@ -290,6 +290,8 @@ namespace SXN
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessAcceptRequests()
 			{
+				auto lastWorkerId = this->workers->Length - 1;
+
 				// the identifier of the worker that will serve connection
 				auto workerId = 0;
 
@@ -318,6 +320,8 @@ namespace SXN
 					//Console::WriteLine("Accepted: {0} Worker: {1} Connection: {2}", acceptedSocket, workerId, connectionHandle->Id);
 
 					ThreadPool::UnsafeQueueUserWorkItem(serveWaitCallback, (Object ^)connectionHandle);
+
+					workerId = workerId == lastWorkerId ? 0 : workerId + 1;
 				}
 			}
 
