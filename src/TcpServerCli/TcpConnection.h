@@ -94,7 +94,7 @@ namespace SXN
 
 				sendBuffer->Length = dataLength;
 
-				return winsock->RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID) id);
+				return winsock->RIOSend(rioRequestQueue, sendBuffer, 1, RIO_MSG_DONT_NOTIFY, (PVOID) id);
 			}
 
 			inline BOOL StartDisconnect()

@@ -11,6 +11,7 @@ namespace SXN
 {
 	namespace Net
 	{
+		[System::Security::SuppressUnmanagedCodeSecurity]
 		public ref class RioTask sealed : ICriticalNotifyCompletion
 		{
 			private:
@@ -60,6 +61,7 @@ namespace SXN
 			/// </summary>
 			/// <returs>An awaiter instance.</returns>
 			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			RioTask^ GetAwaiter()
 			{
 				return this;
@@ -70,6 +72,7 @@ namespace SXN
 			/// </summary>
 			property Boolean IsCompleted
 			{
+				[System::Security::SuppressUnmanagedCodeSecurity]
 				Boolean get()
 				{
 					return isCompleted;
@@ -81,6 +84,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			[System::Security::SecuritySafeCritical]
 			virtual void OnCompleted(Action^ continuation)
 			{
@@ -99,6 +103,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			[System::Security::SecurityCritical]
 			virtual void UnsafeOnCompleted(Action^ newContinuation)
 			{
@@ -118,6 +123,7 @@ namespace SXN
 			/// <summary>
 			/// Ends the wait for the completion of the asynchronous task.
 			/// </summary>
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			UInt32 GetResult()
 			{
 				//Console::WriteLine("ReceiveTask::GetResult Connection[{0}]", this->connection->Id);
@@ -136,6 +142,8 @@ namespace SXN
 
 			#pragma region
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
+
 			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
 			inline void Reset()
 			{
@@ -148,6 +156,8 @@ namespace SXN
 				// reset continuation delegate
 				continuation = nullptr;
 			}
+
+			[System::Security::SuppressUnmanagedCodeSecurity]
 
 			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
 			inline void Complete(UInt32 bytesTransferred)
@@ -177,11 +187,13 @@ namespace SXN
 				}/**/
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			static inline void CompleteCallback(Action^ continuation)
 			{
 				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, continuation);
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
 			static inline void UnsafeCallback(Object^ state)
 			{

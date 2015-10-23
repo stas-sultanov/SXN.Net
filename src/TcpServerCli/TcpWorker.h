@@ -181,6 +181,7 @@ namespace SXN
 				}
 
 				// initialize and run main thread
+				/**
 				{
 					auto threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
@@ -188,6 +189,7 @@ namespace SXN
 
 					mainThread->Start();
 				}
+				/**/
 			}
 
 			private:
@@ -287,6 +289,8 @@ namespace SXN
 
 			#pragma region Static Constructor
 
+			public:
+
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessAcceptRequests()
 			{
@@ -325,6 +329,7 @@ namespace SXN
 				}
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			void Serve(Object^ state)
 			{
 				auto connection = (ConnectionHandle ^) state;

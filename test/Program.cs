@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +11,7 @@ namespace SXN.Net
 	{
 		#region Private methods
 
+		[SuppressUnmanagedCodeSecurity]
 		private static void Main()
 		{
 			ThreadPool.SetMinThreads(256, 256);
@@ -31,6 +33,8 @@ namespace SXN.Net
 			try
 			{
 				server = new TcpWorker(serverSettings, ServeSocket);
+
+				server.ProcessAcceptRequests();
 			}
 			catch (TcpServerException e)
 			{
@@ -63,6 +67,7 @@ namespace SXN.Net
 		}
 
 
+		[SuppressUnmanagedCodeSecurity]
 		private static async Task ServeSocket(ConnectionHandle connection)
 		{
 			//Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
@@ -75,7 +80,9 @@ namespace SXN.Net
 			//Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
 
 			// asynchronously receive data
-			var x = await connection.SendAsync();
+			//var x = await connection.SendAsync();
+
+			connection.StartSend();
 
 			//Console.WriteLine("Program::ServeSocket[{0:D5}] sent: {1} bytes", connection.Id, x);
 

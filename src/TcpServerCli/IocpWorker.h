@@ -16,6 +16,7 @@ namespace SXN
 {
 	namespace Net
 	{
+		[System::Security::SuppressUnmanagedCodeSecurity]
 		private ref class IocpWorker
 		{
 			private:
@@ -239,6 +240,7 @@ namespace SXN
 
 				public:
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			ConnectionHandle^ GetHandle(SOCKET connectionSocket)
 			{
 				// get connection handle

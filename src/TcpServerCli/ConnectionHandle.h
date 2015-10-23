@@ -17,6 +17,7 @@ namespace SXN
 		/// <summary>
 		/// Provides handle to the connection.
 		/// </summary>
+		[System::Security::SuppressUnmanagedCodeSecurity]
 		public ref class ConnectionHandle sealed
 		{
 			private:
@@ -80,6 +81,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="id">The identifier of the handle within the worker.</param>
 			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline ConnectionHandle(ULONG id, Winsock* winsock, PRIO_BUF receiveBuffer, PRIO_BUF sendBuffer)
 			{
 				// set id
@@ -106,8 +108,11 @@ namespace SXN
 
 			#pragma endregion
 
+			public:
+
 			#pragma region Methods
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline Boolean BeginReceive()
 			{
 				state = ConnectionState::Receiving;
@@ -115,6 +120,7 @@ namespace SXN
 				return winsock->RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (PVOID) id);
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline void EndReceive(unsigned int bytesTransferred)
 			{
 				//Console::WriteLine("Connection[{0}]::EndReceive {1} bytes", connection->connectionSocket, bytesTransferred);
@@ -126,6 +132,7 @@ namespace SXN
 
 			property UInt32 Id
 			{
+				[System::Security::SuppressUnmanagedCodeSecurity]
 				UInt32 get()
 				{
 					return id;
@@ -134,12 +141,14 @@ namespace SXN
 
 			property ConnectionState State
 			{
+				[System::Security::SuppressUnmanagedCodeSecurity]
 				ConnectionState get()
 				{
 					return state;
 				}
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline BOOL StartSend(DWORD dataLength)
 			{
 				state = ConnectionState::Sending;
@@ -149,6 +158,7 @@ namespace SXN
 				return winsock->RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID)id);
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline void EndSend(unsigned int bytesTransferred)
 			{
 				state = ConnectionState::Sent;
@@ -158,7 +168,7 @@ namespace SXN
 				sendTask->Complete(bytesTransferred);
 			}
 
-
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline void Reuse(SOCKET socket, RIO_RQ rioRequestQueue)
 			{
 				this->state = ConnectionState::Accepted;
@@ -168,10 +178,11 @@ namespace SXN
 				this->rioRequestQueue = rioRequestQueue;
 			}
 
-			public:
+			
 
 			#pragma region Public methods
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline RioTask^ ReceiveAsync()
 			{
 				//Console::WriteLine("Connection[{0}]::ReceiveAsync", connection->connectionSocket);
@@ -181,6 +192,7 @@ namespace SXN
 				return receiveTask;
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline RioTask^ SendAsync()
 			{
 				//Console::WriteLine("Connection[{0}]::SendAsync", connection->connectionSocket);
@@ -190,11 +202,22 @@ namespace SXN
 				return receiveTask;
 			}
 
+			[System::Security::SuppressUnmanagedCodeSecurity]
 			inline void Disconnect()
 			{
 				state = ConnectionState::Disconnected;
 
 				::closesocket(socket);
+			}
+
+			[System::Security::SuppressUnmanagedCodeSecurity]
+			inline BOOL StartSend()
+			{
+				state = ConnectionState::Sending;
+
+				sendBuffer->Length = strlen(testMessage);
+
+				return winsock->RIOSend(rioRequestQueue, sendBuffer, 1, RIO_MSG_DONT_NOTIFY, (PVOID)id);
 			}
 
 			#pragma endregion
