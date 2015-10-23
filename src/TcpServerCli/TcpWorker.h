@@ -315,7 +315,7 @@ namespace SXN
 						continue;
 					}
 
-					Console::WriteLine("Accepted: {0} Worker: {1} Connection: {2}", acceptedSocket, workerId, connectionHandle->Id);
+					//Console::WriteLine("Accepted: {0} Worker: {1} Connection: {2}", acceptedSocket, workerId, connectionHandle->Id);
 
 					ThreadPool::UnsafeQueueUserWorkItem(serveWaitCallback, (Object ^)connectionHandle);
 				}

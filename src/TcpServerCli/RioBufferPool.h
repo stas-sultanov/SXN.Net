@@ -76,9 +76,7 @@ namespace SXN
 				// set the identifier of the memory block within the Winsock Registered I/O extensions.
 				this->rioBufferId = rioBufferId;
 
-				// initialize collection of the buffer segments
-				//buffers = new RIO_BUF[buffersCount];
-
+				// initialize collection of the buffer segments by allocating the aligned memory block
 				buffers = (PRIO_BUF) ::VirtualAlloc(nullptr, sizeof(RIO_BUF) * buffersCount, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// initialize items of the collection
@@ -166,9 +164,6 @@ namespace SXN
 			/// </summary>
 			inline ~RioBufferPool()
 			{
-				// delete buffers array
-				//delete buffers;
-
 				// free allocated memory
 				// ignore result
 				::VirtualFree(buffers, 0, MEM_RELEASE);

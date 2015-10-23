@@ -11,8 +11,6 @@ namespace SXN
 {
 	namespace Net
 	{
-		extern ref class ConnectionHandle;
-
 		public ref class RioTask sealed : ICriticalNotifyCompletion
 		{
 			private:
@@ -21,7 +19,6 @@ namespace SXN
 
 			static void DoNothing()
 			{
-				Console::WriteLine("ReceiveTask::DoNothing WTF??");
 			}
 
 			static initonly WaitCallback^ continueWaitCallback = gcnew WaitCallback(&RioTask::UnsafeCallback);
@@ -31,28 +28,22 @@ namespace SXN
 			/// </summary>
 			Boolean isCompleted;
 
-			Action^ continuation;
-
 			/// <summary>
-			/// The amount of bytes transferred.
+			/// The number of bytes sent or received in the I/O request.
 			/// </summary>
 			UInt32 bytesTransferred;
 
-			UInt32 requestCorrelation;
-
-			ConnectionHandle^ connection;
+			Action^ continuation;
 
 			internal:
 
 			#pragma region Constructors
 
 			/// <summary>
-			/// Initialize a new instance of the <see cref="ReceiveTask" /> class.
+			/// Initialize a new instance of the <see cref="RioTask" /> class.
 			/// </summary>
-			RioTask(ConnectionHandle^ connection)
+			RioTask()
 			{
-				this->connection = connection;
-
 				isCompleted = false;
 
 				continuation = nullptr;
@@ -62,7 +53,7 @@ namespace SXN
 
 			public:
 
-			#pragma region Implementation of the awaiter routine
+			#pragma region Methohs implementation of the awaiter routine
 
 			/// <summary>
 			/// Gets an awaiter used to await this task.
@@ -114,7 +105,12 @@ namespace SXN
 				// replace reference
 				//Interlocked::Exchange(continuation, newContinuation);
 
-				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
+				//ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
+
+				if (continuation == EmptyContinuation || Interlocked::CompareExchange(continuation, continuation, (Action ^) nullptr) == EmptyContinuation)
+				{
+					CompleteCallback(continuation);
+				}
 			}
 
 			/// <summary>
@@ -136,7 +132,10 @@ namespace SXN
 
 			#pragma endregion
 
-			void Reset()
+			#pragma region
+
+			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
+			inline void Reset()
 			{
 				// reset amount of data transferred
 				bytesTransferred = 0;
@@ -148,20 +147,38 @@ namespace SXN
 				continuation = nullptr;
 			}
 
-			void Complete(UInt32 bytesTransferred)
+			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
+			inline void Complete(UInt32 bytesTransferred)
 			{
+				this->bytesTransferred = bytesTransferred;
+
 				// set completed
 				isCompleted = true;
 
-				this->bytesTransferred = bytesTransferred;
+				Action^ continueAction;
 
-				if (continuation != nullptr)
+				if (continuation == nullptr)
 				{
-					//ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, continuation);
+					continueAction = Interlocked::CompareExchange(continuation, EmptyContinuation, (Action ^) nullptr);
+				}
+				else
+				{
+					continueAction = continuation;
+				}
+
+				if (continueAction != nullptr)
+				{
+					CompleteCallback(continuation);
 				}
 			}
 
-			static void UnsafeCallback(Object^ state)
+			static inline void CompleteCallback(Action^ continuation)
+			{
+				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, continuation);
+			}
+
+			[MethodImplAttribute(MethodImplOptions::AggressiveInlining)]
+			static inline void UnsafeCallback(Object^ state)
 			{
 				auto action = (Action ^)state;
 
@@ -170,6 +187,8 @@ namespace SXN
 					action();
 				}
 			}
+
+			#pragma endregion
 		};
 	}
 }

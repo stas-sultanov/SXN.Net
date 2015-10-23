@@ -30,10 +30,29 @@ namespace SXN
 			/// </summary>
 			Winsock* winsock;
 
+			/// <summary>
+			/// The identifier of the handle within the worker.
+			/// </summary>
 			initonly ULONG id;
 
+			/// <summary>
+			/// The receive buffer.
+			/// </summary>
+			initonly PRIO_BUF receiveBuffer;
+
+			/// <summary>
+			/// The send buffer.
+			/// </summary>
+			initonly PRIO_BUF sendBuffer;
+
+			/// <summary>
+			/// The data receive task.
+			/// </summary>
 			initonly RioTask^ receiveTask;
 
+			/// <summary>
+			/// The data send task.
+			/// </summary>
 			initonly RioTask^ sendTask;
 
 			/// <summary>
@@ -50,10 +69,6 @@ namespace SXN
 
 			PVOID addrBuf;
 
-			initonly PRIO_BUF receiveBuffer;
-
-			initonly PRIO_BUF sendBuffer;
-
 			#pragma endregion
 
 			internal:
@@ -63,21 +78,29 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="ConnectionHandle" /> class.
 			/// </summary>
+			/// <param name="id">The identifier of the handle within the worker.</param>
 			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
 			inline ConnectionHandle(ULONG id, Winsock* winsock, PRIO_BUF receiveBuffer, PRIO_BUF sendBuffer)
 			{
+				// set id
 				this->id = id;
 
+				// set reference to winsock
 				this->winsock = winsock;
 
+				// set receive buffer
 				this->receiveBuffer = receiveBuffer;
 
+				// set send buffer
 				this->sendBuffer = sendBuffer;
 
-				receiveTask = gcnew RioTask(this);
+				// initialize receive task
+				receiveTask = gcnew RioTask();
 
-				sendTask = gcnew RioTask(this);
+				// initialize send task
+				sendTask = gcnew RioTask();
 
+				// set state of the connection
 				state = ConnectionState::Disconnected;
 			}
 
@@ -145,7 +168,9 @@ namespace SXN
 				this->rioRequestQueue = rioRequestQueue;
 			}
 
-				public:
+			public:
+
+			#pragma region Public methods
 
 			inline RioTask^ ReceiveAsync()
 			{
@@ -171,6 +196,8 @@ namespace SXN
 
 				::closesocket(socket);
 			}
+
+			#pragma endregion
 		};
 	}
 }

@@ -7,5 +7,3 @@
 #include "TcpWorker.h"
 
 #include "ConnectionHandle.h"
-
-#pragma unmanaged
