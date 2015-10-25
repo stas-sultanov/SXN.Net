@@ -103,17 +103,26 @@ namespace SXN
 			/// </summary>
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
 			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
-			[System::Security::SuppressUnmanagedCodeSecurity]
 			[System::Security::SecurityCritical]
 			virtual void UnsafeOnCompleted(Action^ newContinuation)
 			{
-				// replace reference
-				//Interlocked::Exchange(continuation, newContinuation);
+				/**/
 
-				ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
+				/**/
+
+				// replace reference
+				Interlocked::Exchange(continuation, newContinuation);
+
+				//ThreadPool::UnsafeQueueUserWorkItem(continueWaitCallback, newContinuation);
 
 				/**
-				if (continuation == EmptyContinuation || Interlocked::CompareExchange(continuation, continuation, (Action ^) nullptr) == EmptyContinuation)
+				if (continuation == EmptyContinuation || Interlocked::CompareExchange(continuation, newContinuation, (Action ^) nullptr) == EmptyContinuation)
+				{
+					CompleteCallback(continuation);
+				}
+
+				/**/
+				if (isCompleted)
 				{
 					CompleteCallback(continuation);
 				}
@@ -167,7 +176,7 @@ namespace SXN
 				// set completed
 				isCompleted = true;
 
-				/*
+				/**
 				Action^ continueAction;
 
 				if (continuation == nullptr)
@@ -178,13 +187,13 @@ namespace SXN
 				{
 					continueAction = continuation;
 				}
-				*/
+				
 
-				/**
+				/**/
 				if (continuation != nullptr)
 				{
 					CompleteCallback(continuation);
-				}/**/
+				}
 			}
 
 			[System::Security::SuppressUnmanagedCodeSecurity]

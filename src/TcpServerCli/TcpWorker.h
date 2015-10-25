@@ -89,6 +89,7 @@ namespace SXN
 				}
 
 				// configure listen socket
+				/**
 				{
 					auto configResult = Configure(listenSocket, settings);
 
@@ -101,6 +102,7 @@ namespace SXN
 						throw gcnew TcpServerException(winsockErrorCode);
 					}
 				}
+				/**/
 
 				// initialize winsock extensions
 				{
@@ -117,6 +119,7 @@ namespace SXN
 				}
 
 				// initialize IOCP
+				/**
 				{
 					// create I/O completion port
 					completionPort = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
@@ -143,20 +146,8 @@ namespace SXN
 						throw gcnew TcpServerException(kernelErrorCode);
 					}
 				}
+				/**/
 
-				// start listen
-				{
-					auto configResult = StartListen(listenSocket, settings);
-
-					if (!configResult)
-					{
-						// get error code
-						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
-
-						// throw exception
-						throw gcnew TcpServerException(winsockErrorCode);
-					}
-				}
 
 				// create and configure sub workers
 				{
@@ -190,6 +181,21 @@ namespace SXN
 					mainThread->Start();
 				}
 				/**/
+
+
+				// start listen
+				{
+					auto configResult = StartListen(listenSocket, settings);
+
+					if (!configResult)
+					{
+						// get error code
+						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+
+						// throw exception
+						throw gcnew TcpServerException(winsockErrorCode);
+					}
+				}
 			}
 
 			private:
@@ -254,13 +260,17 @@ namespace SXN
 					// compose address
 					IN_ADDR address;
 
-					address.S_un.S_addr = 0;
+					//address.S_un.S_addr = 0;
+					address.S_un.S_un_b.s_b1 = 127;
+					address.S_un.S_un_b.s_b2 = 0;
+					address.S_un.S_un_b.s_b3 = 0;
+					address.S_un.S_un_b.s_b4 = 1;
 
 					// compose socket address
 					SOCKADDR_IN socketAddress;
 
 					socketAddress.sin_family = AF_INET;
-					socketAddress.sin_port = ::htons(settings.Port);
+					socketAddress.sin_port = ::htons(5000);
 					socketAddress.sin_addr = address;
 
 					// try associate address with socket
@@ -274,7 +284,7 @@ namespace SXN
 
 				// try start listen
 				{
-					auto startListen = ::listen(listenSocket, settings.ConnectionsBacklogLength);
+					auto startListen = ::listen(listenSocket, 10);
 
 					if (startListen == SOCKET_ERROR)
 					{

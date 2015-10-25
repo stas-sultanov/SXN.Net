@@ -22,7 +22,7 @@ namespace SXN.Net
 				Port = 5001,
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
-				ConnectionsBacklogLength = 32768 *8,
+				ConnectionsBacklogLength = 1024,
 				UseFastLoopback = true,
 				UseNagleAlgorithm = false
 			};
@@ -34,7 +34,7 @@ namespace SXN.Net
 			{
 				server = new TcpWorker(serverSettings, ServeSocket);
 
-				server.ProcessAcceptRequests();
+				
 			}
 			catch (TcpServerException e)
 			{
@@ -46,6 +46,8 @@ namespace SXN.Net
 			}
 
 			Console.WriteLine($"server is activated");
+
+			server.ProcessAcceptRequests();
 
 			/*
 			// 2 try accept connection
@@ -72,17 +74,22 @@ namespace SXN.Net
 		{
 			//Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
 
-			// asynchronously receive data
-			var receiveResult = await connection.ReceiveAsync();
+			while (true)
+			{
+				// asynchronously receive data
+				var receiveResult = await connection.ReceiveAsync();
 
-			// await Task.WaitAny(receiveTask, Task.Delay(2000));
+				if (receiveResult == 0) break;
 
-			//Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
+				// await Task.WaitAny(receiveTask, Task.Delay(2000));
 
-			// asynchronously receive data
-			//var x = await connection.SendAsync();
+				//Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
 
-			connection.StartSend();
+				// asynchronously receive data
+				var x = await connection.SendAsync();
+
+				//connection.StartSend();
+			}
 
 			//Console.WriteLine("Program::ServeSocket[{0:D5}] sent: {1} bytes", connection.Id, x);
 

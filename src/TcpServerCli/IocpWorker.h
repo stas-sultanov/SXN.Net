@@ -192,7 +192,7 @@ namespace SXN
 					// get Registered IO send buffer
 					auto rioSendBuffer = rioSendBufferPool->GetBuffer(connectionIndex);
 
-					// create connection handle
+					// create connection handleC:\Users\stass_000\Source\Repos\SXN.Net\Test\App.config
 					auto connection = gcnew ConnectionHandle(connectionIndex, winsock, rioReceiveBuffer, rioSendBuffer);
 
 					// add to collection
@@ -254,7 +254,7 @@ namespace SXN
 				}
 
 				// create request queue
-				auto requestQueue = winsock->RIOCreateRequestQueue(connectionSocket, 32, 1, 32, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)connectionHandle->Id);
+				auto requestQueue = winsock->RIOCreateRequestQueue(connectionSocket, 24, 1, 40, 1, rioCompletionQueue, rioCompletionQueue, (PVOID)connectionHandle->Id);
 				{
 					// check if operation has failed
 					if (requestQueue == RIO_INVALID_RQ)
