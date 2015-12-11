@@ -19,7 +19,7 @@ namespace SXN
 			#pragma region Fields
 
 			/// <summary>
-			/// A reference to the object that provides work with Winsock extensions.
+			/// A reference to the object that provides work with the Winsock extensions.
 			/// </summary>
 			Winsock& winsock;
 
@@ -55,7 +55,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="RioBufferPool" /> class.
 			/// </summary>
-			/// <param name="winsock">A reference to the object that provides work with Winsock extensions.</param>
+			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
 			/// <param name="bufferLength">The length of the single buffer.</param>
 			/// <param name="buffersCount">The count of the buffers to manage.</param>
 			/// <param name="memoryBlock">A pointer to the aligned memory block.</param>
@@ -109,7 +109,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="RioBufferPool" /> class.
 			/// </summary>
-			/// <param name="winsock">A reference to the object that provides work with Winsock extensions.</param>
+			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
 			/// <param name="bufferLength">The length of the single buffer.</param>
 			/// <param name="buffersCount">The count of the buffers to manage.</param>
 			inline static RioBufferPool* Create(Winsock& winsock, ULONG bufferLength, ULONG buffersCount, DWORD& kernelErrorCode, int& winsockErrorCode)

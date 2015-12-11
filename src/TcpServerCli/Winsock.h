@@ -2,14 +2,12 @@
 
 #include "Stdafx.h"
 
-#pragma unmanaged
-
 namespace SXN
 {
 	namespace Net
 	{
 		/// <summary>
-		/// Provides work with Winsock extensions.
+		/// Provides work with the Winsock extensions.
 		/// </summary>
 		private class Winsock final
 		{
@@ -56,7 +54,11 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="Winsock" /> class.
 			/// </summary>
-			inline Winsock(LPFN_ACCEPTEX pAcceptEx, LPFN_DISCONNECTEX pDisconnectEx, LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs, RIO_EXTENSION_FUNCTION_TABLE& rioTable)
+			/// <param name="pAcceptEx">A pointer to the AccepteEx function.</param>
+			/// <param name="pDisconnectEx">A pointer to the DisconnectEx function.</param>
+			/// <param name="pGetAcceptExSockaddrs">A pointer to the GetAcceptExSockaddrs function.</param>
+			/// <param name="rioFunctionsTable">A reference to the structure that contains information on the functions that implement the Winsock registered I/O extensions.</param>
+			inline Winsock(LPFN_ACCEPTEX pAcceptEx, LPFN_DISCONNECTEX pDisconnectEx, LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs, RIO_EXTENSION_FUNCTION_TABLE& rioFunctionsTable)
 			{
 				this->pAcceptEx = pAcceptEx;
 
@@ -64,44 +66,54 @@ namespace SXN
 
 				this->pGetAcceptExSockaddrs = pGetAcceptExSockaddrs;
 
-				this->pRIOCloseCompletionQueue = rioTable.RIOCloseCompletionQueue;
+				this->pRIOCloseCompletionQueue = rioFunctionsTable.RIOCloseCompletionQueue;
 
-				this->pRIOCreateCompletionQueue = rioTable.RIOCreateCompletionQueue;
+				this->pRIOCreateCompletionQueue = rioFunctionsTable.RIOCreateCompletionQueue;
 
-				this->pRIOCreateRequestQueue = rioTable.RIOCreateRequestQueue;
+				this->pRIOCreateRequestQueue = rioFunctionsTable.RIOCreateRequestQueue;
 
-				this->pRIODequeueCompletion = rioTable.RIODequeueCompletion;
+				this->pRIODequeueCompletion = rioFunctionsTable.RIODequeueCompletion;
 
-				this->pRIODeregisterBuffer = rioTable.RIODeregisterBuffer;
+				this->pRIODeregisterBuffer = rioFunctionsTable.RIODeregisterBuffer;
 
-				this->pRIONotify = rioTable.RIONotify;
+				this->pRIONotify = rioFunctionsTable.RIONotify;
 
-				this->pRIOReceive = rioTable.RIOReceive;
+				this->pRIOReceive = rioFunctionsTable.RIOReceive;
 
-				this->pRIOReceiveEx = rioTable.RIOReceiveEx;
+				this->pRIOReceiveEx = rioFunctionsTable.RIOReceiveEx;
 
-				this->pRIORegisterBuffer = rioTable.RIORegisterBuffer;
+				this->pRIORegisterBuffer = rioFunctionsTable.RIORegisterBuffer;
 
-				this->pRIOResizeCompletionQueue = rioTable.RIOResizeCompletionQueue;
+				this->pRIOResizeCompletionQueue = rioFunctionsTable.RIOResizeCompletionQueue;
 
-				this->pRIOResizeRequestQueue = rioTable.RIOResizeRequestQueue;
+				this->pRIOResizeRequestQueue = rioFunctionsTable.RIOResizeRequestQueue;
 
-				this->pRIOSend = rioTable.RIOSend;
+				this->pRIOSend = rioFunctionsTable.RIOSend;
 
-				this->pRIOSendEx = rioTable.RIOSendEx;
+				this->pRIOSendEx = rioFunctionsTable.RIOSendEx;
 			}
 
 			#pragma endregion
 
 			#pragma region Methods
 
-			static inline int GetExtension(SOCKET socket, GUID extensionId, LPVOID ptr)
+			/// <summary>
+			/// Gets the address of the function within the Winsock extensions.
+			/// </summary>
+			/// <param name="socket">The descriptor of the socket.</param>
+			/// <param name="extensionId">The unique identifier of the Winsock extension.</param>
+			/// <param name="pFunction">A pointer to the memory where to place address of the function.</param>
+			/// <returns>
+			/// Upon successful completion, returns <c>0</c>.
+			/// Otherwise, a value of <see cref="SOCKET_ERROR"> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
+			/// </returns>
+			static inline int GetExtensionFunctionAddress(SOCKET socket, GUID extensionId, LPVOID pFunction)
 			{
 				// will contain actual pointer size
 				DWORD actualPtrSize;
 
 				// get function pointer
-				return ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), ptr, sizeof(LPFN_ACCEPTEX), &actualPtrSize, nullptr, nullptr);
+				return ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), pFunction, sizeof(LPFN_ACCEPTEX), &actualPtrSize, nullptr, nullptr);
 			}
 
 			#pragma endregion
@@ -113,7 +125,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="Winsock" /> class.
 			/// </summary>
-			/// <param name="socket">A descriptor that identifies the socket.</param>
+			/// <param name="socket">The descriptor of the socket.</param>
 			/// <returns>
 			/// If the function succeeds, the return value is the pointer to the instance of the class.
 			/// If the function fails, the return value is <c>null</c>.
@@ -125,7 +137,7 @@ namespace SXN
 				LPFN_ACCEPTEX pAcceptEx;
 				{
 					// get pointer
-					int getResult = GetExtension(socket, WSAID_ACCEPTEX, &pAcceptEx);
+					int getResult = GetExtensionFunctionAddress(socket, WSAID_ACCEPTEX, &pAcceptEx);
 
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
@@ -138,7 +150,7 @@ namespace SXN
 				LPFN_DISCONNECTEX pDisconnectEx;
 				{
 					// get pointer
-					int getResult = GetExtension(socket, WSAID_DISCONNECTEX, &pDisconnectEx);
+					int getResult = GetExtensionFunctionAddress(socket, WSAID_DISCONNECTEX, &pDisconnectEx);
 
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
@@ -151,7 +163,7 @@ namespace SXN
 				LPFN_GETACCEPTEXSOCKADDRS pGetAcceptExSockaddrs;
 				{
 					// get pointer
-					int getResult = GetExtension(socket, WSAID_GETACCEPTEXSOCKADDRS, &pGetAcceptExSockaddrs);
+					int getResult = GetExtensionFunctionAddress(socket, WSAID_GETACCEPTEXSOCKADDRS, &pGetAcceptExSockaddrs);
 
 					// check if operation has failed
 					if (getResult == SOCKET_ERROR)
@@ -160,7 +172,7 @@ namespace SXN
 					}
 				}
 
-				// get Registered I/O functions table
+				// get registered I/O functions table
 				RIO_EXTENSION_FUNCTION_TABLE rioTable;
 				{
 					// get extension id
@@ -397,5 +409,3 @@ namespace SXN
 		};
 	}
 }
-
-#pragma managed

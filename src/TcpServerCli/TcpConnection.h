@@ -10,6 +10,9 @@ namespace SXN
 {
 	namespace Net
 	{
+		/// <summary>
+		/// Provides work with a TCP connection.
+		/// </summary>
 		public class TcpConnection final
 		{
 			public :
@@ -32,19 +35,28 @@ namespace SXN
 			SOCKET connectionSocket;
 
 			/// <summary>
-			/// The descriptor of the request queue of the Registered IO of the socket.
+			/// The descriptor of the socket within the Registered I/O extension.
 			/// </summary>
 			RIO_RQ rioRequestQueue;
 
-			PVOID addrBuf;
+			/// <summary>
+			/// The descriptor of the portion of the registered buffer used for receiving data.
+			/// </summary>
+			PRIO_BUF rioReceiveBuffer;
+
+			/// <summary>
+			/// The descriptor of the portion of the registered buffer used for sending data.
+			/// </summary>
+			PRIO_BUF rioSendBuffer;
+
+			/// <summary>
+			/// The pointer to the IP address of the client which has requested the connection.
+			/// </summary>
+			PVOID clientAddress;
 
 			Ovelapped* acceptOverlapped;
 
 			Ovelapped* disconnectOverlaped;
-
-			PRIO_BUF receiveBuffer;
-
-			PRIO_BUF sendBuffer;
 
 			ULONG id;
 
@@ -59,6 +71,10 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 			/// </summary>
+			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
+			/// <param name="listenSocket">The descriptor of the listening socket.</param>
+			/// <param name="connectionSocket">The descriptor of the connection socket.</param>
+			/// <param name="rioRequestQueue">The descriptor of the socket within the Registered I/O extension.</param>
 			inline TcpConnection(Winsock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
 				: winsock(winsock)
 			{
@@ -70,7 +86,7 @@ namespace SXN
 
 				this->rioRequestQueue = rioRequestQueue;
 
-				this->addrBuf = new char[(sizeof(sockaddr_in) + 16) * 2];
+				this->clientAddress = new char[(sizeof(sockaddr_in) + 16) * 2];
 
 				{
 					this->acceptOverlapped = new Ovelapped();
@@ -109,7 +125,7 @@ namespace SXN
 
 			inline ~TcpConnection()
 			{
-				delete addrBuf;
+				delete clientAddress;
 			}
 
 			#pragma endregion
@@ -122,7 +138,7 @@ namespace SXN
 
 				DWORD dwBytes;
 
-				return winsock.AcceptEx(listenSocket, connectionSocket, addrBuf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
+				return winsock.AcceptEx(listenSocket, connectionSocket, clientAddress, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
 			}
 
 			inline int EndAccepet()
@@ -139,16 +155,16 @@ namespace SXN
 			{
 				state = ConnectionState::Receiving;
 
-				return winsock.RIOReceive(rioRequestQueue, receiveBuffer, 1, 0, (PVOID) id);
+				return winsock.RIOReceive(rioRequestQueue, rioReceiveBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartSend(DWORD dataLength)
 			{
 				state = ConnectionState::Sending;
 
-				sendBuffer->Length = dataLength;
+				rioSendBuffer->Length = dataLength;
 
-				return winsock.RIOSend(rioRequestQueue, sendBuffer, 1, 0, (PVOID) id);
+				return winsock.RIOSend(rioRequestQueue, rioSendBuffer, 1, 0, (PVOID) id);
 			}
 
 			inline BOOL StartDisconnect()

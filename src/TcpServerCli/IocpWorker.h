@@ -451,9 +451,9 @@ namespace SXN
 				// set initial state
 				connection->state = ConnectionState::Disconnected;
 
-				connection->receiveBuffer = rioReceiveBufferPool->GetBuffer(connectionId);
+				connection->rioReceiveBuffer = rioReceiveBufferPool->GetBuffer(connectionId);
 
-				connection->sendBuffer = rioSendBufferPool->GetBuffer(connectionId);
+				connection->rioSendBuffer = rioSendBufferPool->GetBuffer(connectionId);
 
 				memcpy(rioSendBufferPool->GetBufferData(connectionId), testMessage, strlen(testMessage));
 
