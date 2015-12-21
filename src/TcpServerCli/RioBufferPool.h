@@ -1,16 +1,13 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "Winsock.h"
-
-#pragma unmanaged
 
 namespace SXN
 {
 	namespace Net
 	{
 		/// <summary>
-		/// Provides management of the memory buffers within the Winsock Registered I/O extensions.
+		/// Provides management of the memory buffers within the Winsock registered I/O extensions.
 		/// </summary>
 		private class RioBufferPool final
 		{
@@ -39,7 +36,7 @@ namespace SXN
 			LPVOID memoryBlock;
 
 			/// <summary>
-			/// The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.
+			/// The identifier of the <see cref="memoryBlock" /> within the Winsock registered I/O extensions.
 			/// </summary>
 			RIO_BUFFERID rioBufferId;
 
@@ -57,9 +54,9 @@ namespace SXN
 			/// </summary>
 			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
 			/// <param name="bufferLength">The length of the single buffer.</param>
-			/// <param name="buffersCount">The count of the buffers to manage.</param>
+			/// <param name="buffersCount">The count of the buffers.</param>
 			/// <param name="memoryBlock">A pointer to the aligned memory block.</param>
-			/// <param name="rioBufferId">The identifier of the <see cref="memoryBlock" /> within the Winsock Registered I/O extensions.</param>
+			/// <param name="rioBufferId">The identifier of the <see cref="memoryBlock" /> within the Winsock registered I/O extensions.</param>
 			inline RioBufferPool(Winsock& winsock, ULONG bufferLength, ULONG buffersCount, LPVOID memoryBlock, RIO_BUFFERID rioBufferId)
 				: winsock(winsock)
 			{
@@ -72,12 +69,10 @@ namespace SXN
 				// set memory block pointer
 				this->memoryBlock = memoryBlock;
 
-				// set the identifier of the memory block within the Winsock Registered I/O extensions.
+				// set the identifier of the memory block within the Winsock registered I/O extensions.
 				this->rioBufferId = rioBufferId;
 
 				// initialize collection of the buffer segments
-				//buffers = new RIO_BUF[buffersCount];
-
 				buffers = (PRIO_BUF) ::VirtualAlloc(nullptr, sizeof(RIO_BUF) * buffersCount, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 				// initialize items of the collection
@@ -165,9 +160,6 @@ namespace SXN
 			/// </summary>
 			inline ~RioBufferPool()
 			{
-				// delete buffers array
-				//delete buffers;
-
 				// free allocated memory
 				// ignore result
 				::VirtualFree(buffers, 0, MEM_RELEASE);
@@ -190,7 +182,6 @@ namespace SXN
 			/// </summary>
 			/// <param name="bufferIndex">The identifier of the buffer to retrieve.</param>
 			/// <returns>Structure that specifies a portion of the registered buffer.</returns>
-			/// <remarks><paramref name="bufferIndex" /> must be less then <see cref="buffersCount">.</remarks>
 			inline PRIO_BUF GetBuffer(ULONG bufferIndex)
 			{
 				return this->buffers + bufferIndex;
@@ -201,7 +192,6 @@ namespace SXN
 			/// </summary>
 			/// <param name="bufferIndex">The identifier of the buffer to retrieve.</param>
 			/// <returns>A pointer to the memory block.</returns>
-			/// <remarks><paramref name="bufferIndex" /> must be less then <see cref="buffersCount">.</remarks>
 			inline char* GetBufferData(ULONG bufferIndex)
 			{
 				return ((PCHAR) this->memoryBlock) + bufferLength * bufferIndex;
@@ -211,5 +201,3 @@ namespace SXN
 		};
 	}
 }
-
-#pragma managed

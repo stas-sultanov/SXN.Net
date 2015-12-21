@@ -96,7 +96,7 @@ namespace SXN.Net
 		}
 
 		/// <summary>
-		/// The object that provides work with Winsock Registered I/O extensions.
+		/// The object that provides work with Winsock registered I/O extensions.
 		/// </summary>
 		private RIOHandle RioHandle
 		{
@@ -216,7 +216,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Tries to create a new instance of the <see cref="IocpWorker" />.
 		/// </summary>
-		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="rioHandle">The object that provides work with Winsock registered I/O extensions.</param>
 		/// <param name="processorIndex">The index of the processor.</param>
 		/// <param name="segmentLength">The length of the segment.</param>
 		/// <param name="segmentsCount">The count of the segments.</param>

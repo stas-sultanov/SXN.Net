@@ -11,7 +11,7 @@ namespace SXN
 		/// <summary>
 		/// Specifies the configuration settings of the TCP worker.
 		/// </summary>
-		public value struct TcpWorkerSettings
+		public ref class TcpWorkerSettings
 		{
 			private:
 
@@ -131,6 +131,36 @@ namespace SXN
 			property UInt32 RIOMaxOutstandingReceive;
 
 			property UInt32 RIOMaxOutstandingSend;
+
+			/// <summary>
+			/// The maximum number of entries to try to dequeue from the accept queue.
+			/// </summary>
+			property UInt32 AcceptQueueMaxEntriesCount
+			{
+				UInt32 get()
+				{
+					return useProcessorsCount;
+				}
+
+				void set(UInt32 value)
+				{
+					if (value < 1)
+					{
+						throw gcnew ArgumentOutOfRangeException("value");
+					}
+				}
+			}
+
+			/// <summary>
+			/// The time to wait for a request packet to appear at the accept queue.
+			/// If value is INFINITE(0xFFFFFFFF), the function will never time out.
+			/// If dwMilliseconds is zero and there is no I / O operation to dequeue, the function will time out immediately.
+			/// </summary>
+			property TimeSpan AcceptQueueWaitTime;
+
+			property Boolean UseIPv6;
+
+			property System::Net::IPAddress^ ListenAddress;
 
 			#pragma endregion
 

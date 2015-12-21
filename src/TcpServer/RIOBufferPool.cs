@@ -7,7 +7,7 @@ using SXN.Net.Winsock;
 namespace SXN.Net
 {
 	/// <summary>
-	/// Provides management of the memory buffers required for the Winsock Registered I/O extensions.
+	/// Provides management of the memory buffers required for the Winsock registered I/O extensions.
 	/// </summary>
 	internal sealed class RIOBufferPool
 	{
@@ -24,7 +24,7 @@ namespace SXN.Net
 		private readonly UInt32 bufferLength;
 
 		/// <summary>
-		/// The identifier of the <see cref="buffer" /> within the Winsock Registered I/O extensions.
+		/// The identifier of the <see cref="buffer" /> within the Winsock registered I/O extensions.
 		/// </summary>
 		private readonly IntPtr bufferId;
 
@@ -90,7 +90,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Tries to create a new instance of the <see cref="RIOBufferPool" />.
 		/// </summary>
-		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="rioHandle">The object that provides work with Winsock registered I/O extensions.</param>
 		/// <param name="segmentLength">The length of the segment.</param>
 		/// <param name="segmentsCount">The count of the segments.</param>
 		/// <returns>
@@ -171,7 +171,7 @@ namespace SXN.Net
 		/// <summary>
 		/// Tries to release all allocated resources.
 		/// </summary>
-		/// <param name="rioHandle">The object that provides work with Winsock Registered I/O extensions.</param>
+		/// <param name="rioHandle">The object that provides work with Winsock registered I/O extensions.</param>
 		/// <param name="kernelErrorCode">Contains <c>0</c> if operation was successful, error code otherwise.</param>
 		/// <returns><c>true</c> if operation was successful, <c>false</c> otherwise.</returns>
 		public unsafe Boolean TryRelease(RIOHandle rioHandle, out UInt32 kernelErrorCode)

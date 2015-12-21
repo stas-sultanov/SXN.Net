@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Stdafx.h"
-#include "TcpWorkerSettings.h"
-#include "Winsock.h"
-#include "IocpWorker.h"
 
 
 namespace SXN
@@ -40,6 +37,11 @@ namespace SXN
 
 			initonly Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket;
 
+			/// <summary>
+			/// The maximum number of entries to try to dequeue from the accept queue.
+			/// </summary>
+			initonly UInt32 acceptQueueMaxEntriesCount;
+
 			#pragma endregion
 
 			public:
@@ -47,9 +49,9 @@ namespace SXN
 			#pragma region Methods
 
 			/// <summary>
-			/// Activates server.
+			/// Initializes a new instance of the <see cref="TcpWorker" /> class.
 			/// </summary>
-			TcpWorker(TcpWorkerSettings settings, Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket)
+			TcpWorker(TcpWorkerSettings^ settings, Func<Connection^, System::Threading::Tasks::Task^>^ serveSocket)
 			{
 				this->serveSocket = serveSocket;
 
@@ -157,11 +159,11 @@ namespace SXN
 
 				// create and configure sub workers
 				{
-					// 3 get count of processors
+					// get count of processors
 					auto processorsCount = TcpWorkerSettings::ProcessorsCount;
 
 					// get the length of the connections backlog per processor
-					auto perWorkerConnectionBacklogLength = settings.ConnectionsBacklogLength / processorsCount;
+					auto perWorkerConnectionBacklogLength = settings->ConnectionsBacklogLength / processorsCount;
 
 					// 4 create collection of the IOCP workers
 					workers = gcnew array<IocpWorker^>(processorsCount);
@@ -170,7 +172,7 @@ namespace SXN
 					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						auto worker = gcnew IocpWorker(listenSocket, *pWinsock, processorIndex, settings.ReceiveBufferLength, perWorkerConnectionBacklogLength);
+						auto worker = gcnew IocpWorker(listenSocket, *pWinsock, processorIndex, settings->ReceiveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[processorIndex] = worker;
@@ -178,10 +180,10 @@ namespace SXN
 				}
 
 				// initialize and run main thread
-				{
-					auto threadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
+				{ 
+					auto mainThreadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
-					mainThread = gcnew Thread(threadDelegate);
+					mainThread = gcnew Thread(mainThreadDelegate);
 
 					mainThread->Start();
 				}
@@ -189,10 +191,10 @@ namespace SXN
 
 			private:
 
-			static Boolean Configure(SOCKET listenSocket, TcpWorkerSettings settings)
+			static Boolean Configure(SOCKET listenSocket, TcpWorkerSettings^ settings)
 			{
 				// disable use of the Nagle algorithm if requested
-				if (settings.UseNagleAlgorithm == false)
+				if (settings->UseNagleAlgorithm == false)
 				{
 					auto boolValue = (BOOL) TRUE;
 
@@ -223,7 +225,7 @@ namespace SXN
 				}
 
 				// enable faster operations on the loop-back if requested
-				if (settings.UseFastLoopback == true)
+				if (settings->UseFastLoopback == true)
 				{
 					UInt32 optionValue = 1;
 
@@ -241,7 +243,7 @@ namespace SXN
 				return true;
 			}
 
-			static Boolean StartListen(SOCKET listenSocket, TcpWorkerSettings settings)
+			static Boolean StartListen(SOCKET listenSocket, TcpWorkerSettings^ settings)
 			{
 
 				// try bind
@@ -255,7 +257,7 @@ namespace SXN
 					SOCKADDR_IN socketAddress;
 
 					socketAddress.sin_family = AF_INET;
-					socketAddress.sin_port = ::htons(settings.Port);
+					socketAddress.sin_port = ::htons(settings->Port);
 					socketAddress.sin_addr = address;
 
 					// try associate address with socket
@@ -269,7 +271,7 @@ namespace SXN
 
 				// try start listen
 				{
-					auto startListen = ::listen(listenSocket, settings.ConnectionsBacklogLength);
+					auto startListen = ::listen(listenSocket, settings->ConnectionsBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -287,16 +289,20 @@ namespace SXN
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessAcceptRequests()
 			{
-				// define array of completion entries
-				OVERLAPPED_ENTRY completionPortEntries[1024];
+				ULONG maxEntries = acceptQueueMaxEntriesCount;
+
+				// allocate array of completion entries
+				auto completionPortEntries = (LPOVERLAPPED_ENTRY) ::VirtualAlloc(nullptr, sizeof(OVERLAPPED_ENTRY) * maxEntries, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+				DWORD waitTime = (DWORD) -1;
 
 				// will contain number of entries removed from the completion queue
 				ULONG numEntriesRemoved;
 
 				while (true)
 				{
-					// dequeue completion status
-					auto dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, 1024, &numEntriesRemoved, WSA_INFINITE, FALSE);
+					// dequeue entries
+					auto dequeueResult = ::GetQueuedCompletionStatusEx(completionPort, completionPortEntries, maxEntries, &numEntriesRemoved, waitTime, FALSE);
 
 					// check if operation has failed
 					if (dequeueResult == FALSE)
@@ -332,6 +338,9 @@ namespace SXN
 						ThreadPool::UnsafeQueueUserWorkItem(waitCallback, (Object ^)connection);
 					}
 				}
+
+				// free allocated memory
+				::VirtualFree(completionPortEntries, 0, MEM_RELEASE);
 			}
 
 			void Serve(Object^ state)

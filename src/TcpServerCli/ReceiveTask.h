@@ -11,7 +11,7 @@ namespace SXN
 {
 	namespace Net
 	{
-		extern ref class Connection;
+		ref class Connection;
 
 		public ref class ReceiveTask sealed : ICriticalNotifyCompletion
 		{
@@ -67,7 +67,7 @@ namespace SXN
 			/// <summary>
 			/// Gets an awaiter used to await this task.
 			/// </summary>
-			/// <returs>An awaiter instance.</returns>
+			/// <returns>An awaiter instance.</returns>
 			/// <remarks>This method is intended for compiler use rather than for use in application code.</remarks>
 			ReceiveTask^ GetAwaiter()
 			{
@@ -107,7 +107,6 @@ namespace SXN
 			/// Schedules the continuation action that's invoked when the instance completes.
 			/// </summary>
 			/// <param name="continuation">The action to invoke when the operation completes.</param>
-			/// <exception cref="ArgumentNullException"><paramref name="continuation" /> is <c>null</c>.</exception>
 			[System::Security::SecurityCritical]
 			virtual void UnsafeOnCompleted(Action^ newContinuation)
 			{

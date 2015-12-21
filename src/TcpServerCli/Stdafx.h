@@ -4,6 +4,8 @@
 
 #pragma once
 
+
+
 #include <WinSock2.h>
 
 #include <MSWSock.h>
@@ -11,3 +13,9 @@
 #include <mstcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
+
+#include "Winsock.h"
+
+#include "TcpWorkerSettings.h"
+#include "Winsock.h"
+#include "IocpWorker.h"

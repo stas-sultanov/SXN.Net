@@ -179,13 +179,9 @@ namespace SXN
 			/// </summary>
 			TcpConnection** connections;
 
-
-
 			int connectionsCount;
 
 			initonly Thread^ processRioOperationsThread;
-
-			
 
 			#pragma endregion
 

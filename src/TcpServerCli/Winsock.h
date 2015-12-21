@@ -54,7 +54,7 @@ namespace SXN
 			/// <summary>
 			/// Initializes a new instance of the <see cref="Winsock" /> class.
 			/// </summary>
-			/// <param name="pAcceptEx">A pointer to the AccepteEx function.</param>
+			/// <param name="pAcceptEx">A pointer to the AcceptEx function.</param>
 			/// <param name="pDisconnectEx">A pointer to the DisconnectEx function.</param>
 			/// <param name="pGetAcceptExSockaddrs">A pointer to the GetAcceptExSockaddrs function.</param>
 			/// <param name="rioFunctionsTable">A reference to the structure that contains information on the functions that implement the Winsock registered I/O extensions.</param>
@@ -105,7 +105,7 @@ namespace SXN
 			/// <param name="pFunction">A pointer to the memory where to place address of the function.</param>
 			/// <returns>
 			/// Upon successful completion, returns <c>0</c>.
-			/// Otherwise, a value of <see cref="SOCKET_ERROR"> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
+			/// Otherwise, a value of <c>SOCKET_ERROR</c> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
 			/// </returns>
 			static inline int GetExtensionFunctionAddress(SOCKET socket, GUID extensionId, LPVOID pFunction)
 			{
@@ -212,7 +212,7 @@ namespace SXN
 			/// If the function fails, returns <c>FALSE</c>.
 			/// The <see cref="WSAGetLastError"/> function can then be called to return extended error information.
 			/// If <see cref ="WSAGetLastError"/> returns <c>ERROR_IO_PENDING</c>, then the operation was successfully initiated and is still in progress.
-			/// If the error is <c>WSAECONNRESET<c/>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
+			/// If the error is <c>WSAECONNRESET</c>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
 			/// </returns>
 			inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped)
 			{
@@ -223,7 +223,7 @@ namespace SXN
 			/// Closes a connection on a socket, and allows the socket handle to be reused.
 			/// </summary>
 			/// <param name="hSocket">A handle to a connected, connection-oriented socket.</param>
-			/// <param name="lpOverlapped">A pointer to an <see href="OVERLAPPED" /> structure. If the socket handle has been opened as overlapped, specifying this parameter results in an overlapped (asynchronous) I/O operation.</param>
+			/// <param name="lpOverlapped">A pointer to an <see cref="OVERLAPPED" /> structure. If the socket handle has been opened as overlapped, specifying this parameter results in an overlapped (asynchronous) I/O operation.</param>
 			/// <param name="dwFlags">A set of flags that customizes processing of the function call.</param>
 			/// <param name="reserved">Reserved. Must be zero.</param>
 			/// <returns>
@@ -392,13 +392,13 @@ namespace SXN
 			/// </summary>
 			/// <param name="SocketQueue">A descriptor that identifies a connected registered I/O TCP socket or a bound registered I/O UDP socket.</param>
 			/// <param name="pData">A description of the portion of the registered buffer from which to send data. This parameter may be <c>null</c> for a bound registered I/O UDP socket if the application does not need to send a data payload in the UDP datagram.</param>
-			/// <param name="DataBufferCount">A data buffer count parameter that indicates if data is to be sent in the buffer pointed to by the <paramref="pData" /> parameter.</param>
+			/// <param name="DataBufferCount">A data buffer count parameter that indicates if data is to be sent in the buffer pointed to by the <c>pData</c> parameter.</param>
 			/// <param name="Flags">A set of flags that modify the behavior of the function.</param>
 			/// <param name="RequestContext">The request context to associate with this send operation.</param>
 			/// <returns>
 			/// If no error occurs, returns <c>true</c>. In this case, the send operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
 			/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.
-			/// A specific error code can be retrieved by calling the <see cref="WinsockInterop.WSAGetLastError" /> function.
+			/// A specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 			/// </returns>
 			inline BOOL RIOSend(RIO_RQ SocketQueue, PRIO_BUF pData, DWORD DataBufferCount, DWORD Flags, PVOID RequestContext)
 			{
