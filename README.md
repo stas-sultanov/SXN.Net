@@ -2,4 +2,4 @@
 
 A Tcp Server
 
-Uses winsocks and Registered IO extensions
+Uses winsocks IOCP and Registered IO extensions
