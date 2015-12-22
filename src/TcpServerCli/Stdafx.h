@@ -12,6 +12,9 @@
 
 #include <mstcpip.h>
 
+#include <In6addr.h>
+
+
 #pragma comment(lib, "Ws2_32.lib")
 
 #include "Winsock.h"

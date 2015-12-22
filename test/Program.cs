@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +18,9 @@ namespace SXN.Net
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				Port = 5001,
+				AcceptPoint = new IPEndPoint(IPAddress.Any, 5001),
+				AcceptQueueMaxEntriesCount = 1024,
+				AcceptQueueWaitTime = TimeSpan.FromMilliseconds(2),
 				ReceiveBufferLength = 512,
 				SendBufferLength = 512,
 				ConnectionsBacklogLength = 4096,

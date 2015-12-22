@@ -245,22 +245,38 @@ namespace SXN
 
 			static Boolean StartListen(SOCKET listenSocket, TcpWorkerSettings^ settings)
 			{
-
-				// try bind
+				// bind
 				{
-					// compose address
-					IN_ADDR address;
-
-					address.S_un.S_addr = 0;
+					auto acceptPoint = settings->AcceptPoint;
 
 					// compose socket address
 					SOCKADDR_IN socketAddress;
 
-					socketAddress.sin_family = AF_INET;
-					socketAddress.sin_port = ::htons(settings->Port);
-					socketAddress.sin_addr = address;
+					// set address family
+					socketAddress.sin_family = (ADDRESS_FAMILY) acceptPoint->AddressFamily;
 
-					// try associate address with socket
+					// set port
+					socketAddress.sin_port = ::htons(acceptPoint->Port);
+
+					// set address
+					if (acceptPoint->AddressFamily == System::Net::Sockets::AddressFamily::InterNetwork)
+					{
+						IN_ADDR address;
+
+						address.S_un.S_addr = 0;
+
+						socketAddress.sin_addr = address;
+					}
+					else
+					{
+						IN6_ADDR address;
+
+						//address.u.Word[0] = 0;
+
+						//socketAddress.sin_addr = address;
+					}
+
+					// associate address with socket
 					auto bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
 
 					if (bindResult == SOCKET_ERROR)
@@ -269,7 +285,7 @@ namespace SXN
 					}
 				}
 
-				// try start listen
+				// start listen
 				{
 					auto startListen = ::listen(listenSocket, settings->ConnectionsBacklogLength);
 

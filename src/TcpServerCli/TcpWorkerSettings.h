@@ -3,6 +3,8 @@
 #include "Stdafx.h"
 
 using namespace System;
+using namespace System::Net;
+using namespace System::Net::Sockets;
 
 namespace SXN
 {
@@ -22,6 +24,8 @@ namespace SXN
 			static initonly UInt32 allocationGranularity;
 
 			Int32 useProcessorsCount;
+
+			IPEndPoint^ acceptPoint;
 
 			#pragma endregion
 
@@ -58,11 +62,6 @@ namespace SXN
 					return processorsCount;
 				}
 			}
-
-			/// <summary>
-			/// Specifies the port on which to listen for incoming connection attempts.
-			/// </summary>
-			property UInt16 Port;
 
 			/// <summary>
 			/// The length in bytes of the memory buffer for receive operations.
@@ -158,9 +157,31 @@ namespace SXN
 			/// </summary>
 			property TimeSpan AcceptQueueWaitTime;
 
-			property Boolean UseIPv6;
+			/// <summary>
+			/// The Internet Protocol address and port on which to listen the incoming connections.
+			/// </summary>
+			property IPEndPoint^ AcceptPoint
+			{
+				IPEndPoint^ get()
+				{
+					return acceptPoint;
+				}
 
-			property System::Net::IPAddress^ ListenAddress;
+				void set(IPEndPoint^ value)
+				{
+					if (value == nullptr)
+					{
+						throw gcnew ArgumentNullException("value");
+					}
+
+					if ((value->AddressFamily != AddressFamily::InterNetwork) || (value->AddressFamily != AddressFamily::InterNetworkV6))
+					{
+						throw gcnew ArgumentOutOfRangeException("value.AddressFamily");
+					}
+
+					acceptPoint = value;
+				}
+			}
 
 			#pragma endregion
 
