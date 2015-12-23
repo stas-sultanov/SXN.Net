@@ -256,6 +256,9 @@ namespace SXN
 						// compose socket address
 						SOCKADDR_IN socketAddress;
 
+						// reset memory
+						memset(&socketAddress, 0, sizeof(SOCKADDR_IN));
+
 						// set address family
 						socketAddress.sin_family = AF_INET;
 
@@ -279,7 +282,8 @@ namespace SXN
 						// compose socket address
 						SOCKADDR_IN6 socketAddress;
 
-						memset(&socketAddress, sizeof(SOCKADDR_IN6));
+						// reset memory
+						memset(&socketAddress, 0, sizeof(SOCKADDR_IN6));
 
 						// set address family
 						socketAddress.sin6_family = AF_INET6;
