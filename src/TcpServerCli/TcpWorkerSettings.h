@@ -174,7 +174,7 @@ namespace SXN
 						throw gcnew ArgumentNullException("value");
 					}
 
-					if ((value->AddressFamily != AddressFamily::InterNetwork) || (value->AddressFamily != AddressFamily::InterNetworkV6))
+					if ((value->AddressFamily != AddressFamily::InterNetwork) && (value->AddressFamily != AddressFamily::InterNetworkV6))
 					{
 						throw gcnew ArgumentOutOfRangeException("value.AddressFamily");
 					}

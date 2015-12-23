@@ -14,6 +14,7 @@
 
 #include <In6addr.h>
 
+#include <Ws2ipdef.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 

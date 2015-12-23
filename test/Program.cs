@@ -18,7 +18,7 @@ namespace SXN.Net
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				AcceptPoint = new IPEndPoint(IPAddress.Any, 5001),
+				AcceptPoint = new IPEndPoint(IPAddress.IPv6Loopback/*Parse("104.5.23.4")*/, 5001),
 				AcceptQueueMaxEntriesCount = 1024,
 				AcceptQueueWaitTime = TimeSpan.FromMilliseconds(2),
 				ReceiveBufferLength = 512,

@@ -74,7 +74,11 @@ namespace SXN
 
 				// initialize listen socket
 				{
-					listenSocket = ::WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
+					// get address family from the accept point
+					auto addressFamily = (int) settings->AcceptPoint->AddressFamily;
+
+					// create socket
+					listenSocket = ::WSASocket(addressFamily, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
 
 					// check if operation has failed
 					if (listenSocket == INVALID_SOCKET)
@@ -206,13 +210,7 @@ namespace SXN
 						return false;
 					}
 
-					auto resultLength = (int) sizeof(BOOL);
-
-					auto getNagleStatus = getsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&boolValue, &resultLength);
-
-					Console::WriteLine("socket {0} TCP_NODELAY state {1}", listenSocket, boolValue);
-
-					/* EXPEREMENTAL */
+					/* EXPEREMENTAL *
 					int intValue = 0;
 
 					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
@@ -221,7 +219,8 @@ namespace SXN
 					if (setBufferResult == SOCKET_ERROR)
 					{
 						return false;
-					}/**/
+					}
+					/**/
 				}
 
 				// enable faster operations on the loop-back if requested
@@ -249,35 +248,57 @@ namespace SXN
 				{
 					auto acceptPoint = settings->AcceptPoint;
 
-					// compose socket address
-					SOCKADDR_IN socketAddress;
-
-					// set address family
-					socketAddress.sin_family = (ADDRESS_FAMILY) acceptPoint->AddressFamily;
-
-					// set port
-					socketAddress.sin_port = ::htons(acceptPoint->Port);
+					int bindResult;
 
 					// set address
 					if (acceptPoint->AddressFamily == System::Net::Sockets::AddressFamily::InterNetwork)
 					{
-						IN_ADDR address;
+						// compose socket address
+						SOCKADDR_IN socketAddress;
 
-						address.S_un.S_addr = 0;
+						// set address family
+						socketAddress.sin_family = AF_INET;
 
-						socketAddress.sin_addr = address;
+						// set port
+						socketAddress.sin_port = ::htons(acceptPoint->Port);
+
+						// get address as bytes
+						auto addressBytes = acceptPoint->Address->GetAddressBytes();
+
+						// set address
+						socketAddress.sin_addr.S_un.S_un_b.s_b1 = addressBytes[0];
+						socketAddress.sin_addr.S_un.S_un_b.s_b2 = addressBytes[1];
+						socketAddress.sin_addr.S_un.S_un_b.s_b3 = addressBytes[2];
+						socketAddress.sin_addr.S_un.S_un_b.s_b4 = addressBytes[3];
+
+						// associate address with socket
+						auto bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
 					}
 					else
 					{
-						IN6_ADDR address;
+						// compose socket address
+						SOCKADDR_IN6 socketAddress;
 
-						//address.u.Word[0] = 0;
+						memset(&socketAddress, sizeof(SOCKADDR_IN6));
 
-						//socketAddress.sin_addr = address;
+						// set address family
+						socketAddress.sin6_family = AF_INET6;
+
+						// set port
+						socketAddress.sin6_port = ::htons(acceptPoint->Port);
+
+						// get address as bytes
+						auto addressBytes = acceptPoint->Address->GetAddressBytes();
+
+						// set address
+						for (auto index = 0; index < 16; index++)
+						{
+							socketAddress.sin6_addr.u.Byte[index] = addressBytes[index];
+						}
+
+						// associate address with socket
+						bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN6));
 					}
-
-					// associate address with socket
-					auto bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
 
 					if (bindResult == SOCKET_ERROR)
 					{
