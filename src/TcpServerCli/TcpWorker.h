@@ -327,6 +327,9 @@ namespace SXN
 
 			#pragma region Static Constructor
 
+			/// <summary>
+			/// Processes the accept requests.
+			/// </summary>
 			[System::Security::SuppressUnmanagedCodeSecurity]
 			void ProcessAcceptRequests()
 			{
