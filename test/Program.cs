@@ -3,8 +3,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-//using SXN.Net.Winsock;
-
 namespace SXN.Net
 {
 	internal static class Program
@@ -18,7 +16,7 @@ namespace SXN.Net
 			// 0 initialize server settings
 			var serverSettings = new TcpWorkerSettings
 			{
-				AcceptPoint = new IPEndPoint(IPAddress.Parse("2001:0:5ef5:79fb:142a:29b9:4f88:b3a6"), 5001),
+				AcceptPoint = new IPEndPoint(IPAddress.Loopback, /*IPAddress.Parse("2001:0:5ef5:79fb:142a:29b9:4f88:b3a6")*/ 5001),
 				AcceptQueueMaxEntriesCount = 1024,
 				AcceptQueueWaitTime = TimeSpan.FromMilliseconds(2),
 				ReceiveBufferLength = 512,

@@ -275,7 +275,7 @@ namespace SXN
 						socketAddress.sin_addr.S_un.S_un_b.s_b4 = addressBytes[3];
 
 						// associate address with socket
-						auto bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
+						bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
 					}
 					else
 					{
