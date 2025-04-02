@@ -22,11 +22,7 @@ namespace SXN::Net
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Connection" /> class.
 		/// </summary>
-		/// <param name="listenSocket">The descriptor of the listening socket.</param>
-		/// <param name="pWinsock">A pointer to the object that provides work with Winsock extensions.</param>
-		/// <param name="id">The unique identifier of the worker.</param>
-		/// <param name="segmentLength">The length of the segment.</param>
-		/// <param name="connectionsCount">The count of the segments.</param>
+		/// <param name="connection">The connection.</param>
 		inline Connection(TcpConnection* connection)
 		{
 			this->connection = connection;
@@ -92,7 +88,7 @@ namespace SXN::Net
 
 		inline void EndSend(unsigned int bytesTransferred)
 		{
-			connection->state = ConnectionState::Sent;
+			connection->state = ConnectionState::Transmitted;
 
 			//Console::WriteLine("Connection[{0}]::EndSend {1} bytes", connection->connectionSocket, bytesTransferred);
 

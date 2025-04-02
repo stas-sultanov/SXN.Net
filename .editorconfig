@@ -1,8 +1,7 @@
 # Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
 
-# C# files
-[*.cs]
+[*]
 
 #### Core EditorConfig Options ####
 
@@ -15,8 +14,14 @@ tab_width = 4
 end_of_line = crlf
 insert_final_newline = true
 
+# Trim trailing whitespace
+trim_trailing_whitespace = true
+
 # Header
 file_header_template = Created by Stas Sultanov.\nCopyright © Stas Sultanov.
+
+# C# files
+[*.cs]
 
 #### .NET Code Actions ####
 

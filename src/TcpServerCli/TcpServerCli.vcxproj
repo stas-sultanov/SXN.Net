@@ -1,101 +1,101 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <EnableManagedPackageReferenceSupport>true</EnableManagedPackageReferenceSupport>
-    <Keyword>NetCoreCProj</Keyword>
-    <ProjectGuid>{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}</ProjectGuid>
-    <RootNamespace>TcpServer</RootNamespace>
-    <TargetFramework>net9.0</TargetFramework>
-    <VCProjectVersion>17.0</VCProjectVersion>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup>
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
-    <CLRSupport>NetCore</CLRSupport>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <UseDebugLibraries>true</UseDebugLibraries>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <UseDebugLibraries>false</UseDebugLibraries>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <WarningLevel>Level3</WarningLevel>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="Connection.h" />
-    <ClInclude Include="ConnectionState.h" />
-    <ClInclude Include="IocpWorker.h" />
-    <ClInclude Include="Ovelapped.h" />
-    <ClInclude Include="ReceiveTask.h" />
-    <ClInclude Include="RioBufferPool.h" />
-    <ClInclude Include="SendTask.h" />
-    <ClInclude Include="Stdafx.h" />
-    <ClInclude Include="TcpConnection.h" />
-    <ClInclude Include="TcpServerException.h" />
-    <ClInclude Include="TcpWorker.h" />
-    <ClInclude Include="TcpWorkerSettings.h" />
-    <ClInclude Include="WinsockErrorCode.h" />
-    <ClInclude Include="Winsock.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="AssemblyInfo.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Stdafx.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+	<ItemGroup Label="ProjectConfigurations">
+		<ProjectConfiguration Include="Debug|x64">
+			<Configuration>Debug</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="Release|x64">
+			<Configuration>Release</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+	</ItemGroup>
+	<PropertyGroup Label="Globals">
+		<EnableManagedPackageReferenceSupport>true</EnableManagedPackageReferenceSupport>
+		<Keyword>NetCoreCProj</Keyword>
+		<ProjectGuid>{30AEF4FC-3713-44A8-A807-96E8A32E3B0B}</ProjectGuid>
+		<RootNamespace>TcpServer</RootNamespace>
+		<TargetFramework>net9.0</TargetFramework>
+		<VCProjectVersion>17.0</VCProjectVersion>
+		<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+	<PropertyGroup>
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<PlatformToolset>v143</PlatformToolset>
+		<CLRSupport>NetCore</CLRSupport>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+		<UseDebugLibraries>true</UseDebugLibraries>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+		<UseDebugLibraries>false</UseDebugLibraries>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+	</ImportGroup>
+	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+	</ImportGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<LinkIncremental>true</LinkIncremental>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<LinkIncremental>false</LinkIncremental>
+	</PropertyGroup>
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+			<GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
+			<InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<LanguageStandard>stdcpp20</LanguageStandard>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+			<PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+			<WarningLevel>Level3</WarningLevel>
+		</ClCompile>
+		<Link>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+		</Link>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<ClCompile>
+			<Optimization>Disabled</Optimization>
+			<PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+		</ClCompile>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<ClCompile>
+			<PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+		</ClCompile>
+	</ItemDefinitionGroup>
+	<ItemGroup>
+		<ClInclude Include="Connection.h" />
+		<ClInclude Include="ConnectionState.h" />
+		<ClInclude Include="IocpWorker.h" />
+		<ClInclude Include="Ovelapped.h" />
+		<ClInclude Include="ReceiveTask.h" />
+		<ClInclude Include="RioBufferPool.h" />
+		<ClInclude Include="SendTask.h" />
+		<ClInclude Include="Stdafx.h" />
+		<ClInclude Include="TcpConnection.h" />
+		<ClInclude Include="TcpServerException.h" />
+		<ClInclude Include="TcpWorker.h" />
+		<ClInclude Include="TcpWorkerSettings.h" />
+		<ClInclude Include="WinsockErrorCode.h" />
+		<ClInclude Include="Winsock.h" />
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="AssemblyInfo.cpp" />
+		<ClCompile Include="main.cpp" />
+		<ClCompile Include="Stdafx.cpp">
+			<PrecompiledHeader>Create</PrecompiledHeader>
+		</ClCompile>
+	</ItemGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -8,14 +8,16 @@ using namespace System::Net::Sockets;
 
 namespace SXN::Net
 {
+	ref class TcpWorker;
+
 	/// <summary>
-	/// Specifies the configuration settings for the <see cref="TcpWorker" /> class.
+	/// Specifies the configuration settings for the <see cref="TcpWorker"/> class.
 	/// </summary>
 	public ref class TcpWorkerSettings
 	{
 	private:
 
-#pragma region Static Fields
+		#pragma region Static Fields
 
 		/// <summary>
 		/// The number of logical processors available in the current system.
@@ -27,24 +29,7 @@ namespace SXN::Net
 		/// </summary>
 		static initonly UInt32 allocationGranularity;
 
-#pragma endregion
-
-		Int32 useProcessorsCount;
-
-		IPEndPoint^ acceptPoint;
-
-#pragma endregion
-
-	public:
-
-#pragma region Constant and Static Fields
-
-		/// <summary>
-		/// The maximum number of connections that can be queued for acceptance.
-		/// </summary>
-		const Int32 MaxConnections = SOMAXCONN;
-
-#pragma endregion
+		#pragma endregion
 
 		static TcpWorkerSettings()
 		{
@@ -59,7 +44,24 @@ namespace SXN::Net
 			allocationGranularity = sysinfo.dwAllocationGranularity;
 		}
 
-#pragma region Properties
+		Int32 useProcessorsCount;
+
+		IPEndPoint^ acceptPoint;
+
+		#pragma endregion
+
+	public:
+
+		#pragma region Constant and Static Fields
+
+		/// <summary>
+		/// The maximum number of connections that can be queued for acceptance.
+		/// </summary>
+		const Int32 MaxConnections = SOMAXCONN;
+
+		#pragma endregion
+
+		#pragma region Properties
 
 		/// <summary>
 		/// Gets the number of logical processors available in the current system.
@@ -131,6 +133,7 @@ namespace SXN::Net
 				{
 					throw gcnew ArgumentOutOfRangeException("value");
 				}
+
 				useProcessorsCount = value;
 			}
 		}
@@ -200,6 +203,6 @@ namespace SXN::Net
 			}
 		}
 
-#pragma endregion
+		#pragma endregion
 	};
 }

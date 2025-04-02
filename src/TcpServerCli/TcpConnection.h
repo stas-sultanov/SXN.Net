@@ -3,182 +3,182 @@
 #include "Stdafx.h"
 #include "Winsock.h"
 #include "Ovelapped.h"
+#include "ConnectionState.h"
 
 #pragma unmanaged
 
-namespace SXN
+namespace SXN::Net
 {
-	namespace Net
+	/// <summary>
+	/// Provides work with a TCP connection.
+	/// </summary>
+	public class TcpConnection final
 	{
+	public:
+
+		#pragma region Fields
+
 		/// <summary>
-		/// Provides work with a TCP connection.
+		/// A reference to the object that provides work with the Winsock extensions.
 		/// </summary>
-		public class TcpConnection final
+		Winsock& winsock;
+
+		/// <summary>
+		/// The descriptor of the listening socket.
+		/// </summary>
+		SOCKET listenSocket;
+
+		/// <summary>
+		/// The descriptor of the connection socket.
+		/// </summary>
+		SOCKET connectionSocket;
+
+		/// <summary>
+		/// The descriptor of the socket within the Registered I/O extension.
+		/// </summary>
+		RIO_RQ rioRequestQueue;
+
+		/// <summary>
+		/// The descriptor of the portion of the registered buffer used for receiving data.
+		/// </summary>
+		PRIO_BUF rioReceiveBuffer;
+
+		/// <summary>
+		/// The descriptor of the portion of the registered buffer used for sending data.
+		/// </summary>
+		PRIO_BUF rioSendBuffer;
+
+		/// <summary>
+		/// The pointer to the IP address of the client which has requested the connection.
+		/// </summary>
+		PVOID clientAddress;
+
+		Ovelapped* acceptOverlapped;
+
+		Ovelapped* disconnectOverlaped;
+
+		ULONG id;
+
+		#pragma endregion
+
+	public:
+
+		ConnectionState state;
+
+		#pragma region Constructor & Destructor
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TcpConnection" /> class.
+		/// </summary>
+		/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
+		/// <param name="listenSocket">The descriptor of the listening socket.</param>
+		/// <param name="connectionSocket">The descriptor of the connection socket.</param>
+		/// <param name="rioRequestQueue">The descriptor of the socket within the Registered I/O extension.</param>
+		inline TcpConnection(Winsock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
+			: winsock(winsock)
 		{
-			public :
+			this->id = id;
 
-			#pragma region Fields
+			this->listenSocket = listenSocket;
 
-			/// <summary>
-			/// A reference to the object that provides work with the Winsock extensions.
-			/// </summary>
-			Winsock& winsock;
+			this->connectionSocket = connectionSocket;
 
-			/// <summary>
-			/// The descriptor of the listening socket.
-			/// </summary>
-			SOCKET listenSocket;
+			this->rioRequestQueue = rioRequestQueue;
 
-			/// <summary>
-			/// The descriptor of the connection socket.
-			/// </summary>
-			SOCKET connectionSocket;
+			this->clientAddress = new char[(sizeof(sockaddr_in) + 16) * 2];
 
-			/// <summary>
-			/// The descriptor of the socket within the Registered I/O extension.
-			/// </summary>
-			RIO_RQ rioRequestQueue;
-
-			/// <summary>
-			/// The descriptor of the portion of the registered buffer used for receiving data.
-			/// </summary>
-			PRIO_BUF rioReceiveBuffer;
-
-			/// <summary>
-			/// The descriptor of the portion of the registered buffer used for sending data.
-			/// </summary>
-			PRIO_BUF rioSendBuffer;
-
-			/// <summary>
-			/// The pointer to the IP address of the client which has requested the connection.
-			/// </summary>
-			PVOID clientAddress;
-
-			Ovelapped* acceptOverlapped;
-
-			Ovelapped* disconnectOverlaped;
-
-			ULONG id;
-
-			#pragma endregion
-
-			public:
-
-			ConnectionState state;
-
-			#pragma region Constructor & Destructor
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="TcpConnection" /> class.
-			/// </summary>
-			/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
-			/// <param name="listenSocket">The descriptor of the listening socket.</param>
-			/// <param name="connectionSocket">The descriptor of the connection socket.</param>
-			/// <param name="rioRequestQueue">The descriptor of the socket within the Registered I/O extension.</param>
-			inline TcpConnection(Winsock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
-				: winsock(winsock)
 			{
-				this->id = id;
+				this->acceptOverlapped = new Ovelapped();
 
-				this->listenSocket = listenSocket;
+				memset(acceptOverlapped, 0, sizeof(Ovelapped));
 
-				this->connectionSocket = connectionSocket;
+				acceptOverlapped->connectionId = id;
 
-				this->rioRequestQueue = rioRequestQueue;
+				acceptOverlapped->workerId = workerId;
 
-				this->clientAddress = new char[(sizeof(sockaddr_in) + 16) * 2];
+				acceptOverlapped->action = SOCK_ACTION_ACCEPT;
 
-				{
-					this->acceptOverlapped = new Ovelapped();
+				acceptOverlapped->connection = this;
 
-					memset(acceptOverlapped, 0, sizeof(Ovelapped));
+				acceptOverlapped->connectionSocket = connectionSocket;
 
-					acceptOverlapped->connectionId = id;
-
-					acceptOverlapped->workerId = workerId;
-
-					acceptOverlapped->action = SOCK_ACTION_ACCEPT;
-
-					acceptOverlapped->connection = this;
-
-					acceptOverlapped->connectionSocket = connectionSocket;
-
-					acceptOverlapped->completionPort = complitionPort;
-				}
-
-				{
-					this->disconnectOverlaped = new Ovelapped();
-
-					memset(disconnectOverlaped, 0, sizeof(Ovelapped));
-
-					disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
-
-					disconnectOverlaped->connection = this;
-
-					disconnectOverlaped->connectionSocket = connectionSocket;
-
-					disconnectOverlaped->completionPort = complitionPort;
-				}
-
-				state = ConnectionState::Disconnected;
+				acceptOverlapped->completionPort = complitionPort;
 			}
 
-			inline ~TcpConnection()
 			{
-				delete clientAddress;
+				this->disconnectOverlaped = new Ovelapped();
+
+				memset(disconnectOverlaped, 0, sizeof(Ovelapped));
+
+				disconnectOverlaped->action = SOCK_ACTION_DISCONNECT;
+
+				disconnectOverlaped->connection = this;
+
+				disconnectOverlaped->connectionSocket = connectionSocket;
+
+				disconnectOverlaped->completionPort = complitionPort;
 			}
 
-			#pragma endregion
+			state = ConnectionState::Disconnected;
+		}
 
-			#pragma region Methods
+		inline ~TcpConnection()
+		{
+			delete clientAddress;
+		}
 
-			inline BOOL StartAccept()
-			{
-				state = ConnectionState::Accepting;
+		#pragma endregion
 
-				DWORD dwBytes;
+		#pragma region Methods
 
-				return winsock.AcceptEx(listenSocket, connectionSocket, clientAddress, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
-			}
+		inline BOOL StartAccept()
+		{
+			state = ConnectionState::Accepting;
 
-			inline int EndAccepet() const
-			{
-				return ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
-			}
+			DWORD dwBytes;
 
-			inline void GetSourceAddress()
-			{
-				//winsock.GetAcceptExSockaddrs();
-			}
+			return winsock.AcceptEx(listenSocket, connectionSocket, clientAddress, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
+		}
 
-			inline BOOL StartRecieve()
-			{
-				state = ConnectionState::Receiving;
+		inline int EndAccept()
+		{
+			state = ConnectionState::Accepted;
 
-				return winsock.RIOReceive(rioRequestQueue, rioReceiveBuffer, 1, 0, (PVOID) id);
-			}
+			return ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char*)&listenSocket, sizeof(SOCKET));
+		}
 
-			inline BOOL StartSend(DWORD dataLength)
-			{
-				state = ConnectionState::Sending;
+		inline void GetSourceAddress()
+		{
+			//winsock.GetAcceptExSockaddrs();
+		}
 
-				rioSendBuffer->Length = dataLength;
+		inline BOOL StartRecieve()
+		{
+			state = ConnectionState::Receiving;
 
-				return winsock.RIOSend(rioRequestQueue, rioSendBuffer, 1, 0, (PVOID) id);
-			}
+			return winsock.RIOReceive(rioRequestQueue, rioReceiveBuffer, 1, 0, (PVOID)id);
+		}
 
-			inline BOOL StartDisconnect()
-			{
-				state = ConnectionState::Disconnecting;
+		inline BOOL StartSend(DWORD dataLength)
+		{
+			state = ConnectionState::Transmitting;
 
-				//return winsock.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+			rioSendBuffer->Length = dataLength;
 
-				return winsock.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
-			}
+			return winsock.RIOSend(rioRequestQueue, rioSendBuffer, 1, 0, (PVOID)id);
+		}
 
-			#pragma endregion
-		};
-	}
+		inline BOOL StartDisconnect()
+		{
+			state = ConnectionState::Disconnecting;
+
+			//return winsock.DisconnectEx(connectionSocket, disconnectOverlaped, TF_REUSE_SOCKET, 0);
+
+			return winsock.DisconnectEx(connectionSocket, NULL, TF_REUSE_SOCKET, 0);
+		}
+
+		#pragma endregion
+	};
 }
 
 #pragma managed

@@ -11,6 +11,36 @@ namespace SXN::Net
 	{
 	private:
 
+		#pragma region Static Methods
+
+		/// <summary>
+		/// Gets the address of the function within the Winsock extensions.
+		/// </summary>
+		/// <param name="socket">The descriptor of the socket.</param>
+		/// <param name="extensionId">The unique identifier of the Winsock extension.</param>
+		/// <param name="pFunction">A pointer to the memory where to place address of the function.</param>
+		/// <returns>
+		/// Upon successful completion, returns <c>0</c>.
+		/// Otherwise, a value of <c>SOCKET_ERROR</c> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
+		/// </returns>
+		static inline int GetExtensionFunctionAddress
+		(
+			_In_ SOCKET socket,
+			_In_ GUID extensionId,
+			_Out_ LPVOID pFunction
+		)
+		{
+			// will contain actual pointer size
+			DWORD actualPtrSize;
+
+			// get function address
+			auto result = ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), pFunction, sizeof(LPFN_ACCEPTEX), &actualPtrSize, nullptr, nullptr);
+
+			return result;
+		}
+
+		#pragma endregion
+
 		#pragma region Fields
 
 		LPFN_ACCEPTEX pAcceptEx;
@@ -95,31 +125,6 @@ namespace SXN::Net
 			this->pRIOSend = rioFunctionsTable.RIOSend;
 
 			this->pRIOSendEx = rioFunctionsTable.RIOSendEx;
-		}
-
-		#pragma endregion
-
-		#pragma region Methods
-
-		/// <summary>
-		/// Gets the address of the function within the Winsock extensions.
-		/// </summary>
-		/// <param name="socket">The descriptor of the socket.</param>
-		/// <param name="extensionId">The unique identifier of the Winsock extension.</param>
-		/// <param name="pFunction">A pointer to the memory where to place address of the function.</param>
-		/// <returns>
-		/// Upon successful completion, returns <c>0</c>.
-		/// Otherwise, a value of <c>SOCKET_ERROR</c> is returned, and a specific error code can be retrieved by calling <see cref="WSAGetLastError" />.
-		/// </returns>
-		static inline int GetExtensionFunctionAddress(SOCKET socket, GUID extensionId, _Out_ LPVOID pFunction)
-		{
-			// will contain actual pointer size
-			DWORD actualPtrSize;
-
-			// get function pointer
-			auto result = ::WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &extensionId, sizeof(GUID), pFunction, sizeof(LPFN_ACCEPTEX), &actualPtrSize, nullptr, nullptr);
-
-			return result;
 		}
 
 		#pragma endregion

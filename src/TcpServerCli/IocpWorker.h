@@ -399,7 +399,7 @@ namespace SXN::Net
 							// end receive
 							connection->EndReceive(rioResult.BytesTransferred);
 						}
-						else if (connection->State == Sending)
+						else if (connection->State == ConnectionState::Transmitting)
 						{
 							// set connection state to sent
 							//connection->state = SXN::Net::ConnectionState::Sent;

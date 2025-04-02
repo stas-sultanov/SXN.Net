@@ -410,7 +410,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The file handle reference is no longer available.
 		/// </remarks>
-		Stale = WSAESTALE/*,
+		Stale = WSAESTALE,
 
 		/// <summary>
 		/// Item is remote.
@@ -418,7 +418,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The item is not available locally.
 		/// </remarks>
-		WSAEREMOTE = 10071,
+		Remote = WSAEREMOTE,
 
 		/// <summary>
 		/// Network subsystem is unavailable.
@@ -429,7 +429,7 @@ namespace SXN::Net
 		/// That they are not trying to use more than one Windows Sockets implementation simultaneously. If there is more than one Winsock DLL on your system, be sure the first one in the path is appropriate for the network subsystem currently loaded.
 		/// The Windows Sockets implementation documentation to be sure all necessary components are currently installed and configured correctly.
 		/// </remarks>
-		WSASYSNOTREADY = 10091,
+		NotReady = WSASYSNOTREADY,
 
 		/// <summary>
 		/// Winsock.dll version out of range.
@@ -437,7 +437,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The current Windows Sockets implementation does not support the Windows Sockets specification version requested by the application.Check that no old Windows Sockets DLL files are being accessed.
 		/// </remarks>
-		WSAVERNOTSUPPORTED = 10092,
+		VersionNotSupported = WSAVERNOTSUPPORTED,
 
 		/// <summary>
 		/// Successful WSAStartup not yet performed.
@@ -445,7 +445,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// Either the application has not called WSAStartup or WSAStartup failed. The application may be accessing a socket that the current active task does not own (that is, trying to share a socket between tasks), or WSACleanup has been called too many times.
 		/// </remarks>
-		WSANOTINITIALISED = 10093,
+		NotInitialised = WSANOTINITIALISED,
 
 		/// <summary>
 		/// Graceful shutdown in progress.
@@ -453,7 +453,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// Returned by WSARecv and WSARecvFrom to indicate that the remote party has initiated a graceful shutdown sequence.
 		/// </remarks>
-		WSAEDISCON = 10101,
+		Disconnecting = WSAEDISCON,
 
 		/// <summary>
 		/// No more results.
@@ -461,7 +461,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// No more results can be returned by the WSALookupServiceNext function.
 		/// </remarks>
-		WSAENOMORE = 10102,
+		NoMore = WSAENOMORE,
 
 		/// <summary>
 		/// Call has been canceled.
@@ -469,7 +469,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// A call to the WSALookupServiceEnd function was made while this call was still processing. The call has been canceled.
 		/// </remarks>
-		WSAECANCELLED = 10103,
+		Canceled = WSAECANCELLED,
 
 		/// <summary>
 		/// Procedure call table is invalid.
@@ -477,7 +477,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The service provider procedure call table is invalid.A service provider returned a bogus procedure table to Ws2_32.dll.This is usually caused by one or more of the function pointers being NULL.
 		/// </remarks>
-		WSAEINVALIDPROCTABLE = 10104,
+		InvalidProcedureTable = WSAEINVALIDPROCTABLE,
 
 		/// <summary>
 		/// Service provider is invalid.
@@ -485,7 +485,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The requested service provider is invalid.This error is returned by the WSCGetProviderInfo and WSCGetProviderInfo32 functions if the protocol entry specified could not be found. This error is also returned if the service provider returned a version number other than 2.0.
 		/// </remarks>
-		WSAEINVALIDPROVIDER = 10105,
+		InvalidProvider = WSAEINVALIDPROVIDER,
 
 		/// <summary>
 		/// Service provider failed to initialize.
@@ -493,7 +493,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The requested service provider could not be loaded or initialized. This error is returned if either a service provider's DLL could not be loaded (LoadLibrary failed) or the provider's WSPStartup or NSPStartup function failed.
 		/// </remarks>
-		WSAEPROVIDERFAILEDINIT = 10106,
+		ProviderFailedToInitialize = WSAEPROVIDERFAILEDINIT /*,
 
 		/// <summary>
 		/// System call failure.

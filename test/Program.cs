@@ -11,12 +11,14 @@ internal static class Program
 
 	private static void Main()
 	{
+		var acceptPoint = new IPEndPoint(IPAddress.Loopback, 5001);
+
 		_ = ThreadPool.SetMinThreads(256, 256);
 
 		// 0 initialize server settings
 		var serverSettings = new TcpWorkerSettings
 		{
-			AcceptPoint = new IPEndPoint(IPAddress.Loopback, /*IPAddress.Parse("2001:0:5ef5:79fb:142a:29b9:4f88:b3a6")*/ 5001),
+			AcceptPoint = acceptPoint,
 			AcceptQueueMaxEntriesCount = 1024,
 			AcceptQueueWaitTime = TimeSpan.FromMilliseconds(2),
 			ReceiveBufferLength = 512,
@@ -42,7 +44,7 @@ internal static class Program
 			return;
 		}
 
-		Console.WriteLine($"server is activated");
+		Console.WriteLine($"server is listening on {acceptPoint}");
 
 		/*
 		// 2 try accept connection
@@ -66,19 +68,17 @@ internal static class Program
 
 	private static async Task ServeSocket(Connection connection)
 	{
-		//Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
+		Console.WriteLine("Program::ServeSocket[{0:D5}] accepted", connection.Id);
 
 		// asynchronously receive data
 		var receiveResult = await connection.ReceiveAsync();
 
-		// await Task.WaitAny(receiveTask, Task.Delay(2000));
-
-		//Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
+		Console.WriteLine("Program::ServeSocket[{0:D5}] received: {1} bytes", connection.Id, receiveResult);
 
 		// asynchronously receive data
 		var x = await connection.SendAsync();
 
-		//Console.WriteLine("Program::ServeSocket[{0:D5}] sent: {1} bytes", connection.Id, x);
+		Console.WriteLine("Program::ServeSocket[{0:D5}] sent: {1} bytes", connection.Id, x);
 
 		// disconnect
 		connection.Disconnect();
