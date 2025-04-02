@@ -21,5 +21,5 @@
 #include "Winsock.h"
 
 #include "TcpWorkerSettings.h"
-#include "Winsock.h"
+
 #include "IocpWorker.h"

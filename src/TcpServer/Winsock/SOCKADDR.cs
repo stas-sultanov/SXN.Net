@@ -1,37 +1,35 @@
-﻿using System;
+﻿// ReSharper disable All
+
+namespace SXN.Net.Winsock;
+using System;
 using System.Runtime.InteropServices;
 
-// ReSharper disable All
+using SHORT = Int16;
+using CHAR = Byte;
 
-namespace SXN.Net.Winsock
+[StructLayout(LayoutKind.Sequential, Size = 16)]
+internal unsafe struct SOCKADDR
 {
-	using SHORT = Int16;
-	using CHAR = Byte;
+	#region Constant and Static Fields
 
-	[StructLayout(LayoutKind.Sequential, Size = 16)]
-	internal unsafe struct SOCKADDR
-	{
-		#region Constant and Static Fields
+	/// <summary>
+	/// The size of the structure.
+	/// </summary>
+	public const Int32 Size = 16;
 
-		/// <summary>
-		/// The size of the structure.
-		/// </summary>
-		public const Int32 Size = 16;
+	#endregion
 
-		#endregion
+	#region Fields
 
-		#region Fields
+	/// <summary>
+	/// Address family.
+	/// </summary>
+	public SHORT sa_family;
 
-		/// <summary>
-		/// Address family.
-		/// </summary>
-		public SHORT sa_family;
+	/// <summary>
+	/// Up to 14 bytes of direct address.
+	/// </summary>
+	public fixed CHAR sa_data [14];
 
-		/// <summary>
-		/// Up to 14 bytes of direct address.
-		/// </summary>
-		public fixed CHAR sa_data [14];
-
-		#endregion
-	}
+	#endregion
 }

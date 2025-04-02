@@ -1,36 +1,34 @@
-﻿using System;
+﻿// ReSharper disable All
+
+namespace SXN.Net.Winsock;
+using System;
 using System.Runtime.InteropServices;
 
-// ReSharper disable All
+using RIO_BUFFERID = IntPtr;
+using ULONG = UInt32;
 
-namespace SXN.Net.Winsock
+/// <summary>
+/// Specifies a portion of a registered buffer used for sending or receiving network data with the Winsock registered I/O extensions.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct RIO_BUF
 {
-	using RIO_BUFFERID = IntPtr;
-	using ULONG = UInt32;
+	#region Fields
 
 	/// <summary>
-	/// Specifies a portion of a registered buffer used for sending or receiving network data with the Winsock registered I/O extensions.
+	/// The registered buffer descriptor for a Winsock registered I/O buffer used with send and receive requests.
 	/// </summary>
-	[StructLayout(LayoutKind.Sequential)]
-	internal struct RIO_BUF
-	{
-		#region Fields
+	public RIO_BUFFERID BufferId;
 
-		/// <summary>
-		/// The registered buffer descriptor for a Winsock registered I/O buffer used with send and receive requests.
-		/// </summary>
-		public RIO_BUFFERID BufferId;
+	/// <summary>
+	/// The offset, in bytes, into the buffer specified by the <see cref="BufferId" /> member.
+	/// </summary>
+	public ULONG Offset;
 
-		/// <summary>
-		/// The offset, in bytes, into the buffer specified by the <see cref="BufferId" /> member.
-		/// </summary>
-		public ULONG Offset;
+	/// <summary>
+	/// A length, in bytes, of the buffer to use from the <see cref="Offset" /> member.
+	/// </summary>
+	public ULONG Length;
 
-		/// <summary>
-		/// A length, in bytes, of the buffer to use from the <see cref="Offset" /> member.
-		/// </summary>
-		public ULONG Length;
-
-		#endregion
-	}
+	#endregion
 }

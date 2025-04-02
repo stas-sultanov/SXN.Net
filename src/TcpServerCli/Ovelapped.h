@@ -19,24 +19,7 @@ namespace SXN
 {
 	namespace Net
 	{
-		enum ConnectionState : USHORT
-		{
-			Disconnected,
 
-			Accepting,
-
-			Accepted,
-
-			Receiving,
-
-			Received,
-
-			Sending,
-
-			Sent,
-
-			Disconnecting,
-		};
 
 		class TcpConnection;
 

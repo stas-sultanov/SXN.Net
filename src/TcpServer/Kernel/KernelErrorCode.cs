@@ -1,12 +1,11 @@
 ﻿// ReSharper disable All
 
-namespace SXN.Net.Kernel
+namespace SXN.Net.Kernel;
+
+public enum KernelErrorCode : System.Int32
 {
-	public enum KernelErrorCode : int
-	{
-		/// <summary>
-		/// No error.
-		/// </summary>
-		None = 0,
-	}
+	/// <summary>
+	/// No error.
+	/// </summary>
+	None = 0,
 }

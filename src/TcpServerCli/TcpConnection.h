@@ -141,7 +141,7 @@ namespace SXN
 				return winsock.AcceptEx(listenSocket, connectionSocket, clientAddress, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, acceptOverlapped);
 			}
 
-			inline int EndAccepet()
+			inline int EndAccepet() const
 			{
 				return ::setsockopt(connectionSocket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&listenSocket, sizeof(SOCKET));
 			}

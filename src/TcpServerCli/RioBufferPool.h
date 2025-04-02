@@ -192,7 +192,7 @@ namespace SXN
 			/// </summary>
 			/// <param name="bufferIndex">The identifier of the buffer to retrieve.</param>
 			/// <returns>A pointer to the memory block.</returns>
-			inline char* GetBufferData(ULONG bufferIndex)
+			inline char* GetBufferData(ULONG bufferIndex) const
 			{
 				return ((PCHAR) this->memoryBlock) + bufferLength * bufferIndex;
 			}

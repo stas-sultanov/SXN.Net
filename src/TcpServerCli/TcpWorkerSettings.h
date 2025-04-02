@@ -6,211 +6,200 @@ using namespace System;
 using namespace System::Net;
 using namespace System::Net::Sockets;
 
-namespace SXN
+namespace SXN::Net
 {
-	namespace Net
+	/// <summary>
+	/// Specifies the configuration settings for the <see cref="TcpWorker" /> class.
+	/// </summary>
+	public ref class TcpWorkerSettings
 	{
+	private:
+
+#pragma region Static Fields
+
 		/// <summary>
-		/// Specifies the configuration settings of the TCP worker.
+		/// The number of logical processors available in the current system.
 		/// </summary>
-		public ref class TcpWorkerSettings
+		static initonly Int32 processorsCount;
+
+		/// <summary>
+		/// The granularity for the starting address at which virtual memory can be allocated.
+		/// </summary>
+		static initonly UInt32 allocationGranularity;
+
+#pragma endregion
+
+		Int32 useProcessorsCount;
+
+		IPEndPoint^ acceptPoint;
+
+#pragma endregion
+
+	public:
+
+#pragma region Constant and Static Fields
+
+		/// <summary>
+		/// The maximum number of connections that can be queued for acceptance.
+		/// </summary>
+		const Int32 MaxConnections = SOMAXCONN;
+
+#pragma endregion
+
+		static TcpWorkerSettings()
 		{
-			private:
+			// Retrieve system information
+			SYSTEM_INFO sysinfo;
+			::GetSystemInfo(&sysinfo);
 
-			#pragma region Fields
+			// Set the number of logical processors
+			processorsCount = sysinfo.dwNumberOfProcessors;
 
-			static initonly Int32 processorsCount;
+			// Set the allocation granularity
+			allocationGranularity = sysinfo.dwAllocationGranularity;
+		}
 
-			static initonly UInt32 allocationGranularity;
+#pragma region Properties
 
-			Int32 useProcessorsCount;
-
-			IPEndPoint^ acceptPoint;
-
-			#pragma endregion
-
-			public:
-
-			#pragma region Constant and Static Fields
-
-			const Int32 MaxConnections = SOMAXCONN;
-
-			#pragma endregion
-
-			static TcpWorkerSettings()
+		/// <summary>
+		/// Gets the number of logical processors available in the current system.
+		/// </summary>
+		static property Int32 ProcessorsCount
+		{
+			Int32 get()
 			{
-				// get number of processors
-				SYSTEM_INFO sysinfo;
+				return processorsCount;
+			}
+		}
 
-				::GetSystemInfo(&sysinfo);
+		/// <summary>
+		/// Gets or sets the length of the connection backlog queue.
+		/// </summary>
+		/// <remarks>
+		/// The value must be less than the maximum number of ports and will be adjusted to the number of used processors.
+		/// </remarks>
+		property UInt32 ConnectionsBacklogLength;
 
-				processorsCount = sysinfo.dwNumberOfProcessors;
+		/// <summary>
+		/// Gets or sets the length of the receive buffer in bytes.
+		/// </summary>
+		/// <remarks>
+		/// The value will be adjusted to the nearest valid size.
+		/// </remarks>
+		property Int32 ReceiveBufferLength;
 
-				allocationGranularity = sysinfo.dwAllocationGranularity;
+		/// <summary>
+		/// Gets or sets the length of the send buffer in bytes.
+		/// </summary>
+		/// <remarks>
+		/// The value will be adjusted to the nearest valid size.
+		/// </remarks>
+		property Int32 SendBufferLength;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether the Nagle algorithm is used by the server.
+		/// </summary>
+		/// <remarks>
+		/// The Nagle algorithm reduces network traffic by buffering small packets of data and transmitting them as a single packet.
+		/// </remarks>
+		property Boolean UseNagleAlgorithm;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether the TCP Loopback optimization is used by the server.
+		/// </summary>
+		/// <remarks>
+		/// The TCP loopback optimization provides an optimized low-latency loopback path for performance-critical applications that rely on loopback for inter-process communication.
+		/// </remarks>
+		property Boolean UseFastLoopback;
+
+		/// <summary>
+		/// Gets or sets the number of processors to use.
+		/// </summary>
+		/// <remarks>
+		/// If the value is not specified, is zero, or is greater than the actual number of processors, then all available processors will be used.
+		/// </remarks>
+		property Int32 UseProcessorsCount
+		{
+			Int32 get()
+			{
+				return useProcessorsCount;
 			}
 
-
-			#pragma region Properties
-
-			/// <summary>
-			/// The number of processors on the current machine.
-			/// </summary>
-			static property Int32 ProcessorsCount
+			void set(Int32 value)
 			{
-				Int32 get()
+				if ((value < 1) || (value > processorsCount))
 				{
-					return processorsCount;
+					throw gcnew ArgumentOutOfRangeException("value");
 				}
+				useProcessorsCount = value;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the maximum number of outstanding receive operations for RIO.
+		/// </summary>
+		property UInt32 RIOMaxOutstandingReceive;
+
+		/// <summary>
+		/// Gets or sets the maximum number of outstanding send operations for RIO.
+		/// </summary>
+		property UInt32 RIOMaxOutstandingSend;
+
+		/// <summary>
+		/// Gets or sets the maximum number of entries to try to dequeue from the accept queue.
+		/// </summary>
+		property UInt32 AcceptQueueMaxEntriesCount
+		{
+			UInt32 get()
+			{
+				return useProcessorsCount;
 			}
 
-			/// <summary>
-			/// The length in bytes of the memory buffer for receive operations.
-			/// </summary>
-			/// <remarks>
-			/// Must be less than maximum number of ports.
-			/// Value will be ceiled to the number of used processors.
-			/// </remarks>
-			property UInt32 ConnectionsBacklogLength;
-
-			/// <summary>
-			/// The length in bytes of the memory buffer for receive operations.
-			/// </summary>
-			/// <remarks>
-			/// Value will be ceiled.
-			/// </remarks>
-			property Int32 ReceiveBufferLength;
-
-			/// <summary>
-			/// The length in bytes of the memory buffer for receive operations.
-			/// </summary>
-			/// <remarks>
-			/// Value will be ceiled.
-			/// </remarks>
-			property Int32 SendBufferLength;
-
-			/// <summary>
-			/// Determines whether the Nagle algorithm is used by the server.
-			/// </summary>
-			/// <remarks>
-			/// The Nagle algorithm is used to reduce network traffic by buffering small packets of data and transmitting them as a single packet.
-			/// This process is also referred to as "nagling"; it is widely used because it reduces the number of packets transmitted and lowers the overhead per packet.
-			/// </remarks>
-			property Boolean UseNagleAlgorithm;
-
-			/// <summary>
-			/// Determines whether the TCP Loopback optimization is used by the server.
-			/// </summary>
-			/// <remarks>
-			/// The TCP loopback optimization provides an optimized low-latency loopback path for performance-critical applications that rely on loopback for inter-process communication.
-			/// </remarks>
-			property Boolean UseFastLoopback;
-
-			/// <summary>
-			/// The number of processors to use.
-			/// </summary>
-			/// <remarks>
-			/// If value is not specified or is zero or is greater than actual number of processors, then all available processors will be used.
-			/// </remarks>
-			property Int32 UseProcessorsCount
+			void set(UInt32 value)
 			{
-				Int32 get()
+				if (value < 1)
 				{
-					return useProcessorsCount;
+					throw gcnew ArgumentOutOfRangeException("value");
 				}
+				useProcessorsCount = value;
+			}
+		}
 
-				void set(Int32 value)
-				{
-					if ((value < 1) || (value > processorsCount))
-					{
-						throw gcnew ArgumentOutOfRangeException("value");
-					}
-				}
+		/// <summary>
+		/// Gets or sets the time to wait for a request packet to appear in the accept queue.
+		/// </summary>
+		/// <remarks>
+		/// If the value is INFINITE (0xFFFFFFFF), the function will never time out.
+		/// If the value is zero and there is no I/O operation to dequeue, the function will time out immediately.
+		/// </remarks>
+		property TimeSpan AcceptQueueWaitTime;
+
+		/// <summary>
+		/// Gets or sets the Internet Protocol address and port on which to listen for incoming connections.
+		/// </summary>
+		property IPEndPoint^ AcceptPoint
+		{
+			IPEndPoint^ get()
+			{
+				return acceptPoint;
 			}
 
-			property UInt32 RIOMaxOutstandingReceive;
-
-			property UInt32 RIOMaxOutstandingSend;
-
-			/// <summary>
-			/// The maximum number of entries to try to dequeue from the accept queue.
-			/// </summary>
-			property UInt32 AcceptQueueMaxEntriesCount
+			void set(IPEndPoint^ value)
 			{
-				UInt32 get()
+				if (value == nullptr)
 				{
-					return useProcessorsCount;
+					throw gcnew ArgumentNullException("value");
 				}
 
-				void set(UInt32 value)
+				if ((value->AddressFamily != AddressFamily::InterNetwork) && (value->AddressFamily != AddressFamily::InterNetworkV6))
 				{
-					if (value < 1)
-					{
-						throw gcnew ArgumentOutOfRangeException("value");
-					}
+					throw gcnew ArgumentOutOfRangeException("value.AddressFamily");
 				}
+
+				acceptPoint = value;
 			}
+		}
 
-			/// <summary>
-			/// The time to wait for a request packet to appear at the accept queue.
-			/// If value is INFINITE(0xFFFFFFFF), the function will never time out.
-			/// If dwMilliseconds is zero and there is no I / O operation to dequeue, the function will time out immediately.
-			/// </summary>
-			property TimeSpan AcceptQueueWaitTime;
-
-			/// <summary>
-			/// The Internet Protocol address and port on which to listen the incoming connections.
-			/// </summary>
-			property IPEndPoint^ AcceptPoint
-			{
-				IPEndPoint^ get()
-				{
-					return acceptPoint;
-				}
-
-				void set(IPEndPoint^ value)
-				{
-					if (value == nullptr)
-					{
-						throw gcnew ArgumentNullException("value");
-					}
-
-					if ((value->AddressFamily != AddressFamily::InterNetwork) && (value->AddressFamily != AddressFamily::InterNetworkV6))
-					{
-						throw gcnew ArgumentOutOfRangeException("value.AddressFamily");
-					}
-
-					acceptPoint = value;
-				}
-			}
-
-			#pragma endregion
-
-
-			internal:
-
-			/**
-			TcpWorkerSettings^ Validate()
-			{
-				// get number of procssors
-				SYSTEM_INFO sysinfo;
-
-				:: GetSystemInfo(&sysinfo);
-
-				UInt16 numCPU = sysinfo.dwNumberOfProcessors;
-
-				TcpWorkerSettings^ result = gcnew TcpWorkerSettings();
-
-				if (NumberOfProcessors.HasValue)
-				{
-					if ((NumberOfProcessors.Value == 0) || (NumberOfProcessors.Value > numCPU))
-					{
-						throw gcnew ArgumentOutOfRangeException();
-					}
-				}
-
-				result->NumberOfProcessors = NumberOfProcessors.HasValue ? NumberOfProcessors.Value == 0  : numCPU;
-			}
-			/**/
-		};
-	}
+#pragma endregion
+	};
 }
