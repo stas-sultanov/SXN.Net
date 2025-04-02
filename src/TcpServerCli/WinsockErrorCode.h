@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#include "stdafx.h"
+#include "pch.h"
 
 namespace SXN::Net
 {
 	/// <summary>
 	/// Specifies the error code occurred within the winsock library.
 	/// </summary>
-	public enum class WinsockErrorCode : int
+	public enum class WinSockErrorCode : int
 	{
 		/// <summary>
 		/// No error.
@@ -426,13 +426,13 @@ namespace SXN::Net
 		/// <remarks>
 		/// This error is returned by WSAStartup if the Windows Sockets implementation cannot function at this time because the underlying system it uses to provide network services is currently unavailable. Users should check:
 		/// That the appropriate Windows Sockets DLL file is in the current path.
-		/// That they are not trying to use more than one Windows Sockets implementation simultaneously. If there is more than one Winsock DLL on your system, be sure the first one in the path is appropriate for the network subsystem currently loaded.
+		/// That they are not trying to use more than one Windows Sockets implementation simultaneously. If there is more than one WinSock DLL on your system, be sure the first one in the path is appropriate for the network subsystem currently loaded.
 		/// The Windows Sockets implementation documentation to be sure all necessary components are currently installed and configured correctly.
 		/// </remarks>
 		NotReady = WSASYSNOTREADY,
 
 		/// <summary>
-		/// Winsock.dll version out of range.
+		/// WinSock.dll version out of range.
 		/// </summary>
 		/// <remarks>
 		/// The current Windows Sockets implementation does not support the Windows Sockets specification version requested by the application.Check that no old Windows Sockets DLL files are being accessed.
@@ -493,7 +493,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The requested service provider could not be loaded or initialized. This error is returned if either a service provider's DLL could not be loaded (LoadLibrary failed) or the provider's WSPStartup or NSPStartup function failed.
 		/// </remarks>
-		ProviderFailedToInitialize = WSAEPROVIDERFAILEDINIT /*,
+		ProviderFailedToInitialize = WSAEPROVIDERFAILEDINIT,
 
 		/// <summary>
 		/// System call failure.
@@ -503,7 +503,7 @@ namespace SXN::Net
 		/// Returned when a system call that should never fail does fail.For example, if a call to WaitForMultipleEvents fails or one of the registry functions fails trying to manipulate the protocol/namespace catalogs.
 		/// Returned when a provider does not return SUCCESS and does not provide an extended error code.Can indicate a service provider implementation error.
 		/// </remarks>
-		WSASYSCALLFAILURE = 10107,
+		SystemCallFailure = WSASYSCALLFAILURE,
 
 		/// <summary>
 		/// Service not found.
@@ -511,7 +511,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// No such service is known.The service cannot be found in the specified name space.
 		/// </remarks>
-		WSASERVICE_NOT_FOUND = 10108,
+		ServiceNotFound = WSASERVICE_NOT_FOUND,
 
 		/// <summary>
 		/// Class type not found.
@@ -519,7 +519,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// The specified class was not found.
 		/// </remarks>
-		WSATYPE_NOT_FOUND = 10109,
+		ClassTypeNotFound = WSATYPE_NOT_FOUND,
 
 		/// <summary>
 		/// No more results.
@@ -527,7 +527,7 @@ namespace SXN::Net
 		/// <remarks>
 		/// No more results can be returned by the WSALookupServiceNext function.
 		/// </remarks>
-		WSA_E_NO_MORE = 10110,
+		NoMoreResults = WSA_E_NO_MORE/*,
 
 		/// <summary>
 		/// Call was canceled.
@@ -725,7 +725,7 @@ namespace SXN::Net
 		/// Incorrect QoS flow count.
 		/// </summary>
 		/// <remarks>
-		/// An incorrect number of flow descriptors was specified in the QoS structure.
+		/// An incorrect number of flow specificators was specified in the QoS structure.
 		/// </remarks>
 		WSA_QOS_EFLOWCOUNT = 11023,
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Stdafx.h"
-#include "Winsock.h"
+#include "pch.h"
+#include "WinSock.h"
 #include "Ovelapped.h"
 #include "ConnectionState.h"
 
@@ -19,9 +19,9 @@ namespace SXN::Net
 		#pragma region Fields
 
 		/// <summary>
-		/// A reference to the object that provides work with the Winsock extensions.
+		/// A reference to the object that provides work with the WinSock extensions.
 		/// </summary>
-		Winsock& winsock;
+		WinSock& winsock;
 
 		/// <summary>
 		/// The descriptor of the listening socket.
@@ -70,11 +70,11 @@ namespace SXN::Net
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TcpConnection" /> class.
 		/// </summary>
-		/// <param name="winsock">A reference to the object that provides work with the Winsock extensions.</param>
+		/// <param name="winsock">A reference to the object that provides work with the WinSock extensions.</param>
 		/// <param name="listenSocket">The descriptor of the listening socket.</param>
 		/// <param name="connectionSocket">The descriptor of the connection socket.</param>
 		/// <param name="rioRequestQueue">The descriptor of the socket within the Registered I/O extension.</param>
-		inline TcpConnection(Winsock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
+		inline TcpConnection(WinSock& winsock, SOCKET listenSocket, SOCKET connectionSocket, RIO_RQ rioRequestQueue, HANDLE complitionPort, ULONG id, ULONG workerId)
 			: winsock(winsock)
 		{
 			this->id = id;

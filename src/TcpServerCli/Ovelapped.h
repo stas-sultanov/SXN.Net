@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Stdafx.h"
+#include "pch.h"
 
 #define SOCK_ACTION_ACCEPT 2
 

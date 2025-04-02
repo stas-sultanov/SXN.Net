@@ -1,6 +1,6 @@
-#include "stdafx.h"
+#include "pch.h"
 
-#include "WinsockErrorCode.h"
+#include "WinSockErrorCode.h"
 
 #include "TcpWorkerSettings.h"
 

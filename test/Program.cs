@@ -37,7 +37,7 @@ internal static class Program
 		}
 		catch (TcpServerException e)
 		{
-			Console.WriteLine($"Error activating server. Kernel error code: {e.KErrorCode}. Winsock error code: {e.WErrorCode}.");
+			Console.WriteLine($"Error activating server. Kernel error code: {e.KErrorCode}. WinSock error code: {e.WErrorCode}.");
 
 			//Console.WriteLine($"Error activating server.");
 
@@ -52,7 +52,7 @@ internal static class Program
 
 		if (!tryAccept.Success)
 		{
-			Console.WriteLine($"error on accept. Kernel error code: {tryAccept.KernelErrorCode}. Winsock error code: {tryAccept.WinsockErrorCode}");
+			Console.WriteLine($"error on accept. Kernel error code: {tryAccept.KernelErrorCode}. WinSock error code: {tryAccept.WinSockErrorCode}");
 		}
 
 		Console.WriteLine($"accept success");

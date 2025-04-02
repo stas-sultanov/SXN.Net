@@ -1,30 +1,28 @@
 #pragma once
 
-#include "Stdafx.h"
-#include "WinsockErrorCode.h"
+#include "pch.h"
+#include "WinSockErrorCode.h"
 
 using namespace System;
 
-namespace SXN
+namespace SXN::Net
 {
-	namespace Net
-	{
 		[Serializable]
 		public ref class TcpServerException sealed : Exception
 		{
 			internal:
 
-			TcpServerException(WinsockErrorCode winsockErrorCode)
+			TcpServerException(WinSockErrorCode winsockErrorCode)
 				: TcpServerException(winsockErrorCode, 0)
 			{
 			}
 
 			TcpServerException(int kernelErrorCode)
-				: TcpServerException((WinsockErrorCode) 0, kernelErrorCode)
+				: TcpServerException(WinSockErrorCode::None, kernelErrorCode)
 			{
 			}
 
-			TcpServerException(WinsockErrorCode winsockErrorCode, int kernelErrorCode)
+			TcpServerException(WinSockErrorCode winsockErrorCode, int kernelErrorCode)
 			{
 				WErrorCode = winsockErrorCode;
 
@@ -33,9 +31,8 @@ namespace SXN
 
 			public:
 			
-			property WinsockErrorCode WErrorCode;
+			property WinSockErrorCode WErrorCode;
 
 			property int KErrorCode;
 		};
-	}
 }

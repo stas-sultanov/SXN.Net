@@ -3,6 +3,7 @@
 		<File Path=".editorconfig" />
 		<File Path=".gitignore" />
 	</Folder>
+	<Project Path="src/TcpServer/TcpServer.csproj" />
 	<Project Path="src/TcpServerCli/TcpServerCli.vcxproj" Id="30aef4fc-3713-44a8-a807-96e8a32e3b0b" />
 	<Project Path="test/TcpServer.Tests.csproj" Id="43894023-b3cd-4e8d-84d7-d76320e4587e" />
 </Solution>

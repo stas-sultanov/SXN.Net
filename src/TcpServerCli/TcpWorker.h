@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Stdafx.h"
-
+#include "pch.h"
+#include "WinSock.h"
+#include "IocpWorker.h"
+#include "TcpWorkerSettings.h"
 
 namespace SXN
 {
@@ -9,14 +11,14 @@ namespace SXN
 	{
 		public ref class TcpWorker sealed
 		{
-			private:
+		private:
 
 			#pragma region Fields
 
 			/// <summary>
 			/// The descriptor of the listening socket.
 			/// </summary>
-			initonly SOCKET listenSocket;
+			initonly SOCKET socket;
 
 			/// <summary>
 			/// The completion port of the listening socket.
@@ -24,9 +26,9 @@ namespace SXN
 			initonly HANDLE completionPort;
 
 			/// <summary>
-			/// A reference to the object that provides work with the Winsock extensions.
+			/// A reference to the object that provides work with the Windows Sockets extensions.
 			/// </summary>
-			initonly Winsock* pWinsock;
+			initonly WinSock* pWinSock;
 
 			/// <summary>
 			/// The collection of the workers.
@@ -44,7 +46,7 @@ namespace SXN
 
 			#pragma endregion
 
-			public:
+		public:
 
 			#pragma region Methods
 
@@ -55,17 +57,21 @@ namespace SXN
 			{
 				this->serveSocket = serveSocket;
 
-				// initialize Winsock
+				this->acceptQueueMaxEntriesCount = settings->AcceptQueueMaxEntriesCount;
+
+				// initiates use of the WinSock DLL by a process
 				{
+					// structure to receive details of the Windows Sockets implementation
 					WSADATA data;
 
-					auto startupResultCode = ::WSAStartup(MAKEWORD(2, 2), &data);
+					// request version 2.2 of WinSock
+					auto resultCode = ::WSAStartup(MAKEWORD(2, 2), &data);
 
 					// check if startup was successful
-					if (startupResultCode != 0)
+					if (resultCode != 0)
 					{
 						// get error code
-						auto winsockErrorCode = (WinsockErrorCode)startupResultCode;
+						auto winsockErrorCode = (WinSockErrorCode)resultCode;
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -75,16 +81,16 @@ namespace SXN
 				// initialize listen socket
 				{
 					// get address family from the accept point
-					auto addressFamily = (int) settings->AcceptPoint->AddressFamily;
+					auto addressFamily = (int)settings->AcceptPoint->AddressFamily;
 
 					// create socket
-					listenSocket = ::WSASocket(addressFamily, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO);
+					socket = ::WSASocket(addressFamily, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_REGISTERED_IO | WSA_FLAG_OVERLAPPED);
 
 					// check if operation has failed
-					if (listenSocket == INVALID_SOCKET)
+					if (socket == INVALID_SOCKET)
 					{
 						// get error code
-						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+						auto winsockErrorCode = (WinSockErrorCode) ::WSAGetLastError();
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -93,12 +99,12 @@ namespace SXN
 
 				// configure listen socket
 				{
-					auto configResult = Configure(listenSocket, settings);
+					auto configResult = Configure(socket, settings);
 
 					if (!configResult)
 					{
 						// get error code
-						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+						auto winsockErrorCode = (WinSockErrorCode) ::WSAGetLastError();
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -107,12 +113,12 @@ namespace SXN
 
 				// initialize winsock extensions
 				{
-					pWinsock = Winsock::Initialize(listenSocket);
+					pWinSock = WinSock::Initialize(socket);
 
-					if (pWinsock == nullptr)
+					if (pWinSock == nullptr)
 					{
 						// get error code
-						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+						auto winsockErrorCode = (WinSockErrorCode) ::WSAGetLastError();
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -135,7 +141,7 @@ namespace SXN
 					}
 
 					// associate the listening socket with the completion port
-					HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)listenSocket, completionPort, 0, 0);
+					HANDLE associateResult = ::CreateIoCompletionPort((HANDLE)socket, completionPort, 0, 0);
 
 					if ((associateResult == nullptr) || (associateResult != completionPort))
 					{
@@ -149,12 +155,12 @@ namespace SXN
 
 				// start listen
 				{
-					auto configResult = StartListen(listenSocket, settings);
+					auto configResult = StartListen(socket, settings);
 
 					if (!configResult)
 					{
 						// get error code
-						auto winsockErrorCode = (WinsockErrorCode) ::WSAGetLastError();
+						auto winsockErrorCode = (WinSockErrorCode) ::WSAGetLastError();
 
 						// throw exception
 						throw gcnew TcpServerException(winsockErrorCode);
@@ -169,14 +175,14 @@ namespace SXN
 					// get the length of the connections backlog per processor
 					auto perWorkerConnectionBacklogLength = settings->ConnectionsBacklogLength / processorsCount;
 
-					// 4 create collection of the IOCP workers
+					// create collection of the IOCP workers
 					workers = gcnew array<IocpWorker^>(processorsCount);
 
 					// initialize workers
 					for (int processorIndex = 0; processorIndex < processorsCount; processorIndex++)
 					{
 						// create process worker
-						auto worker = gcnew IocpWorker(listenSocket, *pWinsock, processorIndex, settings->ReceiveBufferLength, perWorkerConnectionBacklogLength);
+						auto worker = gcnew IocpWorker(socket, *pWinSock, processorIndex, settings->ReceiveBufferLength, perWorkerConnectionBacklogLength);
 
 						// add to collection
 						workers[processorIndex] = worker;
@@ -184,7 +190,7 @@ namespace SXN
 				}
 
 				// initialize and run main thread
-				{ 
+				{
 					auto mainThreadDelegate = gcnew ThreadStart(this, &TcpWorker::ProcessAcceptRequests);
 
 					mainThread = gcnew Thread(mainThreadDelegate);
@@ -193,34 +199,22 @@ namespace SXN
 				}
 			}
 
-			private:
+		private:
 
-			static Boolean Configure(SOCKET listenSocket, TcpWorkerSettings^ settings)
+			static Boolean Configure(SOCKET socket, TcpWorkerSettings^ settings)
 			{
 				// disable use of the Nagle algorithm if requested
 				if (settings->UseNagleAlgorithm == false)
 				{
-					auto boolValue = (BOOL) TRUE;
+					auto boolValue = (BOOL)TRUE;
 
-					auto disableNagleResult = ::setsockopt(listenSocket, IPPROTO_TCP, TCP_NODELAY, (const char *)&boolValue, sizeof(BOOL));
+					auto disableNagleResult = ::setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (const char*)&boolValue, sizeof(BOOL));
 
 					// check if operation has failed
 					if (disableNagleResult == SOCKET_ERROR)
 					{
 						return false;
 					}
-
-					/* EXPEREMENTAL *
-					int intValue = 0;
-
-					int setBufferResult = ::setsockopt(listenSocket, SOL_SOCKET, SO_SNDBUF, (const char *)&intValue, sizeof(int));
-
-					// check if operation has failed
-					if (setBufferResult == SOCKET_ERROR)
-					{
-						return false;
-					}
-					/**/
 				}
 
 				// enable faster operations on the loop-back if requested
@@ -230,7 +224,7 @@ namespace SXN
 
 					DWORD dwBytes;
 
-					int enableFastLoopbackResult = ::WSAIoctl(listenSocket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), nullptr, 0, &dwBytes, nullptr, nullptr);
+					int enableFastLoopbackResult = ::WSAIoctl(socket, SIO_LOOPBACK_FAST_PATH, &optionValue, sizeof(UInt32), nullptr, 0, &dwBytes, nullptr, nullptr);
 
 					// check if attempt has succeed
 					if (enableFastLoopbackResult == SOCKET_ERROR)
@@ -242,7 +236,7 @@ namespace SXN
 				return true;
 			}
 
-			static Boolean StartListen(SOCKET listenSocket, TcpWorkerSettings^ settings)
+			static Boolean StartListen(SOCKET socket, TcpWorkerSettings^ settings)
 			{
 				// bind
 				{
@@ -275,7 +269,7 @@ namespace SXN
 						socketAddress.sin_addr.S_un.S_un_b.s_b4 = addressBytes[3];
 
 						// associate address with socket
-						bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN));
+						bindResult = ::bind(socket, (sockaddr*)&socketAddress, sizeof(SOCKADDR_IN));
 					}
 					else
 					{
@@ -301,7 +295,7 @@ namespace SXN
 						}
 
 						// associate address with socket
-						bindResult = ::bind(listenSocket, (sockaddr *)&socketAddress, sizeof(SOCKADDR_IN6));
+						bindResult = ::bind(socket, (sockaddr*)&socketAddress, sizeof(SOCKADDR_IN6));
 					}
 
 					if (bindResult == SOCKET_ERROR)
@@ -312,7 +306,7 @@ namespace SXN
 
 				// start listen
 				{
-					auto startListen = ::listen(listenSocket, settings->ConnectionsBacklogLength);
+					auto startListen = ::listen(socket, settings->ConnectionsBacklogLength);
 
 					if (startListen == SOCKET_ERROR)
 					{
@@ -338,7 +332,15 @@ namespace SXN
 				// allocate array of completion entries
 				auto completionPortEntries = (LPOVERLAPPED_ENTRY) ::VirtualAlloc(nullptr, sizeof(OVERLAPPED_ENTRY) * maxEntries, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-				DWORD waitTime = (DWORD) -1;
+				if (completionPortEntries == nullptr)
+				{
+					// get error code
+					auto kernelErrorCode = ::GetLastError();
+					// throw exception
+					throw gcnew TcpServerException(kernelErrorCode);
+				}
+
+				DWORD waitTime = (DWORD)-1;
 
 				// will contain number of entries removed from the completion queue
 				ULONG numEntriesRemoved;
@@ -360,7 +362,7 @@ namespace SXN
 						auto entry = completionPortEntries[entryIndex];
 
 						// get structure that was specified when the completed I/O operation was started
-						auto overlapped = (Ovelapped*) entry.lpOverlapped;
+						auto overlapped = (Ovelapped*)entry.lpOverlapped;
 
 						// get identifier of the worker
 						auto workerId = overlapped->workerId;
@@ -379,7 +381,7 @@ namespace SXN
 						// queue connection to processing chain
 						auto waitCallback = gcnew WaitCallback(this, &TcpWorker::Serve);
 
-						ThreadPool::UnsafeQueueUserWorkItem(waitCallback, (Object ^)connection);
+						ThreadPool::UnsafeQueueUserWorkItem(waitCallback, (Object^)connection);
 					}
 				}
 
@@ -389,7 +391,7 @@ namespace SXN
 
 			void Serve(Object^ state)
 			{
-				auto connection = (Connection ^) state;
+				auto connection = (Connection^)state;
 
 				connection->connection->EndAccept();
 

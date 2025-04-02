@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Stdafx.h"
+#include "pch.h"
 #include "TcpConnection.h"
 
 using namespace System;

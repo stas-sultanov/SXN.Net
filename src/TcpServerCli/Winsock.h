@@ -1,23 +1,23 @@
 #pragma once
 
-#include "Stdafx.h"
+#include "pch.h"
 
 namespace SXN::Net
 {
 	/// <summary>
-	/// Provides work with the Winsock extensions.
+	/// Provides work with the Windows Sockets Extensions.
 	/// </summary>
-	private class Winsock final
+	private class WinSock final
 	{
 	private:
 
 		#pragma region Static Methods
 
 		/// <summary>
-		/// Gets the address of the function within the Winsock extensions.
+		/// Gets the address of the function within the WinSock extensions.
 		/// </summary>
 		/// <param name="socket">The descriptor of the socket.</param>
-		/// <param name="extensionId">The unique identifier of the Winsock extension.</param>
+		/// <param name="extensionId">The unique identifier of the WinSock extension.</param>
 		/// <param name="pFunction">A pointer to the memory where to place address of the function.</param>
 		/// <returns>
 		/// Upon successful completion, returns <c>0</c>.
@@ -80,13 +80,13 @@ namespace SXN::Net
 		#pragma region Constructor
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="Winsock" /> class.
+		/// Initializes a new instance of the <see cref="WinSock" /> class.
 		/// </summary>
 		/// <param name="pAcceptEx">A pointer to the AcceptEx function.</param>
 		/// <param name="pDisconnectEx">A pointer to the DisconnectEx function.</param>
 		/// <param name="pGetAcceptExSockaddrs">A pointer to the GetAcceptExSockaddrs function.</param>
-		/// <param name="rioFunctionsTable">A reference to the structure that contains information on the functions that implement the Winsock registered I/O extensions.</param>
-		inline Winsock
+		/// <param name="rioFunctionsTable">A reference to the structure that contains information on the functions that implement the WinSock registered I/O extensions.</param>
+		inline WinSock
 		(
 			LPFN_ACCEPTEX pAcceptEx,
 			LPFN_DISCONNECTEX pDisconnectEx,
@@ -134,7 +134,7 @@ namespace SXN::Net
 		#pragma region Methods
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="Winsock" /> class.
+		/// Initializes a new instance of the <see cref="WinSock" /> class.
 		/// </summary>
 		/// <param name="socket">The descriptor of the socket.</param>
 		/// <returns>
@@ -142,7 +142,10 @@ namespace SXN::Net
 		/// If the function fails, the return value is <c>null</c>.
 		/// To get extended error information, call <see cref="WSAGetLastError" />.
 		/// </returns>
-		static Winsock* Initialize(SOCKET socket)
+		static WinSock* Initialize
+		(
+			SOCKET socket
+		)
 		{
 			// get pointer to AcceptEx function
 			LPFN_ACCEPTEX pAcceptEx;
@@ -206,7 +209,7 @@ namespace SXN::Net
 			}
 
 			// compose and return result
-			return new Winsock(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
+			return new WinSock(pAcceptEx, pDisconnectEx, pGetAcceptExSockaddrs, rioTable);
 		}
 
 		#pragma endregion
@@ -225,7 +228,17 @@ namespace SXN::Net
 		/// If <see cref ="WSAGetLastError"/> returns <c>ERROR_IO_PENDING</c>, then the operation was successfully initiated and is still in progress.
 		/// If the error is <c>WSAECONNRESET</c>, an incoming connection was indicated, but was subsequently terminated by the remote peer prior to accepting the call.
 		/// </returns>
-		inline BOOL AcceptEx(SOCKET sListenSocket, SOCKET sAcceptSocket, PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPDWORD lpdwBytesReceived, LPOVERLAPPED lpOverlapped) const
+		inline BOOL AcceptEx
+		(
+			SOCKET sListenSocket,
+			SOCKET sAcceptSocket,
+			PVOID lpOutputBuffer,
+			DWORD dwReceiveDataLength,
+			DWORD dwLocalAddressLength,
+			DWORD dwRemoteAddressLength,
+			LPDWORD lpdwBytesReceived,
+			LPOVERLAPPED lpOverlapped
+		) const
 		{
 			return pAcceptEx(sListenSocket, sAcceptSocket, lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, lpdwBytesReceived, lpOverlapped);
 		}
@@ -244,7 +257,13 @@ namespace SXN::Net
 		/// If a call to the <see cref="WSAGetLastError"/> function returns <c>ERROR_IO_PENDING</c>, the operation initiated successfully and is in progress.
 		/// Under such circumstances, the call may still fail when the operation completes.
 		/// </returns>
-		inline BOOL DisconnectEx(SOCKET hSocket, LPOVERLAPPED lpOverlapped, DWORD dwFlags, DWORD reserved) const
+		inline BOOL DisconnectEx
+		(
+			SOCKET hSocket,
+			LPOVERLAPPED lpOverlapped,
+			DWORD dwFlags,
+			DWORD reserved
+		) const
 		{
 			return pDisconnectEx(hSocket, lpOverlapped, dwFlags, reserved);
 		}
@@ -252,7 +271,17 @@ namespace SXN::Net
 		/// <summary>
 		/// Parses the data obtained from a call to the <see href="AcceptEx"/> function and passes the local and remote addresses to a sockaddr structure.
 		/// </summary>
-		inline void GetAcceptExSockaddrs(PVOID lpOutputBuffer, DWORD dwReceiveDataLength, DWORD dwLocalAddressLength, DWORD dwRemoteAddressLength, LPSOCKADDR* LocalSockaddr, LPINT LocalSockaddrLength, LPSOCKADDR* RemoteSockaddr, LPINT RemoteSockaddrLength) const
+		inline void GetAcceptExSockaddrs
+		(
+			PVOID lpOutputBuffer,
+			DWORD dwReceiveDataLength,
+			DWORD dwLocalAddressLength,
+			DWORD dwRemoteAddressLength,
+			LPSOCKADDR* LocalSockaddr,
+			LPINT LocalSockaddrLength,
+			LPSOCKADDR* RemoteSockaddr,
+			LPINT RemoteSockaddrLength
+		) const
 		{
 			pGetAcceptExSockaddrs(lpOutputBuffer, dwReceiveDataLength, dwLocalAddressLength, dwRemoteAddressLength, LocalSockaddr, LocalSockaddrLength, RemoteSockaddr, RemoteSockaddrLength);
 		}
@@ -262,16 +291,19 @@ namespace SXN::Net
 		#pragma region Methods of the Registered I/O Extensions
 
 		/// <summary>
-		/// Closes an existing completion queue used for I/O completion notification by send and receive requests with the Winsock registered I/O extensions.
+		/// Closes an existing completion queue used for I/O completion notification by send and receive requests with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="CQ">A descriptor identifying an existing completion queue.</param>
-		inline void RIOCloseCompletionQueue(RIO_CQ CQ) const
+		inline void RIOCloseCompletionQueue
+		(
+			RIO_CQ CQ
+		) const
 		{
 			pRIOCloseCompletionQueue(CQ);
 		}
 
 		/// <summary>
-		/// Creates an I/O completion queue of a specific size for use with the Winsock registered I/O extensions.
+		/// Creates an I/O completion queue of a specific size for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="QueueSize">The size, in number of entries, of the completion queue to create.</param>
 		/// <param name="NotificationCompletion">The type of notification completion to use based on the Type member of the <see cref="RIO_NOTIFICATION_COMPLETION" /> structure (I/O completion or event notification).</param>
@@ -279,19 +311,23 @@ namespace SXN::Net
 		/// If no error occurs, returns a descriptor referencing a new completion queue.
 		/// Otherwise, a value of <c>RIO_CORRUPT_CQ</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline RIO_CQ RIOCreateCompletionQueue(DWORD QueueSize, PRIO_NOTIFICATION_COMPLETION NotificationCompletion) const
+		inline RIO_CQ RIOCreateCompletionQueue
+		(
+			DWORD QueueSize,
+			PRIO_NOTIFICATION_COMPLETION NotificationCompletion
+		) const
 		{
 			return pRIOCreateCompletionQueue(QueueSize, NotificationCompletion);
 		}
 
 		/// <summary>
-		/// Creates a registered I/O socket descriptor using a specified socket and I/O completion queues for use with the Winsock registered I/O extensions.
+		/// Creates a registered I/O socket descriptor using a specified socket and I/O completion queues for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="Socket">A descriptor that identifies the socket.</param>
 		/// <param name="MaxOutstandingReceive">The maximum number of outstanding receives allowed on the socket.</param>
-		/// <param name="MaxReceiveDataBuffers">The maximum number of receive data buffers on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
+		/// <param name="MaxReceiveDataBuffers">The maximum number of receive data specificators on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
 		/// <param name="MaxOutstandingSend">The maximum number of outstanding sends allowed on the socket.</param>
-		/// <param name="MaxSendDataBuffers">The maximum number of send data buffers on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
+		/// <param name="MaxSendDataBuffers">The maximum number of send data specificators on the socket. For Windows 8 and Windows Server 2012, must be <c>1</c>.</param>
 		/// <param name="ReceiveCQ">A descriptor that identifies the I/O completion queue to use for receive request completions.</param>
 		/// <param name="SendCQ">A descriptor that identifies the I/O completion queue to use for send request completions.</param>
 		/// <param name="SocketContext">The socket context to associate with this request queue.</param>
@@ -299,13 +335,23 @@ namespace SXN::Net
 		/// If no error occurs, returns a descriptor referencing a new request queue.
 		/// Otherwise, a value of <c>RIO_INVALID_RQ</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline RIO_RQ RIOCreateRequestQueue(SOCKET Socket, ULONG MaxOutstandingReceive, ULONG MaxReceiveDataBuffers, ULONG MaxOutstandingSend, ULONG MaxSendDataBuffers, RIO_CQ ReceiveCQ, RIO_CQ SendCQ, PVOID SocketContext) const
+		inline RIO_RQ RIOCreateRequestQueue
+		(
+			SOCKET Socket,
+			ULONG MaxOutstandingReceive,
+			ULONG MaxReceiveDataBuffers,
+			ULONG MaxOutstandingSend,
+			ULONG MaxSendDataBuffers,
+			RIO_CQ ReceiveCQ,
+			RIO_CQ SendCQ,
+			PVOID SocketContext
+		) const
 		{
 			return pRIOCreateRequestQueue(Socket, MaxOutstandingReceive, MaxReceiveDataBuffers, MaxOutstandingSend, MaxSendDataBuffers, ReceiveCQ, SendCQ, SocketContext);
 		}
 
 		/// <summary>
-		/// Removes entries from an I/O completion queue for use with the Winsock registered I/O extensions.
+		/// Removes entries from an I/O completion queue for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="CQ">A descriptor that identifies an I/O completion queue.</param>
 		/// <param name="Array">An array of <see cref="RIORESULT" /> structures to receive the description of the completions dequeued.</param>
@@ -314,35 +360,46 @@ namespace SXN::Net
 		/// If no error occurs, returns the number of completion entries removed from the specified completion queue.
 		/// Otherwise, a value of <c>RIO_CORRUPT_CQ</c> is returned to indicate that the state of the <see cref="RIO_CQ" /> passed in the <paramref name="CQ" /> parameter has become corrupt due to memory corruption or misuse of the RIO functions.
 		/// </returns>
-		inline ULONG RIODequeueCompletion(RIO_CQ CQ, PRIORESULT Array, ULONG ArraySize) const
+		inline ULONG RIODequeueCompletion
+		(
+			RIO_CQ CQ,
+			PRIORESULT Array,
+			ULONG ArraySize
+		) const
 		{
 			return pRIODequeueCompletion(CQ, Array, ArraySize);
 		}
 
 		/// <summary>
-		/// Deregisters a registered buffer used with the Winsock registered I/O extensions.
+		/// Deregisters a registered buffer used with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="BufferId">A descriptor identifying a registered buffer.</param>
-		inline void RIODeregisterBuffer(RIO_BUFFERID BufferId) const
+		inline void RIODeregisterBuffer
+		(
+			RIO_BUFFERID BufferId
+		) const
 		{
 			pRIODeregisterBuffer(BufferId);
 		}
 
 		/// <summary>
-		/// Registers the method to use for notification behavior with an I/O completion queue for use with the Winsock registered I/O extensions.
+		/// Registers the method to use for notification behavior with an I/O completion queue for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="CQ">A descriptor that identifies an I/O completion queue.</param>
 		/// <returns>
 		/// If no error occurs, returns <c>0</c>.
 		/// Otherwise, the function failed and a specific error code is returned.
 		/// </returns>
-		inline INT RIONotify(RIO_CQ CQ) const
+		inline INT RIONotify
+		(
+			RIO_CQ CQ
+		) const
 		{
 			return pRIONotify(CQ);
 		}
 
 		/// <summary>
-		/// Receives network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the Winsock registered I/O extensions.
+		/// Receives network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="SocketQueue">A descriptor that identifies a connected registered I/O TCP socket or a bound registered I/O UDP socket.</param>
 		/// <param name="pData">A description of the portion of the registered buffer in which to receive data. This parameter may be <c>null</c> for a bound registered I/O UDP socket if the application does not need to receive the data payload in the UDP datagram.</param>
@@ -353,24 +410,35 @@ namespace SXN::Net
 		/// If no error occurs, returns <c>true</c>. In this case, the receive operation is successfully initiated and the completion will have already been queued or the operation has been successfully initiated and the completion will be queued at a later time.
 		/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.A specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline BOOL RIOReceive(RIO_RQ SocketQueue, PRIO_BUF pData, ULONG DataBufferCount, DWORD Flags, PVOID RequestContext) const
+		inline BOOL RIOReceive
+		(
+			RIO_RQ SocketQueue,
+			PRIO_BUF pData,
+			ULONG DataBufferCount,
+			DWORD Flags,
+			PVOID RequestContext
+		) const
 		{
 			return pRIOReceive(SocketQueue, pData, DataBufferCount, Flags, RequestContext);
 		}
 
 		/// <summary>
-		/// Registers a <see cref="RIO_BUFFERID" />, a registered buffer descriptor, with a specified buffer for use with the Winsock registered I/O extensions.
+		/// Registers a <see cref="RIO_BUFFERID" />, a registered buffer descriptor, with a specified buffer for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="DataBuffer">A pointer to the beginning of the memory buffer to register.</param>
 		/// <param name="DataLength">The length, in bytes, in the buffer to register.</param>
 		/// <returns>If no error occurs, returns a registered buffer descriptor. Otherwise, a value of <c>RIO_INVALID_BUFFERID"</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.</returns>
-		inline RIO_BUFFERID RIORegisterBuffer(PCHAR DataBuffer, DWORD DataLength) const
+		inline RIO_BUFFERID RIORegisterBuffer
+		(
+			PCHAR DataBuffer,
+			DWORD DataLength
+		) const
 		{
 			return pRIORegisterBuffer(DataBuffer, DataLength);
 		}
 
 		/// <summary>
-		/// Resizes an I/O completion queue to be either larger or smaller for use with the Winsock registered I/O extensions.
+		/// Resizes an I/O completion queue to be either larger or smaller for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="CQ">A descriptor that identifies an existing I/O completion queue to resize.</param>
 		/// <param name="QueueSize">The new size, in number of entries, of the completion queue.</param>
@@ -378,13 +446,17 @@ namespace SXN::Net
 		/// If no error occurs, returns <c>true</c>.
 		/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline BOOL RIOResizeCompletionQueue(RIO_CQ CQ, DWORD QueueSize) const
+		inline BOOL RIOResizeCompletionQueue
+		(
+			RIO_CQ CQ,
+			DWORD QueueSize
+		) const
 		{
 			return pRIOResizeCompletionQueue(CQ, QueueSize);
 		}
 
 		/// <summary>
-		/// Resizes a request queue to be either larger or smaller for use with the Winsock registered I/O extensions.
+		/// Resizes a request queue to be either larger or smaller for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="RQ">A descriptor that identifies an existing registered I/O socket descriptor (request queue) to resize.</param>
 		/// <param name="MaxOutstandingReceive">The maximum number of outstanding sends allowed on the socket. This value can be larger or smaller than the original number.</param>
@@ -393,13 +465,18 @@ namespace SXN::Net
 		/// If no error occurs, returns <c>true</c>.
 		/// Otherwise, a value of <c>false</c> is returned, and a specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline BOOL RIOResizeRequestQueue(RIO_RQ RQ, DWORD MaxOutstandingReceive, DWORD MaxOutstandingSend) const
+		inline BOOL RIOResizeRequestQueue
+		(
+			RIO_RQ RQ,
+			DWORD MaxOutstandingReceive,
+			DWORD MaxOutstandingSend
+		) const
 		{
 			return pRIOResizeRequestQueue(RQ, MaxOutstandingReceive, MaxOutstandingSend);
 		}
 
 		/// <summary>
-		/// Sends a network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the Winsock registered I/O extensions.
+		/// Sends a network data on a connected registered I/O TCP socket or a bound registered I/O UDP socket for use with the WinSock registered I/O extensions.
 		/// </summary>
 		/// <param name="SocketQueue">A descriptor that identifies a connected registered I/O TCP socket or a bound registered I/O UDP socket.</param>
 		/// <param name="pData">A description of the portion of the registered buffer from which to send data. This parameter may be <c>null</c> for a bound registered I/O UDP socket if the application does not need to send a data payload in the UDP datagram.</param>
@@ -411,7 +488,14 @@ namespace SXN::Net
 		/// A value of <c>false</c> indicates the function failed, the operation was not successfully initiated and no completion indication will be queued.
 		/// A specific error code can be retrieved by calling the <see cref="WSAGetLastError" /> function.
 		/// </returns>
-		inline BOOL RIOSend(RIO_RQ SocketQueue, PRIO_BUF pData, DWORD DataBufferCount, DWORD Flags, PVOID RequestContext) const
+		inline BOOL RIOSend
+		(
+			RIO_RQ SocketQueue,
+			PRIO_BUF pData,
+			DWORD DataBufferCount,
+			DWORD Flags,
+			PVOID RequestContext
+		) const
 		{
 			return pRIOSend(SocketQueue, pData, DataBufferCount, Flags, RequestContext);
 		}

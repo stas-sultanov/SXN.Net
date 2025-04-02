@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Stdafx.h"
+#include "pch.h"
 #include "TcpConnection.h"
+#include "ReceiveTask.h"
 
 namespace SXN::Net
 {
